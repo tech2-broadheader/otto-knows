@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import type { Reminder } from "@otto/schemas";
 import { useReminders } from "../hooks/useReminders";
+import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { AsyncBoundary, EmptyState, ScreenScroll } from "../components/AsyncBoundary";
 import { Button, Card, LabeledInput } from "../components/ui";
 import type { ScheduleResult } from "../notifications";
@@ -23,7 +24,8 @@ function describeScheduleResult(result: ScheduleResult): string {
 }
 
 export function RemindersScreen(): React.JSX.Element {
-  const { state, error, reminders, addReminder, markDone, remindMe, reload } = useReminders();
+  const deps = useRepositoryDeps();
+  const { state, error, reminders, addReminder, markDone, remindMe, reload } = useReminders(deps);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | undefined>();

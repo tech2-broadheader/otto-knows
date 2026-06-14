@@ -10,12 +10,14 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import { initDataLayer, routineRepository } from "./src/data";
+import { createRepositoryDeps, initDataLayer, routineRepository } from "./src/data";
 import { configureNotifications } from "./src/notifications";
+import { rescheduleDay } from "./src/lib/reschedule";
 import { LOCAL_USER_ID } from "./src/lib/constants";
 import { LoadingState } from "./src/components/AsyncBoundary";
 import { TodayScreen } from "./src/screens/TodayScreen";
 import { RemindersScreen } from "./src/screens/RemindersScreen";
+import { MedicationsScreen } from "./src/screens/MedicationsScreen";
 import { FinanceScreen } from "./src/screens/FinanceScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
@@ -51,6 +53,11 @@ function MainTabs(): React.JSX.Element {
         options={{ tabBarIcon: tabIcon("🔔"), tabBarAccessibilityLabel: "Reminders" }}
       />
       <Tab.Screen
+        name="Health"
+        component={MedicationsScreen}
+        options={{ tabBarIcon: tabIcon("💊"), tabBarAccessibilityLabel: "Health" }}
+      />
+      <Tab.Screen
         name="Finance"
         component={FinanceScreen}
         options={{ tabBarIcon: tabIcon("₱"), tabBarAccessibilityLabel: "Finance" }}
@@ -82,6 +89,10 @@ export default function App(): React.JSX.Element {
         hasRoutine = false;
       }
       if (!cancelled) setPhase(hasRoutine ? "main" : "onboarding");
+      // Routine-timed auto-scheduling (Story 4.1): (re)plan today's notifications
+      // on boot. Diffed against what's already scheduled, so no double-fire; and
+      // it degrades gracefully if notification permission is denied.
+      void rescheduleDay(createRepositoryDeps());
     }
     void boot();
     return () => {

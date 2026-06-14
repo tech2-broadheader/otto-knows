@@ -2,8 +2,9 @@
 // notification helper (story 4.1) and degrades gracefully if permission denied.
 import { useCallback, useEffect, useState } from "react";
 import { reminderSchema, type Reminder } from "@otto/schemas";
-import { reminderRepository } from "../data";
+import { reminderRepository, type RepositoryDeps } from "../data";
 import { scheduleReminderNotification, type ScheduleResult } from "../notifications";
+import { rescheduleDay } from "../lib/reschedule";
 import { LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
@@ -26,7 +27,7 @@ export type RemindersState = {
   reload: () => Promise<void>;
 };
 
-export function useReminders(): RemindersState {
+export function useReminders(deps: RepositoryDeps): RemindersState {
   const [state, setState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | undefined>();
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -62,9 +63,11 @@ export function useReminders(): RemindersState {
       });
       const created = await reminderRepository.create(reminder);
       await reload();
+      // Re-plan the day so a routine-timed reminder is scheduled (best-effort).
+      await rescheduleDay(deps);
       return created;
     },
-    [reload],
+    [deps, reload],
   );
 
   const markDone = useCallback(
@@ -72,8 +75,10 @@ export function useReminders(): RemindersState {
       const updated = reminderSchema.parse({ ...reminder, status: "done", updatedAt: nowIso() });
       await reminderRepository.update(updated);
       await reload();
+      // Drop any now-stale scheduled notification for this reminder.
+      await rescheduleDay(deps);
     },
-    [reload],
+    [deps, reload],
   );
 
   const remindMe = useCallback(

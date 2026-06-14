@@ -4,7 +4,7 @@
 // not for Node tests.
 import { ensureSchema } from "../db/client";
 import { createEncryptionProvider } from "../security/encryption";
-import { createInMemoryKeyStore, defaultCryptoPrimitives } from "../security/crypto-primitives";
+import { createSecureStoreKeyStore, defaultCryptoPrimitives } from "../security/crypto-primitives";
 import { consentRepository, persistAuditEntry, type RepositoryDeps } from "./repositories";
 
 export * from "./repositories";
@@ -12,7 +12,10 @@ export * from "./privacy";
 
 /** Build the production RepositoryDeps (encryption + consent loader + audit sink). */
 export function createRepositoryDeps(): RepositoryDeps {
-  const encryption = createEncryptionProvider(createInMemoryKeyStore(), defaultCryptoPrimitives);
+  // GATE-3: the key persists across launches via expo-secure-store so encrypted
+  // data stays readable between sessions. The cipher itself remains the
+  // documented stopgap (see encryption.ts).
+  const encryption = createEncryptionProvider(createSecureStoreKeyStore(), defaultCryptoPrimitives);
   return {
     encryption,
     loadConsents: (userId) => consentRepository.list(userId),

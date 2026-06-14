@@ -3,6 +3,7 @@
     "name": "Otto",
     "slug": "otto",
     "version": "0.1.0",
+    "scheme": "otto",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,6 +14,6 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.broadheader.otto"
     },
-    "plugins": ["expo-sqlite"]
+    "plugins": ["expo-sqlite", "expo-web-browser", "expo-secure-store"]
   }
 }

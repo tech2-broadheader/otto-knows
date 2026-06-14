@@ -30,7 +30,14 @@ describe("toCalendarEvents", () => {
 
   it("expands all-day events to a PH-midnight instant", () => {
     const events = toCalendarEvents(
-      [{ id: "d1", summary: "Holiday", start: { date: "2026-06-12" }, end: { date: "2026-06-13" } }],
+      [
+        {
+          id: "d1",
+          summary: "Holiday",
+          start: { date: "2026-06-12" },
+          end: { date: "2026-06-13" },
+        },
+      ],
       USER,
       idFor,
       NOW,
@@ -41,8 +48,17 @@ describe("toCalendarEvents", () => {
   it("titles untitled events and skips cancelled / timeless / malformed", () => {
     const events = toCalendarEvents(
       [
-        { id: "u1", start: { dateTime: "2026-06-14T09:00:00+08:00" }, end: { dateTime: "2026-06-14T09:30:00+08:00" } },
-        { id: "c1", status: "cancelled", start: { dateTime: "2026-06-14T10:00:00+08:00" }, end: { dateTime: "2026-06-14T10:30:00+08:00" } },
+        {
+          id: "u1",
+          start: { dateTime: "2026-06-14T09:00:00+08:00" },
+          end: { dateTime: "2026-06-14T09:30:00+08:00" },
+        },
+        {
+          id: "c1",
+          status: "cancelled",
+          start: { dateTime: "2026-06-14T10:00:00+08:00" },
+          end: { dateTime: "2026-06-14T10:30:00+08:00" },
+        },
         { id: "t1", summary: "No time" },
         { summary: "No id" },
       ],

@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js / build output
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# env files (keep .env.example tracked)
+.env
+.env*.local
+
+# test / cache
+coverage/
+.turbo/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

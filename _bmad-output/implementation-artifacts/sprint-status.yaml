@@ -1,0 +1,62 @@
+# generated: 06-14-2026
+# project: Otto (Personal Daily Assistant)
+# project_key: OTTO
+# tracking_system: file-system
+# story_location: "_bmad-output/implementation-artifacts/stories"
+#
+# Status: backlog | ready-for-dev | in-progress | review | done
+# Epics/stories mirror _bmad-output/planning-artifacts/epics-and-stories.md
+# Nothing is ready-for-dev until its Definition of Ready is met (CLAUDE.md §9)
+# and any blocking gate/open-decision is cleared (see notes at bottom).
+
+generated: 06-14-2026
+last_updated: 06-14-2026
+project: Otto (Personal Daily Assistant)
+project_key: OTTO
+tracking_system: file-system
+story_location: "_bmad-output/implementation-artifacts/stories"
+
+development_status:
+  # --- Phase 1: free organizer core (target M3 / v0.5.0) ---
+  epic-1: backlog
+  1-1-monorepo-tooling-scaffold: backlog
+  1-2-shared-zod-contracts: backlog
+  1-3-local-store-sqlite-drizzle: backlog
+  1-4-consent-privacy-spine: backlog       # blocked by GATE-3 (DPA review)
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-define-fixed-routine-anchors: backlog
+  2-2-scheduling-substrate: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-google-calendar-tasks-read: backlog
+  3-2-manual-finance-entry-budget: backlog
+  3-3-context-graph-unification: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-routine-timed-reminders-notifications: backlog
+  4-2-basic-today-briefing: backlog
+  epic-4-retrospective: optional
+
+  # --- Phase 2-3: the paid brain (epic-level until detailed) ---
+  epic-5: backlog                           # blocked by OD-2 (conversational depth)
+  epic-6: backlog
+  epic-7: backlog
+
+  # --- Phase 4: health + caregiver ---
+  epic-8: backlog                           # 8-1 blocked by GATE-2 (health policy)
+
+  # --- Monetization (spans) ---
+  epic-9: backlog                           # blocked by OD-5 (pricing)
+
+  # --- Phase 5: continuity & polish ---
+  epic-10: backlog
+
+# BLOCKERS / GATES (clear before the related item -> ready-for-dev):
+#   GATE-1  Verify Google Play SMS policy   -> any FR-C5 SMS work
+#   GATE-2  Verify Health Connect/HealthKit -> 8-1
+#   GATE-3  DPA consent + encryption review -> 1-4
+#   OD-1 platform · OD-2 conv depth (E5) · OD-3 finance capture (FR-C5) · OD-4 name · OD-5 pricing (E9)

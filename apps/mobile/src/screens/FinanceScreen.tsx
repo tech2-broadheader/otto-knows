@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Text, View } from "react-native";
 import type { IncomeCadence } from "@otto/schemas";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
+import { UpgradeButton } from "../components/UpgradeButton";
 import { useFinance } from "../hooks/useFinance";
 import { AsyncBoundary, EmptyState, ScreenScroll } from "../components/AsyncBoundary";
 import { Banner, Button, Card, LabeledInput } from "../components/ui";
@@ -173,7 +174,10 @@ export function FinanceScreen(): React.JSX.Element {
             </View>
           ))}
           {billsAtCap ? (
-            <Banner message={upgradePromptFor("bills")} tone="warning" />
+            <>
+              <Banner message={upgradePromptFor("bills")} tone="warning" />
+              <UpgradeButton />
+            </>
           ) : (
             <View className="mt-2">
               <LabeledInput
@@ -201,7 +205,10 @@ export function FinanceScreen(): React.JSX.Element {
 
         <Card title={`Budget categories (${categories.length}/${FREE_CAPS.budgetCategories})`}>
           {categoriesAtCap ? (
-            <Banner message={upgradePromptFor("budgetCategories")} tone="warning" />
+            <>
+              <Banner message={upgradePromptFor("budgetCategories")} tone="warning" />
+              <UpgradeButton />
+            </>
           ) : (
             <View>
               <LabeledInput

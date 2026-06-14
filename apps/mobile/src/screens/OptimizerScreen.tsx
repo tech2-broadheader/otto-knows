@@ -12,6 +12,7 @@ import type { NewRoutineRequest, Recurrence, RoutineAnchorKind } from "@otto/sch
 import { useOptimizer } from "../hooks/useOptimizer";
 import { EmptyState, LoadingState, ScreenScroll } from "../components/AsyncBoundary";
 import { Banner, Button, Card, LabeledInput } from "../components/ui";
+import { UpgradeButton } from "../components/UpgradeButton";
 import { describeChange } from "../lib/apply-optimization";
 import { getApiBaseUrl } from "../lib/api-client";
 import { IS_PRO } from "../lib/constants";
@@ -94,6 +95,7 @@ export function OptimizerScreen(): React.JSX.Element {
           Tell Otto about a new routine and it proposes a reshaped day — you always confirm.
         </Text>
         <Banner tone={banner.tone} message={banner.text} />
+        {!IS_PRO ? <UpgradeButton /> : null}
       </ScreenScroll>
     );
   }

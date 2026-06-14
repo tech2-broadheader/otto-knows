@@ -24,10 +24,14 @@ import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { OptimizerScreen } from "./src/screens/OptimizerScreen";
 import { TipsScreen } from "./src/screens/TipsScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
+import { UpgradeScreen } from "./src/screens/UpgradeScreen";
 
 type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
+  // Modal paywall — sibling of Main so any tab/Settings screen can reach it
+  // via navigation.navigate("Upgrade").
+  Upgrade: undefined;
 };
 
 /** Settings is a stack so the Pro surfaces (Optimizer, Tips) are reachable from it. */
@@ -151,7 +155,14 @@ export default function App(): React.JSX.Element {
                 {() => <OnboardingScreen onComplete={() => setPhase("main")} />}
               </RootStack.Screen>
             ) : (
-              <RootStack.Screen name="Main" component={MainTabs} />
+              <>
+                <RootStack.Screen name="Main" component={MainTabs} />
+                <RootStack.Screen
+                  name="Upgrade"
+                  component={UpgradeScreen}
+                  options={{ presentation: "modal" }}
+                />
+              </>
             )}
           </RootStack.Navigator>
         )}

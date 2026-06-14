@@ -12,6 +12,7 @@ import { useQuickAdd } from "../hooks/useQuickAdd";
 import { ProposalCard } from "../components/ProposalCard";
 import { EmptyState, LoadingState, ScreenScroll } from "../components/AsyncBoundary";
 import { Banner, Button, Card, LabeledInput } from "../components/ui";
+import { UpgradeButton } from "../components/UpgradeButton";
 import { getApiBaseUrl, type ApiErrorCode } from "../lib/api-client";
 
 /** Map an error code to a banner tone + message for the quick-add surface. */
@@ -82,7 +83,15 @@ export function QuickAddScreen(): React.JSX.Element {
       {status === "error" && error
         ? (() => {
             const banner = errorBanner(errorCode, error);
-            return <Banner tone={banner.tone} message={banner.text} />;
+            // Quota spent (403) / sign-in (401) are the Pro-upgrade paths — offer
+            // a way to the paywall. Rate-limit / not-configured are transient.
+            const isProGate = errorCode === "FORBIDDEN" || errorCode === "UNAUTHORIZED";
+            return (
+              <>
+                <Banner tone={banner.tone} message={banner.text} />
+                {isProGate ? <UpgradeButton /> : null}
+              </>
+            );
           })()
         : null}
 

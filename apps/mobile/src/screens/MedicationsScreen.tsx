@@ -10,6 +10,7 @@ import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { useMedications, type MedicationInput } from "../hooks/useMedications";
 import { AsyncBoundary, EmptyState, ScreenScroll } from "../components/AsyncBoundary";
 import { Banner, Button, Card, LabeledInput } from "../components/ui";
+import { UpgradeButton } from "../components/UpgradeButton";
 import { FREE_CAPS, upgradePromptFor } from "../lib/caps";
 import {
   MED_RECURRENCE_FREQS,
@@ -168,7 +169,10 @@ export function MedicationsScreen(): React.JSX.Element {
         </Card>
 
         {medicationsAtCap && !editingId ? (
-          <Banner message={upgradePromptFor("medications")} tone="warning" />
+          <>
+            <Banner message={upgradePromptFor("medications")} tone="warning" />
+            <UpgradeButton />
+          </>
         ) : (
           <Card title={editingId ? "Edit medication" : "Add a medication"}>
             {formError ? <Banner message={formError} tone="warning" /> : null}

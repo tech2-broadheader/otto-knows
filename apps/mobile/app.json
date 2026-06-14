@@ -7,8 +7,18 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/mascot.png",
+    "splash": {
+      "image": "./assets/mascot.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "android": {
-      "package": "com.broadheader.otto"
+      "package": "com.broadheader.otto",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/mascot.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "ios": {
       "supportsTablet": false,

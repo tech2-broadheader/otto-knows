@@ -11,6 +11,7 @@ import type { TipDomain } from "@otto/schemas";
 import { useTips } from "../hooks/useTips";
 import { EmptyState, LoadingState, ScreenScroll } from "../components/AsyncBoundary";
 import { Banner, Card } from "../components/ui";
+import { UpgradeButton } from "../components/UpgradeButton";
 import { getApiBaseUrl } from "../lib/api-client";
 import { IS_PRO } from "../lib/constants";
 import { proErrorBanner, proGateBanner } from "../lib/pro-feature";
@@ -75,6 +76,7 @@ export function TipsScreen(): React.JSX.Element {
           Gentle, general ideas for money and wellbeing — never personalised advice.
         </Text>
         <Banner tone={banner.tone} message={banner.text} />
+        {!IS_PRO ? <UpgradeButton /> : null}
       </ScreenScroll>
     );
   }

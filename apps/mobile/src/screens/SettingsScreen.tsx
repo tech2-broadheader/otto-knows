@@ -6,7 +6,11 @@ import { ConsentScreen } from "./ConsentScreen";
 import { Card } from "../components/ui";
 import { GoogleCalendarCard } from "../components/GoogleCalendarCard";
 import { CONSENT_POLICY_VERSION } from "../lib/constants";
-// Read app metadata from the Expo manifest (no extra native dep).
+// Read app metadata from the Expo manifest (no extra native dep). expo-constants
+// would expose this at runtime, but it isn't a dependency, so we read app.json
+// directly — it's the same source Expo bundles from.
+// TODO: if expo-constants is added later, prefer Constants.expoConfig for parity
+// with the running build.
 import appConfig from "../../app.json";
 
 const APP_NAME = appConfig.expo.name;
@@ -54,6 +58,11 @@ export function SettingsScreen({
         <>
           <Card title="Otto Pro">
             <NavRow
+              title="Upgrade to Otto Pro"
+              subtitle="See plans — unlock the assistant that thinks and adjusts."
+              onPress={() => navigation.navigate("Upgrade")}
+            />
+            <NavRow
               title="Optimize your day"
               subtitle="Reshape your routine for a new habit — you confirm."
               onPress={() => navigation.navigate("Optimizer")}
@@ -65,9 +74,10 @@ export function SettingsScreen({
             />
           </Card>
           <GoogleCalendarCard />
-          <Card title="About">
-            <Text className="text-sm text-slate-600">{APP_NAME}</Text>
-            <Text className="mt-1 text-sm text-slate-400">Version {APP_VERSION}</Text>
+          <Card title="About Otto">
+            <Text className="text-base font-medium text-slate-900">{APP_NAME}</Text>
+            <Text className="mt-0.5 text-sm italic text-slate-500">Otto knows.</Text>
+            <Text className="mt-2 text-sm text-slate-400">Version {APP_VERSION}</Text>
             <Text className="mt-1 text-sm text-slate-400">
               Privacy policy version {CONSENT_POLICY_VERSION}
             </Text>

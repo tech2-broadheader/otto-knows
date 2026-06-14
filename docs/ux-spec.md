@@ -1,0 +1,60 @@
+# UX Spec — Otto (handoff for the Claude Design pass)
+
+> **Purpose.** This is the "raw UI/UX" (BMAD UX Designer output) that the **Claude Design** pass polishes on the canvas — layout, spacing, type, color, branding (CLAUDE.md §5, Milestone 1). The screens below are **built and functional but visually unstyled** (neutral slate, NativeWind utility classes, text-glyph tab icons). Design decisions are intentionally left open (§5 below).
+> **Platform:** React Native + Expo (Android-first). **Last updated:** 2026-06-15.
+
+---
+
+## 1. Product in one line
+A proactive, cross-domain personal chief-of-staff. Free = it remembers and reminds; Pro = it thinks and adjusts. Tone: calm, warm, never nagging (spec §2, §6.2).
+
+## 2. Navigation map
+```
+Boot → (first run?) → Onboarding ─────────────┐
+                                               ↓
+Main (bottom tabs):
+  ☀  Today        — daily briefing + nudges + (Pro) LLM brief & proposals
+  ＋  Quick Add    — natural-language → confirmable proposals (Pro/quota)
+  🔔 Reminders    — list / add / done; "remind me" schedules a notification
+  💊 Health       — medications (list / add / edit); feeds Today + reminders
+  ₱  Finance      — income, bills, transactions, monthly budget
+  ⚙  Settings (stack):
+        • Settings home — consent toggles, Google Calendar connect, About/version
+        • Optimizer (Pro) — reshape the day for a new routine (propose-and-confirm)
+        • Tips (Pro) — gentle finance / health tips
+        • Upgrade (NEW) — plans & paywall  ← reached from every Pro gate
+
+Onboarding flow: Welcome → Consent (per-source) → Routine setup (seeded anchors) → Main
+```
+
+## 3. Screen inventory
+| Screen | Purpose | Key components | States |
+|--------|---------|----------------|--------|
+| Onboarding | First-run welcome → consent → routine | Card, ToggleRow, Button | — |
+| Today | The home — briefing, nudges, today's items; Pro brief + ProposalCards | Card, Banner, ProposalCard, AsyncBoundary | loading / error / empty (clear day) |
+| Quick Add | NL note → proposals → confirm | LabeledInput, Button, ProposalCard | loading / error / empty / quota-reached |
+| Reminders | List / add / mark done | Card, LabeledInput, Button, ToggleRow | loading / error / empty |
+| Health (Meds) | List / add / edit medications | Card, LabeledInput, Button | loading / error / empty / at free cap |
+| Finance | Income, bills, transactions, budget summary | Card, LabeledInput, Button, Banner | loading / error / empty / at free cap |
+| Settings | Consent, Google Calendar, About, Pro links | Card, ToggleRow, GoogleCalendarCard, Button | — |
+| Optimizer (Pro) | Describe new routine → proposed reshaped day → Apply | LabeledInput, Button, Card | idle / proposing / proposal / applied / not-pro / error |
+| Tips (Pro) | Finance/health tips, domain toggle | Card, Button | loading / error / empty / not-pro |
+| Upgrade (Pro paywall) | Plans + CTA | Card, Button | — |
+
+## 4. Reusable components (already built — `src/components`)
+- `ui.tsx`: `Card`, `LabeledInput`, `Button` (primary/secondary/danger), `ToggleRow`, `Banner` (info/warning).
+- `AsyncBoundary.tsx`: `LoadingState`, error + empty wrappers, `ScreenScroll`.
+- `ProposalCard.tsx`: the propose-and-confirm surface (Accept / Dismiss) — used by Quick Add, Today, Optimizer.
+- `GoogleCalendarCard.tsx`: connect / sync / disconnect.
+
+## 5. Open design decisions (for the Claude Design pass)
+- **Brand & palette.** No palette chosen — currently neutral slate. Pick Otto's colors, accent, and surfaces. Mascot is wired as a placeholder icon/splash (`apps/mobile/assets/`) — refine or replace.
+- **Typography.** No type scale chosen. Define display/body/caption.
+- **Tab bar.** 6 tabs is the current shape (Today / Add / Reminders / Health / Finance / Settings) — consider consolidating (e.g. fold Health into a "+"-style add, or group). Replace text-glyph icons with a real icon set.
+- **Today as the hero.** It's the daily-habit surface; design should make the briefing feel like one warm voice, not a list dump (spec §6).
+- **Tone in UI copy.** Gentle, non-prescriptive; nudges are "heads-ups," never alarms (spec §6.2).
+- **Pro vs Free affordances.** How upgrade prompts and locked features read without feeling naggy.
+- **Empty states.** Each list has a functional empty state; design should make them inviting (esp. a clear day on Today).
+
+## 6. Out of scope for this pass
+Caregiver/family mode (Phase 4), Health Connect UI (Phase 4), widgets/themes (Phase 5). Real auth/login UI is pending the foundations work (separate track).

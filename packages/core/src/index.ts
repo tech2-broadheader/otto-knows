@@ -23,3 +23,7 @@ export * from "./briefing-composer";
 export * from "./google-calendar";
 // Story 4.1 — routine-timed notification planning.
 export * from "./notification-plan";
+// Phase 2 — serialize the context graph + routine for the LLM prompt.
+export * from "./llm-context";
+// E7 — cross-domain forecasts (med-refill, overspend).
+export * from "./forecasts";

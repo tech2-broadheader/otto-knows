@@ -7,3 +7,4 @@ export * from "./finance";
 export * from "./context";
 export * from "./briefing";
 export * from "./consent";
+export * from "./proposals";

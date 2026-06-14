@@ -30,4 +30,10 @@ export type {
   AuditActor,
   AuditEntry,
   SensitiveEntity,
+  ProposalAction,
+  ProposalActionType,
+  ProposalStatus,
+  Proposal,
+  QuickAddRequest,
+  QuickAddResponse,
 } from "@otto/schemas";

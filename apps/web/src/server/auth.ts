@@ -30,6 +30,15 @@ export type AuthResult =
  * no auth context, so Pro routes must treat callers as unauthenticated.
  */
 export async function getAuthContext(_request: Request): Promise<AuthResult> {
+  // DEV-ONLY escape hatch: with OTTO_DEV_AUTH=pro set (never in production), treat
+  // the caller as an authenticated Pro user so the brain can be exercised locally
+  // before real Supabase auth lands. TODO(auth): remove once sessions are wired.
+  if (process.env.NODE_ENV !== "production" && process.env.OTTO_DEV_AUTH === "pro") {
+    return {
+      ok: true,
+      context: { userId: "00000000-0000-4000-8000-0000000000de", entitlement: "pro" },
+    };
+  }
   // No session wired up yet — fail closed.
   return { ok: false, reason: "unauthenticated" };
 }

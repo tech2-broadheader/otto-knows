@@ -9,12 +9,18 @@
 // No native/expo imports here — uses the global `fetch` only, so the pure
 // envelope-unwrapping logic is unit-tested in Node with a stubbed fetch.
 import {
+  optimizeRequestSchema,
+  optimizeResponseSchema,
   quickAddResponseSchema,
+  tipsResponseSchema,
   type BriefingSlot,
   type ContextItem,
   type Income,
+  type OptimizationProposal,
+  type OptimizeRequest,
   type Proposal,
   type Routine,
+  type TipDomain,
 } from "@otto/schemas";
 
 /** Error codes the proxy can return (mirrors the web `ERROR_STATUS` keys). */
@@ -168,4 +174,46 @@ export async function fetchBrief(
   fetchImpl: typeof fetch = fetch,
 ): Promise<ApiResult<BriefData>> {
   return postEnvelope<BriefData>("/api/llm/brief", request, fetchImpl);
+}
+
+/**
+ * Routine optimizer (FR-O1, Pro): POST an OptimizeRequest → a validated
+ * `OptimizationProposal`. The request is validated against the shared schema
+ * before sending (so a malformed form never hits the wire); the response is
+ * parsed through `optimizeResponseSchema` so the UI only ever renders a
+ * well-formed proposal. This proposes — nothing is applied until the user
+ * confirms (CLAUDE.md §1.11).
+ */
+export async function optimize(
+  request: OptimizeRequest,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ApiResult<OptimizationProposal>> {
+  const validRequest = optimizeRequestSchema.safeParse(request);
+  if (!validRequest.success) {
+    return { ok: false, code: "VALIDATION", message: "That routine request looks incomplete." };
+  }
+  const result = await postEnvelope<unknown>("/api/llm/optimize", validRequest.data, fetchImpl);
+  if (!result.ok) return result;
+  const parsed = optimizeResponseSchema.safeParse(result.data);
+  if (!parsed.success) {
+    return { ok: false, code: "MALFORMED", message: "Otto sent back an unexpected response." };
+  }
+  return { ok: true, data: parsed.data.proposal };
+}
+
+/**
+ * Tips (FR-T1/FR-T2, Pro): POST `{ domain }` → a validated list of general,
+ * non-prescriptive tips. The response is parsed through `tipsResponseSchema`.
+ */
+export async function fetchTips(
+  domain: TipDomain,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ApiResult<string[]>> {
+  const result = await postEnvelope<unknown>("/api/llm/tips", { domain }, fetchImpl);
+  if (!result.ok) return result;
+  const parsed = tipsResponseSchema.safeParse(result.data);
+  if (!parsed.success) {
+    return { ok: false, code: "MALFORMED", message: "Otto sent back an unexpected response." };
+  }
+  return { ok: true, data: parsed.data.tips };
 }

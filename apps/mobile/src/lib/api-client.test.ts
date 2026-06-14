@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { fetchBrief, getApiBaseUrl, postEnvelope, quickAdd } from "./api-client";
+import type { OptimizeRequest } from "@otto/schemas";
+import {
+  fetchBrief,
+  fetchTips,
+  getApiBaseUrl,
+  optimize,
+  postEnvelope,
+  quickAdd,
+} from "./api-client";
 
 const ORIGINAL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -164,6 +172,117 @@ describe("fetchBrief", () => {
   it("passes through a 401 so the UI can fall back / prompt sign-in", async () => {
     const result = await fetchBrief(
       { slot: "morning", contextItems: [] },
+      jsonFetch(401, { error: { code: "UNAUTHORIZED", message: "Sign in." } }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("UNAUTHORIZED");
+  });
+});
+
+/** A schema-valid OptimizeRequest fixture. */
+function makeOptimizeRequest(): OptimizeRequest {
+  return {
+    routine: {
+      id: "00000000-0000-4000-8000-000000000001",
+      userId: "00000000-0000-4000-8000-000000000002",
+      mode: "fixed",
+      timezone: "Asia/Manila",
+      anchors: [],
+      createdAt: "2026-06-15T08:00:00+08:00",
+      updatedAt: "2026-06-15T08:00:00+08:00",
+    },
+    newRoutine: {
+      label: "Morning run",
+      kind: "exercise",
+      durationMinutes: 30,
+      recurrence: { freq: "daily" },
+    },
+  };
+}
+
+const PROPOSAL = {
+  summary: "Shift lunch later to make room for a morning run.",
+  changes: [
+    {
+      action: "add",
+      label: "Morning run",
+      kind: "exercise",
+      toTime: "06:00",
+      reason: "A quiet slot before work.",
+    },
+  ],
+};
+
+describe("optimize", () => {
+  it("unwraps and validates the proposal on success", async () => {
+    const result = await optimize(
+      makeOptimizeRequest(),
+      jsonFetch(200, { data: { proposal: PROPOSAL } }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.summary).toContain("run");
+      expect(result.data.changes[0]?.action).toBe("add");
+    }
+  });
+
+  it("reports VALIDATION without hitting the wire when the request is malformed", async () => {
+    let called = false;
+    const spy = (async () => {
+      called = true;
+      return new Response("{}");
+    }) as unknown as typeof fetch;
+    // durationMinutes below the schema minimum.
+    const bad = { ...makeOptimizeRequest(), newRoutine: { label: "x", durationMinutes: 1 } };
+    const result = await optimize(bad as unknown as OptimizeRequest, spy);
+    expect(called).toBe(false);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("VALIDATION");
+  });
+
+  it("reports MALFORMED when the proposal fails schema validation", async () => {
+    const result = await optimize(
+      makeOptimizeRequest(),
+      jsonFetch(200, { data: { proposal: { summary: "", changes: [] } } }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("MALFORMED");
+  });
+
+  it("passes through a 403 so the UI can prompt upgrade", async () => {
+    const result = await optimize(
+      makeOptimizeRequest(),
+      jsonFetch(403, { error: { code: "FORBIDDEN", message: "Pro only." } }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("FORBIDDEN");
+  });
+});
+
+describe("fetchTips", () => {
+  it("returns the validated tips on success", async () => {
+    const result = await fetchTips(
+      "finance",
+      jsonFetch(200, {
+        data: { domain: "finance", tips: ["Track spending weekly.", "Save first."] },
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toHaveLength(2);
+  });
+
+  it("reports MALFORMED when the payload isn't a valid tips response", async () => {
+    const result = await fetchTips(
+      "health",
+      jsonFetch(200, { data: { domain: "weather", tips: [] } }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("MALFORMED");
+  });
+
+  it("passes through a 401 so the UI can prompt sign-in", async () => {
+    const result = await fetchTips(
+      "finance",
       jsonFetch(401, { error: { code: "UNAUTHORIZED", message: "Sign in." } }),
     );
     expect(result.ok).toBe(false);

@@ -21,6 +21,8 @@ import { RemindersScreen } from "./src/screens/RemindersScreen";
 import { MedicationsScreen } from "./src/screens/MedicationsScreen";
 import { FinanceScreen } from "./src/screens/FinanceScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
+import { OptimizerScreen } from "./src/screens/OptimizerScreen";
+import { TipsScreen } from "./src/screens/TipsScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 
 type RootStackParamList = {
@@ -28,8 +30,35 @@ type RootStackParamList = {
   Main: undefined;
 };
 
+/** Settings is a stack so the Pro surfaces (Optimizer, Tips) are reachable from it. */
+type SettingsStackParamList = {
+  SettingsHome: undefined;
+  Optimizer: undefined;
+  Tips: undefined;
+};
+
 const Tab = createBottomTabNavigator();
 const RootStack = createNativeStackNavigator<RootStackParamList>();
+const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+
+/** Settings tab: the consent/about home plus the Pro Optimizer + Tips screens. */
+function SettingsNavigator(): React.JSX.Element {
+  return (
+    <SettingsStack.Navigator>
+      <SettingsStack.Screen
+        name="SettingsHome"
+        component={SettingsScreen}
+        options={{ title: "Settings" }}
+      />
+      <SettingsStack.Screen
+        name="Optimizer"
+        component={OptimizerScreen}
+        options={{ title: "Optimize your day" }}
+      />
+      <SettingsStack.Screen name="Tips" component={TipsScreen} options={{ title: "Tips" }} />
+    </SettingsStack.Navigator>
+  );
+}
 
 /** Tab-bar glyph (text — keeps the free build dependency-light). */
 function tabIcon(glyph: string) {
@@ -70,8 +99,12 @@ function MainTabs(): React.JSX.Element {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
-        options={{ tabBarIcon: tabIcon("⚙"), tabBarAccessibilityLabel: "Settings" }}
+        component={SettingsNavigator}
+        options={{
+          headerShown: false,
+          tabBarIcon: tabIcon("⚙"),
+          tabBarAccessibilityLabel: "Settings",
+        }}
       />
     </Tab.Navigator>
   );

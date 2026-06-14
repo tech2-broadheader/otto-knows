@@ -36,4 +36,13 @@ export type {
   Proposal,
   QuickAddRequest,
   QuickAddResponse,
+  NewRoutineRequest,
+  Commitment,
+  ScheduleChange,
+  OptimizationProposal,
+  OptimizeRequest,
+  OptimizeResponse,
+  TipDomain,
+  TipsRequest,
+  TipsResponse,
 } from "@otto/schemas";

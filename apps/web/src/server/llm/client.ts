@@ -31,6 +31,8 @@ export type LlmGenerateRequest = {
   system: string;
   userText: string;
   tools?: LlmToolDef[];
+  /** "any" forces a tool call (used to get a single structured object). */
+  toolChoice?: "auto" | "any";
   /** Adaptive thinking — on for cross-domain reasoning, off for simple extraction. */
   thinking?: boolean;
   effort?: "low" | "medium" | "high";
@@ -71,6 +73,7 @@ export class AnthropicLlmClient implements LlmClient {
               description: t.description,
               input_schema: t.inputSchema as Anthropic.Tool.InputSchema,
             })),
+            ...(request.toolChoice === "any" ? { tool_choice: { type: "any" as const } } : {}),
           }
         : {}),
       messages: [{ role: "user", content: request.userText }],

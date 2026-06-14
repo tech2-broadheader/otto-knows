@@ -27,3 +27,5 @@ export * from "./notification-plan";
 export * from "./llm-context";
 // E7 — cross-domain forecasts (med-refill, overspend).
 export * from "./forecasts";
+// E7 — adaptive routine (7.1) + deviation radar (7.2).
+export * from "./adaptive";

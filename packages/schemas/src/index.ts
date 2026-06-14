@@ -8,3 +8,5 @@ export * from "./context";
 export * from "./briefing";
 export * from "./consent";
 export * from "./proposals";
+export * from "./optimizer";
+export * from "./tips";

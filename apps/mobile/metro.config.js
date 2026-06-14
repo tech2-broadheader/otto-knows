@@ -1,6 +1,7 @@
 // Monorepo-aware Metro config for Expo in a pnpm workspace.
 // See https://docs.expo.dev/guides/monorepos/
 const { getDefaultConfig } = require("expo/metro-config");
+const { withNativeWind } = require("nativewind/metro");
 const path = require("path");
 
 const projectRoot = __dirname;
@@ -20,4 +21,5 @@ config.resolver.nodeModulesPaths = [
 // 3. pnpm uses symlinks; let Metro follow them.
 config.resolver.unstable_enableSymlinks = true;
 
-module.exports = config;
+// 4. Wrap with NativeWind (Tailwind for RN) — global.css holds the directives.
+module.exports = withNativeWind(config, { input: "./global.css" });

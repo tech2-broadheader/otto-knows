@@ -20,7 +20,9 @@ import type {
   Medication,
   Recurrence,
   Reminder,
+  Routine,
   RoutineAnchor,
+  RoutineMode,
   Transaction,
 } from "@otto/schemas";
 
@@ -78,6 +80,44 @@ export function anchorFromRow(r: RoutineAnchorRow): RoutineAnchor {
     kind: r.kind as RoutineAnchor["kind"],
     time: r.time,
     recurrence: JSON.parse(r.recurrence) as Recurrence,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
+// --- routine (non-sensitive) -------------------------------------------------
+// The routine record itself (id/mode/timezone/timestamps). Its `anchors` array
+// is persisted separately in the routine_anchors table and re-attached by the
+// repository on read, so the row mapper takes/returns the routine WITHOUT anchors.
+
+export interface RoutineRow {
+  id: string;
+  userId: string;
+  mode: string;
+  timezone: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function routineToRow(r: Routine): RoutineRow {
+  return {
+    id: r.id,
+    userId: r.userId,
+    mode: r.mode,
+    timezone: r.timezone,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
+/** Re-attach the anchors (loaded from routine_anchors) to rebuild the entity. */
+export function routineFromRow(r: RoutineRow, anchors: RoutineAnchor[]): Routine {
+  return {
+    id: r.id,
+    userId: r.userId,
+    mode: r.mode as RoutineMode,
+    timezone: r.timezone,
+    anchors,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };

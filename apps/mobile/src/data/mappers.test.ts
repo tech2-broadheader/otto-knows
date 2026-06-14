@@ -8,6 +8,7 @@ import {
   incomeSchema,
   medicationSchema,
   reminderSchema,
+  routineSchema,
   routineAnchorSchema,
   transactionSchema,
   type Bill,
@@ -18,6 +19,7 @@ import {
   type Income,
   type Medication,
   type Reminder,
+  type Routine,
   type RoutineAnchor,
   type Transaction,
 } from "@otto/schemas";
@@ -40,6 +42,8 @@ import {
   medicationToRow,
   reminderFromRow,
   reminderToRow,
+  routineFromRow,
+  routineToRow,
   transactionFromRow,
   transactionToRow,
 } from "./mappers";
@@ -60,6 +64,28 @@ describe("non-sensitive mappers round-trip (entity -> row -> entity)", () => {
       updatedAt: T,
     });
     expect(anchorFromRow(anchorToRow(anchor))).toEqual(anchor);
+  });
+
+  it("routine (anchors re-attached on read)", () => {
+    const anchor: RoutineAnchor = routineAnchorSchema.parse({
+      id: ID(1),
+      label: "Wake",
+      kind: "wake",
+      time: "06:30",
+      recurrence: { freq: "daily" },
+      createdAt: T,
+      updatedAt: T,
+    });
+    const routine: Routine = routineSchema.parse({
+      id: ID(2),
+      userId: ID(3),
+      mode: "fixed",
+      timezone: "Asia/Manila",
+      anchors: [anchor],
+      createdAt: T,
+      updatedAt: T,
+    });
+    expect(routineFromRow(routineToRow(routine), [anchor])).toEqual(routine);
   });
 
   it("reminder with recurrence and notes", () => {

@@ -20,6 +20,8 @@ import {
   incomeSchema,
   medicationSchema,
   reminderSchema,
+  routineSchema,
+  routineAnchorSchema,
   transactionSchema,
   type Bill,
   type BudgetCategory,
@@ -30,6 +32,8 @@ import {
   type Income,
   type Medication,
   type Reminder,
+  type Routine,
+  type RoutineAnchor,
   type Transaction,
 } from "@otto/schemas";
 import { getDatabase } from "../db/client";
@@ -54,6 +58,10 @@ import {
   medicationToRow,
   reminderFromRow,
   reminderToRow,
+  routineFromRow,
+  routineToRow,
+  anchorFromRow,
+  anchorToRow,
   transactionFromRow,
   transactionToRow,
 } from "./mappers";
@@ -102,6 +110,73 @@ export const reminderRepository = {
   },
   async delete(id: string): Promise<void> {
     getDatabase().delete(tables.reminders).where(eq(tables.reminders.id, id)).run();
+  },
+};
+
+/**
+ * Routine repository (story 2.1). One routine per user; its anchors live in the
+ * routine_anchors table keyed by routineId. Writes validate the routine via
+ * routineSchema and each anchor via routineAnchorSchema; reads return validated
+ * entities with anchors re-attached. Non-sensitive — no encryption or audit.
+ */
+export const routineRepository = {
+  /** Persist a new routine and its anchors. */
+  async create(input: Routine): Promise<Routine> {
+    const entity = routineSchema.parse(input);
+    const db = getDatabase();
+    db.insert(tables.routine).values(routineToRow(entity)).run();
+    for (const anchor of entity.anchors) {
+      db.insert(tables.routineAnchors).values(anchorToRow(anchor, entity.id)).run();
+    }
+    return entity;
+  },
+  /** The user's routine (with anchors), or undefined if none set yet. */
+  async getForUser(userId: string): Promise<Routine | undefined> {
+    const db = getDatabase();
+    const row = db.select().from(tables.routine).where(eq(tables.routine.userId, userId)).get();
+    if (!row) return undefined;
+    const anchorRows = db
+      .select()
+      .from(tables.routineAnchors)
+      .where(eq(tables.routineAnchors.routineId, row.id))
+      .all();
+    const anchors = anchorRows.map((a) => routineAnchorSchema.parse(anchorFromRow(a)));
+    return routineSchema.parse(routineFromRow(row, anchors));
+  },
+  /** Replace the routine record and its full anchor set (full upsert of anchors). */
+  async update(input: Routine): Promise<Routine> {
+    const entity = routineSchema.parse(input);
+    const db = getDatabase();
+    db.update(tables.routine)
+      .set(routineToRow(entity))
+      .where(eq(tables.routine.id, entity.id))
+      .run();
+    // Replace anchors wholesale: delete this routine's anchors, re-insert.
+    db.delete(tables.routineAnchors).where(eq(tables.routineAnchors.routineId, entity.id)).run();
+    for (const anchor of entity.anchors) {
+      db.insert(tables.routineAnchors).values(anchorToRow(anchor, entity.id)).run();
+    }
+    return entity;
+  },
+  /** Add a single anchor to an existing routine. */
+  async addAnchor(routineId: string, input: RoutineAnchor): Promise<RoutineAnchor> {
+    const anchor = routineAnchorSchema.parse(input);
+    getDatabase().insert(tables.routineAnchors).values(anchorToRow(anchor, routineId)).run();
+    return anchor;
+  },
+  /** Update a single anchor in place. */
+  async updateAnchor(routineId: string, input: RoutineAnchor): Promise<RoutineAnchor> {
+    const anchor = routineAnchorSchema.parse(input);
+    getDatabase()
+      .update(tables.routineAnchors)
+      .set(anchorToRow(anchor, routineId))
+      .where(eq(tables.routineAnchors.id, anchor.id))
+      .run();
+    return anchor;
+  },
+  /** Remove a single anchor. */
+  async deleteAnchor(anchorId: string): Promise<void> {
+    getDatabase().delete(tables.routineAnchors).where(eq(tables.routineAnchors.id, anchorId)).run();
   },
 };
 

@@ -11,3 +11,11 @@ export function greeting(name: string): string {
 export * from "./scheduling";
 // Story 3.3 — context-graph unification ("what's on today").
 export * from "./context-graph";
+// Recurrence evaluation (does a recurring item land on a date?).
+export * from "./recurrence";
+// Story 3.2 — budget math (spent vs limit per category).
+export * from "./budget";
+// Cross-domain insights (payday-vs-bill nudges, …).
+export * from "./insights";
+// Story 4.2 — template-based briefing composer (free tier).
+export * from "./briefing-composer";

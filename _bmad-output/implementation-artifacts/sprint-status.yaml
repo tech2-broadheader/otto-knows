@@ -10,7 +10,7 @@
 # and any blocking gate/open-decision is cleared (see notes at bottom).
 
 generated: 06-14-2026
-last_updated: 06-14-2026  # 1-1,1-2,1-3,2-2,3-3 done; 1-4 raw code (GATE-3 pending); web backend foundation (E5.1 stub)
+last_updated: 06-14-2026  # +2-1,3-2,4-2 done; 3-1,4-1 in-progress; mobile organizer-core UI built (raw, pre-design); Google connector backend
 project: Otto (Personal Daily Assistant)
 project_key: OTTO
 tracking_system: file-system
@@ -25,20 +25,20 @@ development_status:
   1-4-consent-privacy-spine: in-progress   # raw code in place; GATE-3 (DPA review) still required before done
   epic-1-retrospective: optional
 
-  epic-2: in-progress
-  2-1-define-fixed-routine-anchors: backlog   # UI screen — engine ready, screen pending (needs M1 design)
+  epic-2: done
+  2-1-define-fixed-routine-anchors: done      # raw UI; Claude Design polish pass (M1) still pending
   2-2-scheduling-substrate: done
   epic-2-retrospective: optional
 
   epic-3: in-progress
-  3-1-google-calendar-tasks-read: backlog
-  3-2-manual-finance-entry-budget: backlog    # data layer + repos ready; UI/budget view pending
+  3-1-google-calendar-tasks-read: in-progress # web OAuth + read proxy done; mobile connect UI + token persistence pending
+  3-2-manual-finance-entry-budget: done       # finance entry + budget UI; raw, design pass pending
   3-3-context-graph-unification: done
   epic-3-retrospective: optional
 
-  epic-4: backlog
-  4-1-routine-timed-reminders-notifications: backlog
-  4-2-basic-today-briefing: backlog
+  epic-4: in-progress
+  4-1-routine-timed-reminders-notifications: in-progress  # reminders UI + notification scheduling helper; full routine-anchored auto-scheduling pending
+  4-2-basic-today-briefing: done              # template briefing + Today screen; design pass pending
   epic-4-retrospective: optional
 
   # --- Phase 2-3: the paid brain (epic-level until detailed) ---

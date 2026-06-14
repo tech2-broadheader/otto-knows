@@ -1,29 +1,112 @@
+// Navigation root. A bottom-tab navigator (Today, Reminders, Finance, Settings)
+// plus a first-run onboarding flow (Consent → Routine Setup). The data layer is
+// initialized and notifications configured once at boot.
+import "./global.css";
+import { useEffect, useState } from "react";
+import { Text } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import { greeting } from "@otto/core";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Otto</Text>
-      <Text style={styles.subtitle}>{greeting("there")}</Text>
-      <Text style={styles.note}>
-        Phase 1 organizer core scaffold. Routine, reminders and the daily brief land here.
-      </Text>
-      <StatusBar style="auto" />
-    </View>
+import { initDataLayer, routineRepository } from "./src/data";
+import { configureNotifications } from "./src/notifications";
+import { LOCAL_USER_ID } from "./src/lib/constants";
+import { LoadingState } from "./src/components/AsyncBoundary";
+import { TodayScreen } from "./src/screens/TodayScreen";
+import { RemindersScreen } from "./src/screens/RemindersScreen";
+import { FinanceScreen } from "./src/screens/FinanceScreen";
+import { SettingsScreen } from "./src/screens/SettingsScreen";
+import { OnboardingScreen } from "./src/screens/OnboardingScreen";
+
+type RootStackParamList = {
+  Onboarding: undefined;
+  Main: undefined;
+};
+
+const Tab = createBottomTabNavigator();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
+
+/** Tab-bar glyph (text — keeps the free build dependency-light). */
+function tabIcon(glyph: string) {
+  return ({ color }: { color: string }) => (
+    <Text style={{ color, fontSize: 18 }} accessibilityElementsHidden>
+      {glyph}
+    </Text>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-    backgroundColor: "#fff",
-  },
-  title: { fontSize: 32, fontWeight: "700" },
-  subtitle: { fontSize: 16, marginTop: 8 },
-  note: { fontSize: 13, color: "#666", marginTop: 16, textAlign: "center" },
-});
+function MainTabs(): React.JSX.Element {
+  return (
+    <Tab.Navigator screenOptions={{ headerShown: true }}>
+      <Tab.Screen
+        name="Today"
+        component={TodayScreen}
+        options={{ tabBarIcon: tabIcon("☀"), tabBarAccessibilityLabel: "Today" }}
+      />
+      <Tab.Screen
+        name="Reminders"
+        component={RemindersScreen}
+        options={{ tabBarIcon: tabIcon("🔔"), tabBarAccessibilityLabel: "Reminders" }}
+      />
+      <Tab.Screen
+        name="Finance"
+        component={FinanceScreen}
+        options={{ tabBarIcon: tabIcon("₱"), tabBarAccessibilityLabel: "Finance" }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ tabBarIcon: tabIcon("⚙"), tabBarAccessibilityLabel: "Settings" }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+export default function App(): React.JSX.Element {
+  // "booting" while we init the store + decide first-run; then onboarding | main.
+  const [phase, setPhase] = useState<"booting" | "onboarding" | "main">("booting");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function boot(): Promise<void> {
+      initDataLayer();
+      configureNotifications();
+      // First run = no routine set up yet → start with onboarding.
+      let hasRoutine = false;
+      try {
+        hasRoutine = (await routineRepository.getForUser(LOCAL_USER_ID)) !== undefined;
+      } catch {
+        // Treat a load failure as first-run; onboarding is safe to re-enter.
+        hasRoutine = false;
+      }
+      if (!cancelled) setPhase(hasRoutine ? "main" : "onboarding");
+    }
+    void boot();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer>
+        {phase === "booting" ? (
+          <LoadingState label="Starting Otto" />
+        ) : (
+          <RootStack.Navigator screenOptions={{ headerShown: false }}>
+            {phase === "onboarding" ? (
+              <RootStack.Screen name="Onboarding">
+                {() => <OnboardingScreen onComplete={() => setPhase("main")} />}
+              </RootStack.Screen>
+            ) : (
+              <RootStack.Screen name="Main" component={MainTabs} />
+            )}
+          </RootStack.Navigator>
+        )}
+      </NavigationContainer>
+      <StatusBar style="auto" />
+    </SafeAreaProvider>
+  );
+}

@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Otto",
+    "slug": "otto",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.broadheader.otto"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.broadheader.otto"
+    }
+  }
+}

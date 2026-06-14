@@ -1,0 +1,36 @@
+{
+  "name": "otto-knows",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Otto — proactive cross-domain personal daily assistant (monorepo)",
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "web:dev": "pnpm --filter @otto/web dev",
+    "web:build": "pnpm --filter @otto/web build",
+    "mobile:start": "pnpm --filter @otto/mobile start"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^3.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.0.0",
+      "react-dom": "19.0.0"
+    }
+  }
+}

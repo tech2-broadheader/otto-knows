@@ -27,6 +27,10 @@ web-build/
 .env
 .env*.local
 
+# auto-generated framework type declarations
+next-env.d.ts
+expo-env.d.ts
+
 # test / cache
 coverage/
 .turbo/

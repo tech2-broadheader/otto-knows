@@ -12,8 +12,11 @@ import {
   whatsOnToday,
   type DaySources,
 } from "@otto/core";
-import type { Briefing, Consent, ContextItem, Nudge } from "@otto/schemas";
+import { briefingSchema } from "@otto/schemas";
+import type { Briefing, Consent, ContextItem, Nudge, Proposal } from "@otto/schemas";
 import { isConsentGranted as consentGranted } from "../security/consent";
+import { fetchBrief, getApiBaseUrl } from "../lib/api-client";
+import { IS_PRO } from "../lib/constants";
 import {
   consentRepository,
   makeBillRepository,
@@ -35,6 +38,10 @@ export type TodayState = {
   briefing?: Briefing;
   items: ContextItem[];
   nudges: Nudge[];
+  /** Proposals from the Pro LLM briefing (empty on free tier / fallback). */
+  proposals: Proposal[];
+  /** True when the shown briefing came from the LLM (vs the local template). */
+  briefingFromLlm: boolean;
   reload: () => Promise<void>;
 };
 
@@ -44,6 +51,8 @@ export function useToday(deps: RepositoryDeps): TodayState {
   const [briefing, setBriefing] = useState<Briefing | undefined>();
   const [items, setItems] = useState<ContextItem[]>([]);
   const [nudges, setNudges] = useState<Nudge[]>([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [briefingFromLlm, setBriefingFromLlm] = useState(false);
 
   const reload = useCallback(async () => {
     setState("loading");
@@ -96,7 +105,34 @@ export function useToday(deps: RepositoryDeps): TodayState {
 
       setItems(dayItems);
       setNudges(dayNudges);
-      setBriefing(composed);
+
+      // Pro proactive briefing (FR-B1/FR-L2): when entitled AND the backend is
+      // configured, ask the LLM proxy for a reasoned brief + proposals. Any
+      // failure (network, 401/403/429, malformed) falls back to the template
+      // briefing — we NEVER drop the local path or block the day on the network.
+      let usedLlm = false;
+      let llmProposals: Proposal[] = [];
+      let shownBriefing: Briefing = composed;
+      if (IS_PRO && getApiBaseUrl() !== null) {
+        const result = await fetchBrief({
+          slot,
+          contextItems: dayItems,
+          routine,
+          incomes: income.length > 0 ? income : undefined,
+        });
+        if (result.ok) {
+          const parsedBrief = briefingSchema.safeParse(result.data.briefing);
+          if (parsedBrief.success) {
+            shownBriefing = parsedBrief.data;
+            llmProposals = result.data.proposals;
+            usedLlm = true;
+          }
+        }
+      }
+
+      setBriefing(shownBriefing);
+      setProposals(llmProposals);
+      setBriefingFromLlm(usedLlm);
       setState("ready");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not build your day.");
@@ -108,5 +144,5 @@ export function useToday(deps: RepositoryDeps): TodayState {
     void reload();
   }, [reload]);
 
-  return { state, error, briefing, items, nudges, reload };
+  return { state, error, briefing, items, nudges, proposals, briefingFromLlm, reload };
 }

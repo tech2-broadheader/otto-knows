@@ -16,6 +16,7 @@ import { rescheduleDay } from "./src/lib/reschedule";
 import { LOCAL_USER_ID } from "./src/lib/constants";
 import { LoadingState } from "./src/components/AsyncBoundary";
 import { TodayScreen } from "./src/screens/TodayScreen";
+import { QuickAddScreen } from "./src/screens/QuickAddScreen";
 import { RemindersScreen } from "./src/screens/RemindersScreen";
 import { MedicationsScreen } from "./src/screens/MedicationsScreen";
 import { FinanceScreen } from "./src/screens/FinanceScreen";
@@ -46,6 +47,11 @@ function MainTabs(): React.JSX.Element {
         name="Today"
         component={TodayScreen}
         options={{ tabBarIcon: tabIcon("☀"), tabBarAccessibilityLabel: "Today" }}
+      />
+      <Tab.Screen
+        name="Add"
+        component={QuickAddScreen}
+        options={{ tabBarIcon: tabIcon("＋"), tabBarAccessibilityLabel: "Quick add" }}
       />
       <Tab.Screen
         name="Reminders"

@@ -79,7 +79,7 @@ Anything not listed above is a change request, quoted separately and routed thro
 
 ## 13. Open decisions (from spec §14)
 - **OD-1** Confirm platform (Android-first assumed).
-- **OD-2** Conversational depth of v1 — quick-add one-liner vs. full chat.
+- **OD-2** ✅ RESOLVED (2026-06-14): v1 conversational depth = **quick-add + proactive briefing** (natural-language → confirmable proposals), not open-ended chat. Full chat deferred. Implemented via `/api/llm/quick-add` + `/api/llm/brief`.
 - **OD-3** Finance capture — manual only at launch, or pursue SMS parsing (pending Play policy check).
 - **OD-4** Product name + brand direction (working name: Otto).
 - **OD-5** Pricing validation vs current PH comparables (anchors: Free / ₱99 mo / ₱599 yr / ₱1,299 lifetime).

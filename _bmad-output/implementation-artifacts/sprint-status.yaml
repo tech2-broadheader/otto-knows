@@ -10,7 +10,7 @@
 # and any blocking gate/open-decision is cleared (see notes at bottom).
 
 generated: 06-14-2026
-last_updated: 06-14-2026  # Phase 1 (E1-E4) functionally complete: meds screen, on-device calendar connect, routine-timed auto-scheduling, SecureStore keys. Remaining for 1-4: real AES cipher + GATE-3 review. Pre-launch gaps: device run, Claude Design pass, Google creds.
+last_updated: 06-15-2026  # Phase 2 "the brain": real Anthropic LLM proxy (claude-opus-4-8) — brief + quick-add + tool-use proposals (propose-and-confirm) + mobile UI; forecasts (E7). OD-2 resolved. Pre-launch gaps unchanged: real auth/DB, device run, Claude Design pass, Google creds, real AES (GATE-3).
 project: Otto (Personal Daily Assistant)
 project_key: OTTO
 tracking_system: file-system
@@ -42,9 +42,9 @@ development_status:
   epic-4-retrospective: optional
 
   # --- Phase 2-3: the paid brain (epic-level until detailed) ---
-  epic-5: backlog                           # blocked by OD-2 (conversational depth)
+  epic-5: in-progress                       # OD-2 resolved; real LLM proxy (claude-opus-4-8) brief + quick-add + tool-use proposals + mobile UI done. Remaining: real Supabase auth + cloud entitlement for true end-to-end (currently dev-bypass + local IS_PRO flag)
   epic-6: backlog
-  epic-7: backlog
+  epic-7: in-progress                       # forecasts (med-refill, overspend) done; adaptive routine learning (7.1) + deviation radar (7.2) pending
 
   # --- Phase 4: health + caregiver ---
   epic-8: backlog                           # 8-1 blocked by GATE-2 (health policy)

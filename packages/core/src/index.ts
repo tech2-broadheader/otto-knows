@@ -6,3 +6,8 @@
 export function greeting(name: string): string {
   return `Otto knows your day, ${name}.`;
 }
+
+// Story 2.2 — scheduling substrate (free-space slotting + relative placement).
+export * from "./scheduling";
+// Story 3.3 — context-graph unification ("what's on today").
+export * from "./context-graph";

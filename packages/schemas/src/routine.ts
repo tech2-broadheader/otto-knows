@@ -1,6 +1,12 @@
 // The routine layer — the lens through which every other domain is timed.
 import { z } from "zod";
-import { idSchema, recurrenceSchema, timeOfDaySchema, timezoneSchema, timestampFields } from "./common";
+import {
+  idSchema,
+  recurrenceSchema,
+  timeOfDaySchema,
+  timezoneSchema,
+  timestampFields,
+} from "./common";
 
 /** The kind of anchor, used for seeding defaults and for the timing engine. */
 export const routineAnchorKindSchema = z.enum([

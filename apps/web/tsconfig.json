@@ -9,6 +9,7 @@
     "allowJs": true,
     "incremental": true,
     "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@otto/schemas": ["../../packages/schemas/src/index.ts"],

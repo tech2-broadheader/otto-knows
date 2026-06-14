@@ -27,9 +27,9 @@ describe("primitives", () => {
   it("requires daysOfWeek for custom recurrence", () => {
     expect(recurrenceSchema.safeParse({ freq: "daily" }).success).toBe(true);
     expect(recurrenceSchema.safeParse({ freq: "custom" }).success).toBe(false);
-    expect(
-      recurrenceSchema.safeParse({ freq: "custom", daysOfWeek: ["mon", "wed"] }).success,
-    ).toBe(true);
+    expect(recurrenceSchema.safeParse({ freq: "custom", daysOfWeek: ["mon", "wed"] }).success).toBe(
+      true,
+    );
   });
 });
 

@@ -2,7 +2,13 @@
 import { z } from "zod";
 import { idSchema, dateSchema, isoDateTimeSchema, moneySchema, timestampFields } from "./common";
 
-export const incomeCadenceSchema = z.enum(["weekly", "biweekly", "semi-monthly", "monthly", "custom"]);
+export const incomeCadenceSchema = z.enum([
+  "weekly",
+  "biweekly",
+  "semi-monthly",
+  "monthly",
+  "custom",
+]);
 export type IncomeCadence = z.infer<typeof incomeCadenceSchema>;
 
 /** SENSITIVE. Salary / recurring income. `nextPayDate` drives payday-vs-bill nudges. */

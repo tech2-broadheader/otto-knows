@@ -12,6 +12,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.broadheader.otto"
-    }
+    },
+    "plugins": ["expo-sqlite"]
   }
 }

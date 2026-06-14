@@ -19,3 +19,7 @@ export * from "./budget";
 export * from "./insights";
 // Story 4.2 — template-based briefing composer (free tier).
 export * from "./briefing-composer";
+// Story 3.1 — pure Google Calendar event normalizer (shared web + mobile).
+export * from "./google-calendar";
+// Story 4.1 — routine-timed notification planning.
+export * from "./notification-plan";

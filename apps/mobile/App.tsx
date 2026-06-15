@@ -31,6 +31,7 @@ import { rescheduleDay } from "./src/lib/reschedule";
 import { LOCAL_USER_ID } from "./src/lib/constants";
 import { LoadingState } from "./src/components/AsyncBoundary";
 import { OttoTabBar } from "./src/components/otto-ui";
+import { AuthProvider } from "./src/auth/AuthProvider";
 import { TodayScreen } from "./src/screens/TodayScreen";
 import { QuickAddScreen } from "./src/screens/QuickAddScreen";
 import { RemindersScreen } from "./src/screens/RemindersScreen";
@@ -41,6 +42,7 @@ import { OptimizerScreen } from "./src/screens/OptimizerScreen";
 import { TipsScreen } from "./src/screens/TipsScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { UpgradeScreen } from "./src/screens/UpgradeScreen";
+import { LoginScreen } from "./src/screens/LoginScreen";
 
 type RootStackParamList = {
   Onboarding: undefined;
@@ -53,6 +55,9 @@ type RootStackParamList = {
   Settings: undefined;
   Optimizer: undefined;
   Tips: undefined;
+  // Optional sign-in (ADR-002). Modal sibling of Main/Upgrade so any screen can
+  // route an unauthenticated user here before a Pro action.
+  Login: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -124,31 +129,38 @@ export default function App(): React.JSX.Element {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        {phase === "booting" || !fontsLoaded ? (
-          <LoadingState label="Starting Otto" />
-        ) : (
-          <RootStack.Navigator screenOptions={{ headerShown: false }}>
-            {phase === "onboarding" ? (
-              <RootStack.Screen name="Onboarding">
-                {() => <OnboardingScreen onComplete={() => setPhase("main")} />}
-              </RootStack.Screen>
-            ) : (
-              <>
-                <RootStack.Screen name="Main" component={MainTabs} />
-                <RootStack.Screen
-                  name="Upgrade"
-                  component={UpgradeScreen}
-                  options={{ presentation: "modal" }}
-                />
-                <RootStack.Screen name="Settings" component={SettingsScreen} />
-                <RootStack.Screen name="Optimizer" component={OptimizerScreen} />
-                <RootStack.Screen name="Tips" component={TipsScreen} />
-              </>
-            )}
-          </RootStack.Navigator>
-        )}
-      </NavigationContainer>
+      <AuthProvider>
+        <NavigationContainer>
+          {phase === "booting" || !fontsLoaded ? (
+            <LoadingState label="Starting Otto" />
+          ) : (
+            <RootStack.Navigator screenOptions={{ headerShown: false }}>
+              {phase === "onboarding" ? (
+                <RootStack.Screen name="Onboarding">
+                  {() => <OnboardingScreen onComplete={() => setPhase("main")} />}
+                </RootStack.Screen>
+              ) : (
+                <>
+                  <RootStack.Screen name="Main" component={MainTabs} />
+                  <RootStack.Screen
+                    name="Upgrade"
+                    component={UpgradeScreen}
+                    options={{ presentation: "modal" }}
+                  />
+                  <RootStack.Screen
+                    name="Login"
+                    component={LoginScreen}
+                    options={{ presentation: "modal" }}
+                  />
+                  <RootStack.Screen name="Settings" component={SettingsScreen} />
+                  <RootStack.Screen name="Optimizer" component={OptimizerScreen} />
+                  <RootStack.Screen name="Tips" component={TipsScreen} />
+                </>
+              )}
+            </RootStack.Navigator>
+          )}
+        </NavigationContainer>
+      </AuthProvider>
       <StatusBar style="auto" />
     </SafeAreaProvider>
   );

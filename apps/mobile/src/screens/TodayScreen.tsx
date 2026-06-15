@@ -27,7 +27,7 @@ import {
 } from "../components/otto-ui";
 import { ProposalCard } from "../components/ProposalCard";
 import { applyProposal, type ApplyContext } from "../lib/apply-proposal";
-import { IS_PRO } from "../lib/constants";
+import { useAuth } from "../auth/AuthProvider";
 import { newUuid } from "../lib/id";
 import { greetingForHour, longDateLabel, nowIso, timeLabel } from "../lib/datetime";
 
@@ -47,6 +47,7 @@ type TodayNavigation = { navigate: (screen: "Optimizer") => void };
 export function TodayScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
   const navigation = useNavigation();
+  const { isPro } = useAuth();
   const { state, error, briefing, items, nudges, proposals, briefingFromLlm, reload } =
     useToday(deps);
 
@@ -162,7 +163,7 @@ export function TodayScreen(): React.JSX.Element {
 
         <View className="mt-6">
           <SectionLabel>Otto&apos;s deeper read</SectionLabel>
-          {IS_PRO ? (
+          {isPro ? (
             <Card>
               <View className="flex-row items-start gap-3">
                 <View className="h-[38px] w-[38px] items-center justify-center rounded-inner bg-green">

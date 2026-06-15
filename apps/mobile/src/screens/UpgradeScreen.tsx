@@ -12,9 +12,10 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, OC } from "../components/ui";
 import { OttoMascot } from "../components/otto-ui";
+import { useAuth } from "../auth/AuthProvider";
 import { FREE_VS_PAID_TAGLINE, TRUST_LINE, paidPlans, priceLabel, type Plan } from "../lib/pricing";
 
-type UpgradeNavigation = { goBack: () => void };
+type UpgradeNavigation = { goBack: () => void; navigate: (screen: "Login") => void };
 
 /** Calm "billing isn't connected" notice; replaces the real purchase flow. */
 const BILLING_COMING_SOON =
@@ -26,6 +27,7 @@ export function UpgradeScreen({
   navigation: UpgradeNavigation;
 }): React.JSX.Element {
   const insets = useSafeAreaInsets();
+  const { status, isConfigured } = useAuth();
   const plans = paidPlans();
   // Default-select the badged "best value" plan when present, else the first.
   const [selected, setSelected] = useState<Plan["id"]>(
@@ -33,6 +35,12 @@ export function UpgradeScreen({
   );
 
   const handleStart = (): void => {
+    // Pro is tied to a signed-in account. An anonymous user signs in first (when
+    // auth is configured); billing is still stubbed afterward.
+    if (isConfigured && status !== "signed-in") {
+      navigation.navigate("Login");
+      return;
+    }
     Alert.alert("Start Otto Pro", BILLING_COMING_SOON);
   };
 

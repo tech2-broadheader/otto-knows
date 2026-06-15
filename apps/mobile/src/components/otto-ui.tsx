@@ -7,7 +7,7 @@ import Svg, { Circle } from "react-native-svg";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import type { ReactNode } from "react";
 import { Icon, OC, Pill, toneColor, type IconName, type OttoTone } from "./ui";
-import { IS_PRO } from "../lib/constants";
+import { useAuth } from "../auth/AuthProvider";
 
 // require() is the React Native idiom for static image assets (Metro resolves it).
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -324,6 +324,7 @@ type HeaderNavigation = { navigate: (screen: "Settings" | "Upgrade") => void };
 
 export function ScreenHeader({ title, sub }: { title: string; sub?: string }): React.JSX.Element {
   const navigation = useNavigation();
+  const { isPro } = useAuth();
   // reason: main screens aren't typed against the root param list; navigating to
   // the root-stack "Settings"/"Upgrade" screens by name is valid at runtime
   // (navigation bubbles to the parent navigator).
@@ -332,7 +333,7 @@ export function ScreenHeader({ title, sub }: { title: string; sub?: string }): R
     <AppHeader
       title={title}
       sub={sub}
-      isPro={IS_PRO}
+      isPro={isPro}
       onUpgrade={() => nav.navigate("Upgrade")}
       onSettings={() => nav.navigate("Settings")}
     />

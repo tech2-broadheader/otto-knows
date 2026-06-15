@@ -18,7 +18,7 @@ import { useOptimizer } from "../hooks/useOptimizer";
 import { Banner, Card, Icon, OC, type IconName, type OttoTone } from "../components/ui";
 import { OttoAvatar, ProGate, ScreenContainer, TimelineRow } from "../components/otto-ui";
 import { getApiBaseUrl } from "../lib/api-client";
-import { IS_PRO } from "../lib/constants";
+import { useAuth } from "../auth/AuthProvider";
 import { proErrorBanner } from "../lib/pro-feature";
 
 /** Example routines offered as one-tap chips (match the design's examples). */
@@ -49,6 +49,7 @@ type OptimizerNavigation = {
 
 export function OptimizerScreen(): React.JSX.Element {
   const navigation = useNavigation() as unknown as OptimizerNavigation;
+  const { isPro } = useAuth();
   const { status, proposal, error, errorCode, propose, apply, discard } = useOptimizer();
 
   const [text, setText] = useState("");
@@ -72,12 +73,12 @@ export function OptimizerScreen(): React.JSX.Element {
   );
 
   // Pre-request gate: not entitled or no backend → calm message, no form.
-  if (!IS_PRO || !configured) {
+  if (!isPro || !configured) {
     return (
       <ScreenContainer>
         {BackHeader}
         <View className="mt-4">
-          {!IS_PRO ? (
+          {!isPro ? (
             <ProGate
               title="The optimizer is a Pro power"
               body="Tell Otto what to make room for and it reshapes your day with reasoning — then waits for your yes."

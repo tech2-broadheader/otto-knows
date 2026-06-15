@@ -13,7 +13,8 @@ import { AsyncBoundary } from "../components/AsyncBoundary";
 import { Card, Icon, OC, Pill, SectionLabel, type IconName } from "../components/ui";
 import { OttoAvatar, ScreenContainer } from "../components/otto-ui";
 import { GoogleCalendarCard } from "../components/GoogleCalendarCard";
-import { CONSENT_POLICY_VERSION, IS_PRO } from "../lib/constants";
+import { useAuth } from "../auth/AuthProvider";
+import { CONSENT_POLICY_VERSION } from "../lib/constants";
 import appConfig from "../../app.json";
 
 const APP_NAME = appConfig.expo.name;
@@ -98,6 +99,8 @@ export function SettingsScreen({
   navigation: SettingsNavigation;
 }): React.JSX.Element {
   const { state, error, isGranted, setConsent, reload } = useConsents();
+  const { status, email, isPro, signOut } = useAuth();
+  const signedIn = status === "signed-in";
 
   return (
     <ScreenContainer>
@@ -114,27 +117,64 @@ export function SettingsScreen({
         <Text className="font-display text-[19px] text-ink">Settings</Text>
       </View>
 
-      {/* Profile card */}
-      <View className="mt-3 flex-row items-center gap-3 rounded-card bg-dark p-4">
-        <OttoAvatar dark={false} size={46} />
-        <View className="flex-1">
-          <Text className="font-display text-[18px] text-white">Your Otto</Text>
-          <Text className="mt-px font-body text-[12.5px] text-sage">
-            {IS_PRO ? "Otto Pro" : "Free plan"}
-          </Text>
+      {/* Profile card — driven by the live auth session. */}
+      <View className="mt-3 rounded-card bg-dark p-4">
+        <View className="flex-row items-center gap-3">
+          <OttoAvatar dark={false} size={46} />
+          <View className="flex-1">
+            <Text className="font-display text-[18px] text-white" numberOfLines={1}>
+              {signedIn && email ? email : "Your Otto"}
+            </Text>
+            <Text className="mt-px font-body text-[12.5px] text-sage">
+              {isPro ? "Otto Pro" : signedIn ? "Free plan" : "Local & anonymous"}
+            </Text>
+          </View>
+          {isPro ? (
+            <Pill tone="pro">PRO</Pill>
+          ) : signedIn ? (
+            <Pressable
+              onPress={() => navigation.navigate("Upgrade")}
+              accessibilityRole="button"
+              accessibilityLabel="Upgrade to Pro"
+              className="rounded-pill bg-emerald px-3.5 py-2"
+            >
+              <Text className="font-body-extra text-[12.5px] text-white">Upgrade</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => navigation.navigate("Login")}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+              className="rounded-pill bg-emerald px-3.5 py-2"
+            >
+              <Text className="font-body-extra text-[12.5px] text-white">Sign in</Text>
+            </Pressable>
+          )}
         </View>
-        {IS_PRO ? (
-          <Pill tone="pro">PRO</Pill>
-        ) : (
-          <Pressable
-            onPress={() => navigation.navigate("Upgrade")}
-            accessibilityRole="button"
-            accessibilityLabel="Upgrade to Pro"
-            className="rounded-pill bg-emerald px-3.5 py-2"
-          >
-            <Text className="font-body-extra text-[12.5px] text-white">Upgrade</Text>
-          </Pressable>
-        )}
+
+        {/* Signed-in: an Upgrade affordance for free + a Sign out row. */}
+        {signedIn ? (
+          <View className="mt-3 flex-row items-center gap-2 border-t border-white/10 pt-3">
+            {!isPro ? (
+              <Pressable
+                onPress={() => navigation.navigate("Upgrade")}
+                accessibilityRole="button"
+                accessibilityLabel="Upgrade to Pro"
+                className="flex-1 items-center rounded-inner bg-white/10 py-2.5"
+              >
+                <Text className="font-body-bold text-[12.5px] text-mint">Upgrade to Pro</Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              onPress={() => void signOut()}
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              className={`items-center rounded-inner bg-white/10 px-4 py-2.5 ${isPro ? "flex-1" : ""}`}
+            >
+              <Text className="font-body-bold text-[12.5px] text-sage">Sign out</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
       <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Loading settings">
@@ -203,7 +243,7 @@ export function SettingsScreen({
               title="Tips"
               subtitle="Gentle finance & health"
               onPress={() => navigation.navigate("Tips")}
-              locked={!IS_PRO}
+              locked={!isPro}
             />
           </Card>
         </View>

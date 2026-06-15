@@ -18,7 +18,7 @@ import { Ring, ScreenContainer, ScreenHeader } from "../components/otto-ui";
 import { formatPeso, parsePesoToCentavos } from "../lib/money";
 import { FREE_CAPS, upgradePromptFor } from "../lib/caps";
 import { todayDate } from "../lib/datetime";
-import { IS_PRO } from "../lib/constants";
+import { useAuth } from "../auth/AuthProvider";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -30,6 +30,7 @@ function formatPesoWhole(amountMinor: number): string {
 export function FinanceScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
   const goToUpgrade = useUpgradeNavigation();
+  const { isPro } = useAuth();
   const finance = useFinance(deps);
   const {
     state,
@@ -172,7 +173,7 @@ export function FinanceScreen(): React.JSX.Element {
                 Trending a little over
               </Text>
               <Text className="mt-0.5 font-body text-[12.5px] leading-[18px] text-amber-ink">
-                {IS_PRO
+                {isPro
                   ? "Easing off where you can keeps you in range."
                   : "Otto can forecast where this lands — that's a Pro power."}
               </Text>

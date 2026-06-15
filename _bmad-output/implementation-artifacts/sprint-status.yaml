@@ -50,7 +50,7 @@ development_status:
   epic-8: backlog                           # 8-1 blocked by GATE-2 (health policy)
 
   # --- Monetization (spans) ---
-  epic-9: backlog                           # blocked by OD-5 (pricing)
+  epic-9: in-progress                       # real Supabase auth + DB-backed entitlement (free/pro/lifetime) + mobile optional login done; remaining: billing that WRITES entitlement (store IAP / RevenueCat) + OD-5 pricing
 
   # --- Phase 5: continuity & polish ---
   epic-10: backlog

@@ -16,7 +16,7 @@ import { briefingSchema } from "@otto/schemas";
 import type { Briefing, Consent, ContextItem, Nudge, Proposal } from "@otto/schemas";
 import { isConsentGranted as consentGranted } from "../security/consent";
 import { fetchBrief, getApiBaseUrl } from "../lib/api-client";
-import { IS_PRO } from "../lib/constants";
+import { useAuth } from "../auth/AuthProvider";
 import {
   consentRepository,
   makeBillRepository,
@@ -46,6 +46,7 @@ export type TodayState = {
 };
 
 export function useToday(deps: RepositoryDeps): TodayState {
+  const { isPro } = useAuth();
   const [state, setState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | undefined>();
   const [briefing, setBriefing] = useState<Briefing | undefined>();
@@ -113,7 +114,7 @@ export function useToday(deps: RepositoryDeps): TodayState {
       let usedLlm = false;
       let llmProposals: Proposal[] = [];
       let shownBriefing: Briefing = composed;
-      if (IS_PRO && getApiBaseUrl() !== null) {
+      if (isPro && getApiBaseUrl() !== null) {
         const result = await fetchBrief({
           slot,
           contextItems: dayItems,
@@ -138,7 +139,7 @@ export function useToday(deps: RepositoryDeps): TodayState {
       setError(caught instanceof Error ? caught.message : "Could not build your day.");
       setState("error");
     }
-  }, [deps]);
+  }, [deps, isPro]);
 
   useEffect(() => {
     void reload();

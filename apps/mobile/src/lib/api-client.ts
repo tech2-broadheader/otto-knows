@@ -75,6 +75,17 @@ export function getApiBaseUrl(): string | null {
 }
 
 /**
+ * Supplies the current auth token (set by the AuthProvider). Kept as a seam so
+ * this module has no native/expo imports — Pro routes get `Authorization: Bearer`
+ * when the user is signed in; anonymous (free, local) requests send none.
+ */
+let authTokenProvider: () => string | null = () => null;
+
+export function setAuthTokenProvider(provider: () => string | null): void {
+  authTokenProvider = provider;
+}
+
+/**
  * POST `body` to `path` and unwrap the envelope into an `ApiResult`. Pure given
  * an injected `fetchImpl` (defaults to the global `fetch`) — this is the piece
  * the unit tests exercise with a stub. Never throws.
@@ -93,11 +104,18 @@ export async function postEnvelope<T>(
     };
   }
 
+  const token = authTokenProvider();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   let response: Response;
   try {
     response = await fetchImpl(`${baseUrl}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers,
       body: JSON.stringify(body),
     });
   } catch {

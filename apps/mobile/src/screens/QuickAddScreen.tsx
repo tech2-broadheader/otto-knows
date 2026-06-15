@@ -18,7 +18,7 @@ import { Banner, Icon, OC } from "../components/ui";
 import { OttoAvatar, ScreenContainer, ScreenHeader } from "../components/otto-ui";
 import { UpgradeButton } from "../components/UpgradeButton";
 import { getApiBaseUrl, type ApiErrorCode } from "../lib/api-client";
-import { IS_PRO } from "../lib/constants";
+import { useAuth } from "../auth/AuthProvider";
 
 /** Example prompts offered as one-tap chips (match the design's examples). */
 const EXAMPLE_CHIPS: readonly string[] = [
@@ -51,6 +51,7 @@ function errorBanner(
 
 export function QuickAddScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
+  const { isPro } = useAuth();
   const { status, proposals, error, errorCode, applyingId, submit, accept, dismiss } =
     useQuickAdd(deps);
   const [text, setText] = useState("");
@@ -111,7 +112,7 @@ export function QuickAddScreen(): React.JSX.Element {
         />
         <View className="mt-2 flex-row items-center justify-between">
           <Text className="font-body-semibold text-[11.5px] text-ink-400">
-            {IS_PRO ? "Unlimited" : "A few free each day"}
+            {isPro ? "Unlimited" : "A few free each day"}
           </Text>
           <Pressable
             onPress={() => handleSubmit()}

@@ -1,8 +1,8 @@
 // Shared, calm messaging for the Pro LLM surfaces (optimizer + tips).
 //
 // Pro features call the web LLM proxy, which enforces Pro server-side and may
-// 401 (sign in) / 403 (upgrade) / 429 (slow down). The local IS_PRO flag also
-// gates the entry points. These helpers turn an outcome into a friendly banner
+// 401 (sign in) / 403 (upgrade) / 429 (slow down). The live entitlement
+// (useAuth().isPro) also gates the entry points. These helpers turn an outcome into a friendly banner
 // so a non-Pro / signed-out / unconfigured / offline state never crashes a screen
 // (CLAUDE.md §1.11, §6 — friendly user messages; the proxy carries the detail).
 import type { ApiErrorCode } from "./api-client";

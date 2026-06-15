@@ -17,7 +17,7 @@ import { EmptyState } from "../components/AsyncBoundary";
 import { Banner, Card, Icon, OC } from "../components/ui";
 import { ProGate, ScreenContainer } from "../components/otto-ui";
 import { getApiBaseUrl } from "../lib/api-client";
-import { IS_PRO } from "../lib/constants";
+import { useAuth } from "../auth/AuthProvider";
 import { proErrorBanner } from "../lib/pro-feature";
 
 const DOMAINS: ReadonlyArray<{ value: TipDomain; label: string }> = [
@@ -62,6 +62,7 @@ function DomainToggle({
 
 export function TipsScreen(): React.JSX.Element {
   const navigation = useNavigation() as unknown as TipsNavigation;
+  const { isPro } = useAuth();
   const { status, domain, tips, error, errorCode, load } = useTips("finance");
   const [hasLoaded, setHasLoaded] = useState(false);
 
@@ -86,7 +87,7 @@ export function TipsScreen(): React.JSX.Element {
     </View>
   );
 
-  if (!IS_PRO || !configured) {
+  if (!isPro || !configured) {
     return (
       <ScreenContainer>
         {BackHeader}
@@ -94,7 +95,7 @@ export function TipsScreen(): React.JSX.Element {
           Gentle, general ideas for money and wellbeing — never personalised advice.
         </Text>
         <View className="mt-4">
-          {!IS_PRO ? (
+          {!isPro ? (
             <ProGate
               title="Tips is a Pro feature"
               body="Gentle, general finance & health ideas from Otto — supportive, never prescriptive."

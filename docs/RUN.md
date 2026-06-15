@@ -48,14 +48,28 @@ EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:3000
 ```
 
 > ⚠️ **The app uses native modules** (SQLite, secure-store, notifications, auth-session)
-> that aren't all in Expo Go on SDK 53. Use a **development build**, not Expo Go:
+> that aren't all in Expo Go on SDK 53. Use a **development build**, not Expo Go.
+> `expo-dev-client` + `eas.json` (development/preview/production profiles) are already set up.
+>
+> **Cloud build (needs a free Expo account):**
 > ```bash
-> npm i -g eas-cli   # once
-> cd apps/mobile && eas build --profile development --platform android
+> npm i -g eas-cli            # once
+> cd apps/mobile
+> eas login                   # your Expo account
+> eas build --profile development --platform android
+> # First run prompts to create/link the Expo project (writes extra.eas.projectId
+> # into app.json) — accept it. Then install the APK it produces on your phone.
 > ```
-> Install the resulting APK on your phone, then `pnpm mobile:start` and open it in
-> the dev build. (A local `npx expo run:android` also works if you have Android
-> Studio + a device/emulator.)
+> Then from the repo root `pnpm mobile:start` and open the project in the installed
+> dev build (it connects to your Metro server, which inlines `EXPO_PUBLIC_API_URL`
+> from `apps/mobile/.env.local`).
+>
+> **Local alternative (no Expo account; needs Android Studio + device/emulator):**
+> ```bash
+> cd apps/mobile && npx expo run:android
+> ```
+> On the **Android emulator** use `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000`; on a
+> **physical phone** use your computer's LAN IP (e.g. `http://192.168.1.20:3000`).
 
 Free tier (today/reminders/finance/health/routine) works offline with no backend.
 The brain (Today's brief, Quick Add, Optimizer, Tips) calls your backend from step 1.

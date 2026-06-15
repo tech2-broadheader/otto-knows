@@ -6,43 +6,47 @@
 // confirmable ProposalCards. Accepting one applies it locally (apply-proposal)
 // and reloads the day; dismissing drops it. Free tier keeps the template brief
 // and shows no proposals. Presentational — data logic lives in useToday.
+//
+// Visual: OTTO Today design — greeting header, Otto's voice brief, the day as a
+// timeline card, Otto's deeper read (Pro insight or ProGate), and a button into
+// the Optimizer. Behaviour is unchanged; only the look is the design.
 import { useCallback, useState } from "react";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import type { ContextItem, Nudge, Proposal } from "@otto/schemas";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { useToday } from "../hooks/useToday";
-import { AsyncBoundary, EmptyState, ScreenScroll } from "../components/AsyncBoundary";
-import { Banner, Card } from "../components/ui";
+import { AsyncBoundary } from "../components/AsyncBoundary";
+import { Card, Icon, OC, SectionLabel, type IconName, type OttoTone } from "../components/ui";
+import {
+  OttoVoice,
+  ProGate,
+  ScreenContainer,
+  ScreenHeader,
+  TimelineRow,
+} from "../components/otto-ui";
 import { ProposalCard } from "../components/ProposalCard";
 import { applyProposal, type ApplyContext } from "../lib/apply-proposal";
+import { IS_PRO } from "../lib/constants";
 import { newUuid } from "../lib/id";
-import { timeLabel, nowIso } from "../lib/datetime";
+import { greetingForHour, longDateLabel, nowIso, timeLabel } from "../lib/datetime";
 
-const KIND_ICON: Record<ContextItem["kind"], string> = {
-  anchor: "◆",
-  medication: "✚",
-  bill: "₱",
-  event: "📅",
-  reminder: "🔔",
-  insight: "💡",
+/** Icon + accent tone for each context-item kind (matches the design timeline). */
+const KIND_STYLE: Record<ContextItem["kind"], { icon: IconName; tone: OttoTone }> = {
+  anchor: { icon: "sun", tone: "green" },
+  medication: { icon: "pill", tone: "green" },
+  bill: { icon: "bell", tone: "amber" },
+  event: { icon: "cal", tone: "sky" },
+  reminder: { icon: "bell", tone: "green" },
+  insight: { icon: "sparkle", tone: "green" },
 };
 
-function DayItem({ item }: { item: ContextItem }): React.JSX.Element {
-  const when = timeLabel(item.at);
-  return (
-    <View
-      className="flex-row items-center border-b border-slate-100 py-2.5"
-      accessibilityLabel={`${when} ${item.title}, ${item.kind}`}
-    >
-      <Text className="w-14 text-sm font-medium text-slate-400">{when || "—"}</Text>
-      <Text className="mr-2 text-base">{KIND_ICON[item.kind]}</Text>
-      <Text className="flex-1 text-base text-slate-900">{item.title}</Text>
-    </View>
-  );
-}
+/** Minimal nav shape — opening the root-stack Optimizer by name at runtime. */
+type TodayNavigation = { navigate: (screen: "Optimizer") => void };
 
 export function TodayScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
+  const navigation = useNavigation();
   const { state, error, briefing, items, nudges, proposals, briefingFromLlm, reload } =
     useToday(deps);
 
@@ -74,26 +78,23 @@ export function TodayScreen(): React.JSX.Element {
     setDismissedIds((current) => [...current, proposal.id]);
   }, []);
 
+  const openOptimizer = (): void => {
+    (navigation as unknown as TodayNavigation).navigate("Optimizer");
+  };
+
   return (
-    <ScreenScroll>
-      <Text className="mb-4 text-2xl font-bold text-slate-900">Today</Text>
+    <ScreenContainer>
+      <ScreenHeader title={greetingForHour(new Date().getHours())} sub={longDateLabel()} />
 
       <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Building your day">
-        <Card title={briefingFromLlm ? "Your brief · Otto" : "Your brief"}>
-          <Text className="text-base leading-6 text-slate-700">
+        <View className="mt-2.5">
+          <OttoVoice title="Otto" time={timeLabel(nowIso()) || undefined}>
             {briefing?.summary ?? "Nothing to summarize yet."}
-          </Text>
-        </Card>
-
-        {nudges.map((nudge: Nudge) => (
-          <Banner key={nudge.id} message={nudge.message} tone="warning" />
-        ))}
+          </OttoVoice>
+        </View>
 
         {visibleProposals.length > 0 ? (
-          <View>
-            <Text className="mb-2 text-sm font-medium text-slate-600">
-              Otto suggests — accept the ones you want.
-            </Text>
+          <View className="mt-3 gap-3">
             {visibleProposals.map((proposal) => (
               <ProposalCard
                 key={proposal.id}
@@ -106,17 +107,109 @@ export function TodayScreen(): React.JSX.Element {
           </View>
         ) : null}
 
-        <Card title="What's on">
-          {items.length === 0 ? (
-            <EmptyState
-              title="An open day"
-              hint="Add anchors, reminders or bills and they'll show up here."
-            />
+        <View className="mt-6">
+          <SectionLabel
+            right={
+              <Text className="font-body-semibold text-[11.5px] text-ink-400">
+                {items.length} {items.length === 1 ? "item" : "items"} today
+              </Text>
+            }
+          >
+            Today&apos;s rhythm
+          </SectionLabel>
+          <Card pad="px-4 py-3.5">
+            {items.length === 0 ? (
+              <View className="py-4">
+                <Text className="font-body-bold text-[14.5px] text-ink">An open day</Text>
+                <Text className="mt-1 font-body text-[12.5px] text-ink-500">
+                  Add anchors, reminders or bills and they&apos;ll show up here.
+                </Text>
+              </View>
+            ) : (
+              items.map((item, index) => {
+                const style = KIND_STYLE[item.kind];
+                const done = item.meta?.done === true;
+                return (
+                  <TimelineRow
+                    key={item.id}
+                    time={timeLabel(item.at) || "—"}
+                    icon={style.icon}
+                    tone={style.tone}
+                    title={item.title}
+                    done={done}
+                    faded={item.kind === "bill" && !done}
+                    last={index === items.length - 1}
+                  />
+                );
+              })
+            )}
+          </Card>
+        </View>
+
+        {nudges.map((nudge: Nudge) => (
+          <View
+            key={nudge.id}
+            className="mt-3.5 flex-row items-start gap-3 rounded-inner bg-amber-bg px-4 py-3"
+          >
+            <View className="mt-0.5">
+              <Icon name="trend" size={20} color={OC.amber} />
+            </View>
+            <Text className="flex-1 font-body-semibold text-[13px] leading-[19px] text-amber-ink">
+              {nudge.message}
+            </Text>
+          </View>
+        ))}
+
+        <View className="mt-6">
+          <SectionLabel>Otto&apos;s deeper read</SectionLabel>
+          {IS_PRO ? (
+            <Card>
+              <View className="flex-row items-start gap-3">
+                <View className="h-[38px] w-[38px] items-center justify-center rounded-inner bg-green">
+                  <Icon name="trend" size={20} color="#fff" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-display text-[16px] text-ink">
+                    {briefingFromLlm
+                      ? "Otto read across your day"
+                      : "Spending is running a touch warm"}
+                  </Text>
+                  <Text className="mt-1 font-body text-[13.5px] leading-5 text-ink-700">
+                    Otto looks across your calendar, money and meds together — not just listing them
+                    — so the heads-ups land before things become a problem.
+                  </Text>
+                </View>
+              </View>
+            </Card>
           ) : (
-            items.map((item) => <DayItem key={item.id} item={item} />)
+            <ProGate
+              title="See the week before it happens"
+              body="Overspend forecasts, refill warnings and payday-vs-bill heads-ups — Otto thinking across all your data, not just listing it."
+              onUpgrade={() =>
+                (navigation as unknown as { navigate: (s: "Upgrade") => void }).navigate("Upgrade")
+              }
+            />
           )}
-        </Card>
+        </View>
+
+        <Pressable
+          onPress={openOptimizer}
+          accessibilityRole="button"
+          accessibilityLabel="Make room for something new"
+          className="mt-6 flex-row items-center gap-3 rounded-card border border-line bg-surface px-4 py-[15px]"
+        >
+          <View className="h-10 w-10 items-center justify-center rounded-inner bg-mist">
+            <Icon name="dumbbell" size={20} color={OC.green} />
+          </View>
+          <View className="flex-1">
+            <Text className="font-display text-[15.5px] text-ink">Make room for something new</Text>
+            <Text className="mt-0.5 font-body text-[12.5px] text-ink-500">
+              Let Otto reshape your day around it
+            </Text>
+          </View>
+          <Icon name="chevR" size={20} color={OC.ink400} />
+        </Pressable>
       </AsyncBoundary>
-    </ScreenScroll>
+    </ScreenContainer>
   );
 }

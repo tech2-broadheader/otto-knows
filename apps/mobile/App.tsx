@@ -1,9 +1,11 @@
-// Navigation root. A bottom-tab navigator (Today, Reminders, Finance, Settings)
-// plus a first-run onboarding flow (Consent → Routine Setup). The data layer is
-// initialized and notifications configured once at boot.
+// Navigation root. A bottom-tab navigator (Today, Reminders, Add, Finance, Health)
+// rendered with the OTTO custom tab bar (the center "Add" is the raised green +).
+// Settings, Optimizer and Tips live on the root stack (siblings of Main + the
+// Upgrade modal) so the per-screen AppHeader gear reaches Settings, and Settings
+// rows reach the Pro surfaces. A first-run onboarding flow gates the app. The data
+// layer is initialized and notifications configured once at boot.
 import "./global.css";
 import { useEffect, useState } from "react";
-import { Text } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import {
   useFonts,
@@ -28,6 +30,7 @@ import { configureNotifications } from "./src/notifications";
 import { rescheduleDay } from "./src/lib/reschedule";
 import { LOCAL_USER_ID } from "./src/lib/constants";
 import { LoadingState } from "./src/components/AsyncBoundary";
+import { OttoTabBar } from "./src/components/otto-ui";
 import { TodayScreen } from "./src/screens/TodayScreen";
 import { QuickAddScreen } from "./src/screens/QuickAddScreen";
 import { RemindersScreen } from "./src/screens/RemindersScreen";
@@ -45,84 +48,32 @@ type RootStackParamList = {
   // Modal paywall — sibling of Main so any tab/Settings screen can reach it
   // via navigation.navigate("Upgrade").
   Upgrade: undefined;
-};
-
-/** Settings is a stack so the Pro surfaces (Optimizer, Tips) are reachable from it. */
-type SettingsStackParamList = {
-  SettingsHome: undefined;
+  // Settings + the Pro surfaces live on the root stack so the per-screen header
+  // gear (AppHeader) reaches Settings, and Settings rows reach Optimizer/Tips.
+  Settings: undefined;
   Optimizer: undefined;
   Tips: undefined;
 };
 
 const Tab = createBottomTabNavigator();
 const RootStack = createNativeStackNavigator<RootStackParamList>();
-const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
-/** Settings tab: the consent/about home plus the Pro Optimizer + Tips screens. */
-function SettingsNavigator(): React.JSX.Element {
-  return (
-    <SettingsStack.Navigator>
-      <SettingsStack.Screen
-        name="SettingsHome"
-        component={SettingsScreen}
-        options={{ title: "Settings" }}
-      />
-      <SettingsStack.Screen
-        name="Optimizer"
-        component={OptimizerScreen}
-        options={{ title: "Optimize your day" }}
-      />
-      <SettingsStack.Screen name="Tips" component={TipsScreen} options={{ title: "Tips" }} />
-    </SettingsStack.Navigator>
-  );
-}
-
-/** Tab-bar glyph (text — keeps the free build dependency-light). */
-function tabIcon(glyph: string) {
-  return ({ color }: { color: string }) => (
-    <Text style={{ color, fontSize: 18 }} accessibilityElementsHidden>
-      {glyph}
-    </Text>
-  );
-}
-
+/**
+ * The five bottom tabs in design order: Today · Reminders · Add (raised +) ·
+ * Finance · Health. The custom OttoTabBar renders the center Add as the raised
+ * green button; headers are off (each screen draws its own AppHeader).
+ */
 function MainTabs(): React.JSX.Element {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true }}>
-      <Tab.Screen
-        name="Today"
-        component={TodayScreen}
-        options={{ tabBarIcon: tabIcon("☀"), tabBarAccessibilityLabel: "Today" }}
-      />
-      <Tab.Screen
-        name="Add"
-        component={QuickAddScreen}
-        options={{ tabBarIcon: tabIcon("＋"), tabBarAccessibilityLabel: "Quick add" }}
-      />
-      <Tab.Screen
-        name="Reminders"
-        component={RemindersScreen}
-        options={{ tabBarIcon: tabIcon("🔔"), tabBarAccessibilityLabel: "Reminders" }}
-      />
-      <Tab.Screen
-        name="Health"
-        component={MedicationsScreen}
-        options={{ tabBarIcon: tabIcon("💊"), tabBarAccessibilityLabel: "Health" }}
-      />
-      <Tab.Screen
-        name="Finance"
-        component={FinanceScreen}
-        options={{ tabBarIcon: tabIcon("₱"), tabBarAccessibilityLabel: "Finance" }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsNavigator}
-        options={{
-          headerShown: false,
-          tabBarIcon: tabIcon("⚙"),
-          tabBarAccessibilityLabel: "Settings",
-        }}
-      />
+    <Tab.Navigator
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <OttoTabBar {...props} />}
+    >
+      <Tab.Screen name="Today" component={TodayScreen} />
+      <Tab.Screen name="Reminders" component={RemindersScreen} />
+      <Tab.Screen name="Add" component={QuickAddScreen} />
+      <Tab.Screen name="Finance" component={FinanceScreen} />
+      <Tab.Screen name="Health" component={MedicationsScreen} />
     </Tab.Navigator>
   );
 }
@@ -190,6 +141,9 @@ export default function App(): React.JSX.Element {
                   component={UpgradeScreen}
                   options={{ presentation: "modal" }}
                 />
+                <RootStack.Screen name="Settings" component={SettingsScreen} />
+                <RootStack.Screen name="Optimizer" component={OptimizerScreen} />
+                <RootStack.Screen name="Tips" component={TipsScreen} />
               </>
             )}
           </RootStack.Navigator>

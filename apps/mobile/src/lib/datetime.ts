@@ -55,3 +55,31 @@ export function briefingSlotForHour(hour: number): "morning" | "midday" | "eveni
   if (hour < 17) return "midday";
   return "evening";
 }
+
+/** A warm, time-of-day greeting for the Today header (matches the design tone). */
+export function greetingForHour(hour: number): string {
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/** "Thursday, June 18" — the long date shown under the Today greeting. */
+export function longDateLabel(now: Date = new Date()): string {
+  return `${WEEKDAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
+}

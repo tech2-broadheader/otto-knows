@@ -2,10 +2,12 @@
 // budget ring, check rows, Pro gate, app header, custom tab bar, screen shell.
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import Svg, { Circle } from "react-native-svg";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import type { ReactNode } from "react";
 import { Icon, OC, Pill, toneColor, type IconName, type OttoTone } from "./ui";
+import { IS_PRO } from "../lib/constants";
 
 // require() is the React Native idiom for static image assets (Metro resolves it).
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -313,6 +315,30 @@ export function AppHeader({
   );
 }
 
+/**
+ * AppHeader pre-wired to navigation + the local Pro flag. The gear opens the
+ * root-stack Settings screen; the Upgrade pill opens the modal paywall. Screens
+ * just supply title/sub so every main screen shares the exact same affordances.
+ */
+type HeaderNavigation = { navigate: (screen: "Settings" | "Upgrade") => void };
+
+export function ScreenHeader({ title, sub }: { title: string; sub?: string }): React.JSX.Element {
+  const navigation = useNavigation();
+  // reason: main screens aren't typed against the root param list; navigating to
+  // the root-stack "Settings"/"Upgrade" screens by name is valid at runtime
+  // (navigation bubbles to the parent navigator).
+  const nav = navigation as unknown as HeaderNavigation;
+  return (
+    <AppHeader
+      title={title}
+      sub={sub}
+      isPro={IS_PRO}
+      onUpgrade={() => nav.navigate("Upgrade")}
+      onSettings={() => nav.navigate("Settings")}
+    />
+  );
+}
+
 // ---------- Screen shell (paper bg scroll, padded for the tab bar) ----------
 export function ScreenContainer({ children }: { children: ReactNode }): React.JSX.Element {
   const insets = useSafeAreaInsets();
@@ -328,6 +354,85 @@ export function ScreenContainer({ children }: { children: ReactNode }): React.JS
       >
         {children}
       </ScrollView>
+    </View>
+  );
+}
+
+// ---------- Onboarding wizard shell (step dots + bottom CTA) ----------
+export function OnboardingShell({
+  step,
+  stepCount,
+  ctaLabel,
+  onNext,
+  onBack,
+  onSkip,
+  children,
+}: {
+  step: number;
+  stepCount: number;
+  ctaLabel: string;
+  onNext: () => void;
+  onBack?: () => void;
+  onSkip?: () => void;
+  children: ReactNode;
+}): React.JSX.Element {
+  const insets = useSafeAreaInsets();
+  return (
+    <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
+      <View className="flex-row items-center gap-2 px-[18px] py-1.5">
+        {onBack && step > 0 ? (
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            className="h-9 w-9 items-center justify-center rounded-inner border border-line bg-surface"
+          >
+            <Icon name="chevL" size={19} color={OC.ink700} />
+          </Pressable>
+        ) : (
+          <View className="w-9" />
+        )}
+        <View className="flex-1 flex-row justify-center gap-1.5">
+          {Array.from({ length: stepCount }).map((_, i) => (
+            <View
+              key={i}
+              className="h-[7px] rounded-full"
+              style={{
+                width: i === step ? 22 : 7,
+                backgroundColor: i === step ? OC.green : OC.lineStrong,
+              }}
+            />
+          ))}
+        </View>
+        {onSkip ? (
+          <Pressable
+            onPress={onSkip}
+            accessibilityRole="button"
+            accessibilityLabel="Skip"
+            className="w-9 items-end"
+          >
+            <Text className="font-body-bold text-[12.5px] text-ink-400">Skip</Text>
+          </Pressable>
+        ) : (
+          <View className="w-9" />
+        )}
+      </View>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+      </ScrollView>
+      <View style={{ paddingHorizontal: 22, paddingBottom: insets.bottom + 18, paddingTop: 12 }}>
+        <Pressable
+          onPress={onNext}
+          accessibilityRole="button"
+          accessibilityLabel={ctaLabel}
+          className="items-center rounded-inner bg-green py-4"
+        >
+          <Text className="font-body-extra text-[16px] text-white">{ctaLabel}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

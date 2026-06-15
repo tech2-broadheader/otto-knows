@@ -44,7 +44,6 @@ export function checkAndConsumeQuota(userId: string, date: string, dailyMax: num
 
 /** Record metered usage. Never logs prompt content — only token counts. */
 export function recordUsage(userId: string, feature: string, usage: LlmUsage): void {
-  // eslint-disable-next-line no-console -- intentional server-side metering log
   console.info(
     `[llm-usage] user=${userId} feature=${feature} in=${usage.inputTokens} out=${usage.outputTokens}`,
   );

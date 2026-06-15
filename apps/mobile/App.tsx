@@ -5,6 +5,19 @@ import "./global.css";
 import { useEffect, useState } from "react";
 import { Text } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import {
+  useFonts,
+  BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
+} from "@expo-google-fonts/bricolage-grotesque";
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from "@expo-google-fonts/plus-jakarta-sans";
+import { SpaceMono_400Regular, SpaceMono_700Bold } from "@expo-google-fonts/space-mono";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -118,6 +131,21 @@ export default function App(): React.JSX.Element {
   // "booting" while we init the store + decide first-run; then onboarding | main.
   const [phase, setPhase] = useState<"booting" | "onboarding" | "main">("booting");
 
+  // OTTO type system: Bricolage Grotesque (display), Plus Jakarta Sans (body),
+  // Space Mono (eyebrows/tabular). Gate render until loaded so text never flashes
+  // in a fallback face.
+  const [fontsLoaded] = useFonts({
+    BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+    SpaceMono_400Regular,
+    SpaceMono_700Bold,
+  });
+
   useEffect(() => {
     let cancelled = false;
     async function boot(): Promise<void> {
@@ -146,7 +174,7 @@ export default function App(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        {phase === "booting" ? (
+        {phase === "booting" || !fontsLoaded ? (
           <LoadingState label="Starting Otto" />
         ) : (
           <RootStack.Navigator screenOptions={{ headerShown: false }}>

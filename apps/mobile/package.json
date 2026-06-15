@@ -11,6 +11,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "@expo-google-fonts/space-mono": "^0.4.2",
     "@otto/core": "workspace:*",
     "@otto/schemas": "workspace:*",
     "@otto/types": "workspace:*",
@@ -21,6 +24,7 @@
     "expo": "~53.0.0",
     "expo-auth-session": "~6.2.1",
     "expo-crypto": "~14.1.5",
+    "expo-font": "~13.3.2",
     "expo-notifications": "~0.31.5",
     "expo-secure-store": "~14.2.4",
     "expo-sqlite": "~15.2.14",
@@ -31,7 +35,8 @@
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.11.1"
+    "react-native-screens": "~4.11.1",
+    "react-native-svg": "15.11.2"
   },
   "devDependencies": {
     "@types/react": "~19.2.0",

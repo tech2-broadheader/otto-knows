@@ -7,23 +7,23 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "icon": "./assets/mascot.png",
+    "icon": "./assets/otto-mascot.png",
     "splash": {
-      "image": "./assets/mascot.png",
+      "image": "./assets/otto-mascot.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F4FAF7"
     },
     "android": {
       "package": "com.broadheader.otto",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/mascot.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/otto-mascot.png",
+        "backgroundColor": "#F4FAF7"
       }
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.broadheader.otto"
     },
-    "plugins": ["expo-sqlite", "expo-web-browser", "expo-secure-store"]
+    "plugins": ["expo-sqlite", "expo-web-browser", "expo-secure-store", "expo-font"]
   }
 }

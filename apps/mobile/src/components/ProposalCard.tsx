@@ -3,9 +3,9 @@
 // Renders one LLM proposal: a human-readable summary of the `action`, the
 // model's `rationale`, and Accept / Dismiss buttons. NOTHING is applied until
 // the user taps Accept — this component only signals intent up via callbacks.
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import type { Proposal, ProposalAction } from "@otto/schemas";
-import { Button, Card } from "./ui";
+import { Icon, OC, toneColor, type IconName, type OttoTone } from "./ui";
 import { formatPeso } from "../lib/money";
 import { timeLabel } from "../lib/datetime";
 
@@ -17,6 +17,16 @@ const ACTION_LABEL: Record<ProposalAction["type"], string> = {
   add_medication: "Add medication",
   block_time: "Block time",
   add_routine_anchor: "Routine anchor",
+};
+
+/** Icon + accent tone per proposal type, matching the design's proposal cards. */
+const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: OttoTone }> = {
+  create_reminder: { icon: "bell", tone: "green" },
+  log_expense: { icon: "peso", tone: "green" },
+  add_bill: { icon: "wallet", tone: "amber" },
+  add_medication: { icon: "pill", tone: "green" },
+  block_time: { icon: "cal", tone: "sky" },
+  add_routine_anchor: { icon: "dumbbell", tone: "green" },
 };
 
 /**
@@ -63,28 +73,54 @@ export function ProposalCard({
 }): React.JSX.Element {
   const label = ACTION_LABEL[proposal.action.type];
   const summary = summarizeAction(proposal.action);
+  const { icon, tone } = ACTION_ICON[proposal.action.type];
+  const accent = toneColor(tone);
   return (
-    <Card title={label}>
-      <Text
-        className="text-base font-medium text-slate-900"
-        accessibilityLabel={`${label}: ${summary}`}
-      >
-        {summary}
-      </Text>
-      <Text className="mt-1 text-sm leading-5 text-slate-500">{proposal.rationale}</Text>
-      <View className="mt-3 flex-row gap-3">
-        <View className="flex-1">
-          <Button label="Accept" onPress={() => onAccept(proposal)} disabled={busy} />
+    <View className="overflow-hidden rounded-[18px] border-[1.5px] border-line-strong bg-surface">
+      <View className="flex-row gap-3 px-4 pb-3 pt-[15px]">
+        <View
+          className="h-10 w-10 items-center justify-center rounded-inner"
+          style={{ backgroundColor: `${accent}1a` }}
+        >
+          <Icon name={icon} size={20} color={accent} />
         </View>
         <View className="flex-1">
-          <Button
-            label="Dismiss"
-            variant="secondary"
-            onPress={() => onDismiss(proposal)}
-            disabled={busy}
-          />
+          <Text className="font-mono-bold text-[10.5px] uppercase tracking-[1px] text-ink-400">
+            Otto proposes
+          </Text>
+          <Text
+            className="mt-0.5 font-display text-[16.5px] leading-5 text-ink"
+            accessibilityLabel={`${label}: ${summary}`}
+          >
+            {summary}
+          </Text>
+          <Text className="mt-1 font-body text-[13px] leading-[19px] text-ink-500">
+            {proposal.rationale}
+          </Text>
         </View>
       </View>
-    </Card>
+      <View className="flex-row border-t border-line">
+        <Pressable
+          onPress={() => onDismiss(proposal)}
+          disabled={busy}
+          className="flex-1 items-center border-r border-line py-[13px]"
+          accessibilityRole="button"
+          accessibilityLabel="Not now"
+        >
+          <Text className="font-body-bold text-[14px] text-ink-500">Not now</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => onAccept(proposal)}
+          disabled={busy}
+          className="flex-row items-center justify-center gap-1.5 py-[13px]"
+          style={{ flex: 1.4 }}
+          accessibilityRole="button"
+          accessibilityLabel="Yes, do it"
+        >
+          <Icon name="check" size={17} color={OC.green} />
+          <Text className="font-body-extra text-[14px] text-green">Yes, do it</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }

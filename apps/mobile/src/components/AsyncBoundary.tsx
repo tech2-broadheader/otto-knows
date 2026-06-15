@@ -1,6 +1,8 @@
 // Shared async-state UI: loading / error / empty wrappers so every screen has
 // explicit states (CODING_CONVENTIONS §8). Presentational only — no data logic.
+// OTTO palette (Claude Design pass).
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { OC } from "./ui";
 
 export type LoadState = "loading" | "error" | "ready";
 
@@ -8,12 +10,12 @@ export type LoadState = "loading" | "error" | "ready";
 export function LoadingState({ label = "Loading" }: { label?: string }): React.JSX.Element {
   return (
     <View
-      className="flex-1 items-center justify-center p-6"
+      className="flex-1 items-center justify-center bg-paper p-6"
       accessibilityRole="progressbar"
       accessibilityLabel={label}
     >
-      <ActivityIndicator size="large" />
-      <Text className="mt-3 text-base text-slate-500">{label}…</Text>
+      <ActivityIndicator size="large" color={OC.green} />
+      <Text className="mt-3 font-body text-base text-ink-500">{label}…</Text>
     </View>
   );
 }
@@ -27,17 +29,17 @@ export function ErrorState({
   onRetry?: () => void;
 }): React.JSX.Element {
   return (
-    <View className="flex-1 items-center justify-center p-6" accessibilityRole="alert">
-      <Text className="text-center text-base font-medium text-red-600">Something went wrong</Text>
-      <Text className="mt-2 text-center text-sm text-slate-500">{message}</Text>
+    <View className="flex-1 items-center justify-center bg-paper p-6" accessibilityRole="alert">
+      <Text className="text-center font-body-bold text-base text-coral">Something went wrong</Text>
+      <Text className="mt-2 text-center font-body text-sm text-ink-500">{message}</Text>
       {onRetry ? (
         <Pressable
-          className="mt-4 rounded-xl bg-slate-900 px-5 py-3"
+          className="mt-4 rounded-btn bg-green px-5 py-3"
           onPress={onRetry}
           accessibilityRole="button"
           accessibilityLabel="Try again"
         >
-          <Text className="font-medium text-white">Try again</Text>
+          <Text className="font-body-bold text-white">Try again</Text>
         </Pressable>
       ) : null}
     </View>
@@ -48,8 +50,10 @@ export function ErrorState({
 export function EmptyState({ title, hint }: { title: string; hint?: string }): React.JSX.Element {
   return (
     <View className="items-center justify-center p-8" accessibilityRole="text">
-      <Text className="text-center text-base font-medium text-slate-700">{title}</Text>
-      {hint ? <Text className="mt-2 text-center text-sm text-slate-400">{hint}</Text> : null}
+      <Text className="text-center font-body-bold text-base text-ink-700">{title}</Text>
+      {hint ? (
+        <Text className="mt-2 text-center font-body text-sm text-ink-400">{hint}</Text>
+      ) : null}
     </View>
   );
 }
@@ -81,9 +85,10 @@ export function AsyncBoundary({
 export function ScreenScroll({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <ScrollView
-      className="flex-1 bg-slate-50"
-      contentContainerClassName="p-4 pb-12"
+      className="flex-1 bg-paper"
+      contentContainerStyle={{ padding: 18, paddingBottom: 120 }}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
       {children}
     </ScrollView>

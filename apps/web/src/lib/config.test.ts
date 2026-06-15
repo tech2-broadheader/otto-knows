@@ -41,8 +41,13 @@ describe("parseConfig() — valid", () => {
 
 describe("parseConfig() — missing required", () => {
   it("throws with the offending var name when a required secret is absent", () => {
-    const { ANTHROPIC_API_KEY: _omit, ...rest } = validEnv;
-    expect(() => parseConfig(rest)).toThrow(/ANTHROPIC_API_KEY/);
+    const { SUPABASE_SERVICE_ROLE_KEY: _omit, ...rest } = validEnv;
+    expect(() => parseConfig(rest)).toThrow(/SUPABASE_SERVICE_ROLE_KEY/);
+  });
+
+  it("treats the LLM keys as optional (provider is swappable)", () => {
+    const { ANTHROPIC_API_KEY: _a, ...rest } = validEnv;
+    expect(() => parseConfig(rest)).not.toThrow();
   });
 
   it("aggregates multiple missing required vars in the message", () => {

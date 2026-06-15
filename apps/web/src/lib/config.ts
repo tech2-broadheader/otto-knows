@@ -28,8 +28,14 @@ function assertServerOnly(): void {
  */
 const serverEnvSchema = z.object({
   // LLM brain — keys live behind the proxy, usage metered (CLAUDE.md §6 backend).
-  ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
+  // The provider is swappable; keys are optional so the app can run on whichever
+  // provider is configured (or none → template/free fallback). The client factory
+  // (server/llm/client.ts) reads these directly, not through this config.
+  LLM_PROVIDER: z.enum(["anthropic", "gemini"]).optional(),
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
   LLM_MODEL: z.string().min(1).default("claude-opus-4-8"),
+  GEMINI_API_KEY: z.string().min(1).optional(),
+  GEMINI_MODEL: z.string().min(1).default("gemini-2.5-flash"),
 
   // Supabase (cloud store + auth, Pro tier).
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),

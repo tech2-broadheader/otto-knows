@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(pnpm --filter @otto/web add @google/genai)",
+      "Bash(awk '{print $2}')",
+      "Bash(git -c user.name=Broadheader -c user.email=tech@broadheader.com commit -q -m 'feat\\(llm\\): swappable provider + Google Gemini free-tier adapter *)"
+    ]
+  }
+}

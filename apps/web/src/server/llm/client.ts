@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { getConfig } from "@/lib/config";
+import { GoogleGenAI } from "@google/genai";
+import { GeminiLlmClient } from "./gemini";
 
 /**
  * LLM client (SERVER-ONLY). A narrow interface around a single non-streaming
@@ -103,13 +104,48 @@ export class AnthropicLlmClient implements LlmClient {
   }
 }
 
+/**
+ * Last-resort client when no provider is configured: always "refuses" so the
+ * brief falls back to its template, quick-add/optimizer return nothing, and tips
+ * are empty. This is what makes the app degrade gracefully to the free/local
+ * experience with no LLM keys at all.
+ */
+export class NullLlmClient implements LlmClient {
+  async generate(): Promise<LlmResult> {
+    return { text: "", toolCalls: [], refused: true, usage: { inputTokens: 0, outputTokens: 0 } };
+  }
+}
+
 let cached: LlmClient | null = null;
 
-/** Build (and cache) the production LLM client from server config. */
+/**
+ * Build (and cache) the LLM client for the configured provider. Reads env
+ * directly (not the full typed config) so the brain works regardless of which
+ * other services are set up.
+ *
+ * Provider selection: `LLM_PROVIDER` ("anthropic" | "gemini"), else inferred
+ * from whichever key is present (Anthropic preferred). No key → NullLlmClient.
+ */
 export function getLlmClient(): LlmClient {
   if (cached) return cached;
-  const config = getConfig();
-  const client = new Anthropic({ apiKey: config.server.ANTHROPIC_API_KEY });
-  cached = new AnthropicLlmClient(client, config.server.LLM_MODEL);
+  cached = buildLlmClient();
   return cached;
+}
+
+function buildLlmClient(): LlmClient {
+  const provider = (process.env.LLM_PROVIDER ?? "").toLowerCase();
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+
+  const useGemini = provider === "gemini" || (!provider && !anthropicKey && !!geminiKey);
+
+  if (useGemini && geminiKey) {
+    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    return new GeminiLlmClient(new GoogleGenAI({ apiKey: geminiKey }), model);
+  }
+  if (anthropicKey && provider !== "gemini") {
+    const model = process.env.LLM_MODEL || "claude-opus-4-8";
+    return new AnthropicLlmClient(new Anthropic({ apiKey: anthropicKey }), model);
+  }
+  return new NullLlmClient();
 }

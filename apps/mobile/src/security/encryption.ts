@@ -1,17 +1,19 @@
-// Encryption-at-rest for SENSITIVE fields (CLAUDE.md §6, §11; story 1.3 AC3).
+// Encryption-at-rest for SENSITIVE fields (CLAUDE.md §6, §11; story 1.3 AC3; GATE-3).
 //
-// expo-crypto exposes hashing + secure random, but NO symmetric AES primitive.
-// So the default provider below derives a per-message keystream by hashing
-// key || iv || counter (SHA-256) and XORs it against the plaintext bytes. The IV
-// is random per message and prepended to the ciphertext, so re-encrypting the
-// same value yields different ciphertext (semantic security against equality
-// leaks). This is a stopgap, NOT authenticated AES.
+// Real authenticated AES-256-GCM via @noble/ciphers (audited, pure-TS — works in
+// Hermes/Expo Go, where native crypto modules can't be loaded). Each message gets
+// a fresh random 96-bit nonce, prepended to the ciphertext+tag; GCM's tag means
+// any tampering or corruption is DETECTED on decrypt (decrypt throws), and the
+// random nonce gives semantic security (same value → different ciphertext).
 //
-// TODO(security): replace with SQLCipher or vetted AES-GCM before storing real
-// data; key must come from secure storage (expo-secure-store) — GATE-3
+// The 256-bit key comes from the platform secure store (expo-secure-store) via the
+// injected KeyStore. New writes use AES-GCM (the "g1:" prefix); decrypt still reads
+// the pre-GCM SHA-256-keystream format so data written before this upgrade survives.
 //
-// The crypto primitives (random bytes + SHA-256) are INJECTED so the pure
-// transform can be unit-tested in Node without loading expo-crypto natives.
+// Crypto primitives (secure random + SHA-256) are INJECTED so the pure transform
+// is unit-testable in Node without expo-crypto natives. @noble/ciphers is pure JS,
+// so the GCM path is testable there too.
+import { gcm } from "@noble/ciphers/aes.js";
 
 /** Abstracted key storage so we don't hard-depend on expo-secure-store (not installed). */
 export interface KeyStore {
@@ -33,8 +35,10 @@ export interface CryptoPrimitives {
   sha256(input: Uint8Array): Promise<Uint8Array>;
 }
 
-const IV_LENGTH = 16;
-const HASH_BLOCK = 32; // SHA-256 output length in bytes
+const NONCE_LENGTH = 12; // 96-bit GCM nonce (recommended)
+const GCM_PREFIX = "g1:"; // marks the AES-GCM format (legacy = no prefix)
+const IV_LENGTH = 16; // legacy keystream IV (decrypt-only, pre-GCM data)
+const HASH_BLOCK = 32; // SHA-256 output length in bytes (legacy)
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -101,29 +105,38 @@ function xor(a: Uint8Array, b: Uint8Array): Uint8Array {
 }
 
 /**
- * PURE core transform — encrypt. Given key + primitives, returns base64 of
- * (iv || ciphertext). Exported for unit testing without native modules.
+ * PURE core transform — encrypt with AES-256-GCM. Returns `"g1:" || base64(nonce
+ * || ciphertext || tag)`. The fresh random nonce makes ciphertext non-deterministic
+ * and the GCM tag authenticates it. Exported for unit testing (noble is pure JS).
  */
 export async function encryptWith(
   plaintext: string,
   key: Uint8Array,
   primitives: CryptoPrimitives,
 ): Promise<string> {
-  const iv = primitives.randomBytes(IV_LENGTH);
+  const nonce = primitives.randomBytes(NONCE_LENGTH);
   const data = textEncoder.encode(plaintext);
-  const keystream = await deriveKeystream(key, iv, data.length, primitives.sha256);
-  const cipher = xor(data, keystream);
-  return toBase64(concatBytes(iv, cipher));
+  const sealed = gcm(key, nonce).encrypt(data);
+  return GCM_PREFIX + toBase64(concatBytes(nonce, sealed));
 }
 
 /**
- * PURE core transform — decrypt. Inverse of encryptWith. Exported for testing.
+ * PURE core transform — decrypt. Reads the AES-GCM format (`g1:` prefix); on a
+ * bad key, tamper, or corruption GCM throws (fail-closed). Falls back to the
+ * legacy SHA-256-keystream format for data written before the GCM upgrade.
  */
 export async function decryptWith(
   ciphertext: string,
   key: Uint8Array,
   primitives: CryptoPrimitives,
 ): Promise<string> {
+  if (ciphertext.startsWith(GCM_PREFIX)) {
+    const bytes = fromBase64(ciphertext.slice(GCM_PREFIX.length));
+    const nonce = bytes.subarray(0, NONCE_LENGTH);
+    const sealed = bytes.subarray(NONCE_LENGTH);
+    return textDecoder.decode(gcm(key, nonce).decrypt(sealed));
+  }
+  // Legacy keystream (pre-GCM). Decrypt-only, so old local data still reads.
   const bytes = fromBase64(ciphertext);
   const iv = bytes.subarray(0, IV_LENGTH);
   const cipher = bytes.subarray(IV_LENGTH);

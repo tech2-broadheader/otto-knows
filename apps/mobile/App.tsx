@@ -30,8 +30,10 @@ import { configureNotifications } from "./src/notifications";
 import { rescheduleDay } from "./src/lib/reschedule";
 import { LOCAL_USER_ID } from "./src/lib/constants";
 import { LoadingState } from "./src/components/AsyncBoundary";
-import { OttoTabBar } from "./src/components/otto-ui";
+import { OttoTabBar } from "./src/design/kit";
 import { AuthProvider } from "./src/auth/AuthProvider";
+import { AppResetProvider } from "./src/lib/app-reset";
+import { useProOffer } from "./src/hooks/useProOffer";
 import { TodayScreen } from "./src/screens/TodayScreen";
 import { QuickAddScreen } from "./src/screens/QuickAddScreen";
 import { RemindersScreen } from "./src/screens/RemindersScreen";
@@ -43,9 +45,12 @@ import { TipsScreen } from "./src/screens/TipsScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { UpgradeScreen } from "./src/screens/UpgradeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
+import { HowItWorksScreen } from "./src/screens/HowItWorksScreen";
 
 type RootStackParamList = {
   Onboarding: undefined;
+  // Post-onboarding sign-up panel (skippable).
+  AuthGate: undefined;
   Main: undefined;
   // Modal paywall — sibling of Main so any tab/Settings screen can reach it
   // via navigation.navigate("Upgrade").
@@ -55,6 +60,8 @@ type RootStackParamList = {
   Settings: undefined;
   Optimizer: undefined;
   Tips: undefined;
+  // Replayable "how Otto works" tour (Settings → How Otto works).
+  HowItWorks: undefined;
   // Optional sign-in (ADR-002). Modal sibling of Main/Upgrade so any screen can
   // route an unauthenticated user here before a Pro action.
   Login: undefined;
@@ -69,6 +76,8 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
  * green button; headers are off (each screen draws its own AppHeader).
  */
 function MainTabs(): React.JSX.Element {
+  // After a few sessions, a free user gets a one-time Pro offer (calm, never naggy).
+  useProOffer();
   return (
     <Tab.Navigator
       screenOptions={{ headerShown: false }}
@@ -85,7 +94,8 @@ function MainTabs(): React.JSX.Element {
 
 export default function App(): React.JSX.Element {
   // "booting" while we init the store + decide first-run; then onboarding | main.
-  const [phase, setPhase] = useState<"booting" | "onboarding" | "main">("booting");
+  // Flow: booting → onboarding (first run) → auth (sign-up panel, skippable) → main.
+  const [phase, setPhase] = useState<"booting" | "onboarding" | "auth" | "main">("booting");
 
   // OTTO type system: Bricolage Grotesque (display), Plus Jakarta Sans (body),
   // Space Mono (eyebrows/tabular). Gate render until loaded so text never flashes
@@ -130,14 +140,21 @@ export default function App(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <NavigationContainer>
+        <AppResetProvider reset={() => setPhase("onboarding")}>
+          <NavigationContainer>
           {phase === "booting" || !fontsLoaded ? (
             <LoadingState label="Starting Otto" />
           ) : (
             <RootStack.Navigator screenOptions={{ headerShown: false }}>
               {phase === "onboarding" ? (
                 <RootStack.Screen name="Onboarding">
-                  {() => <OnboardingScreen onComplete={() => setPhase("main")} />}
+                  {() => <OnboardingScreen onComplete={() => setPhase("auth")} />}
+                </RootStack.Screen>
+              ) : phase === "auth" ? (
+                // Right after onboarding: offer to create an account (skippable —
+                // free tier stays anonymous per ADR-002). Either path → main.
+                <RootStack.Screen name="AuthGate">
+                  {() => <LoginScreen initialMode="sign-up" onDone={() => setPhase("main")} />}
                 </RootStack.Screen>
               ) : (
                 <>
@@ -147,19 +164,19 @@ export default function App(): React.JSX.Element {
                     component={UpgradeScreen}
                     options={{ presentation: "modal" }}
                   />
-                  <RootStack.Screen
-                    name="Login"
-                    component={LoginScreen}
-                    options={{ presentation: "modal" }}
-                  />
+                  <RootStack.Screen name="Login" options={{ presentation: "modal" }}>
+                    {({ navigation }) => <LoginScreen onDone={() => navigation.goBack()} />}
+                  </RootStack.Screen>
                   <RootStack.Screen name="Settings" component={SettingsScreen} />
                   <RootStack.Screen name="Optimizer" component={OptimizerScreen} />
                   <RootStack.Screen name="Tips" component={TipsScreen} />
+                  <RootStack.Screen name="HowItWorks" component={HowItWorksScreen} />
                 </>
               )}
             </RootStack.Navigator>
           )}
-        </NavigationContainer>
+          </NavigationContainer>
+        </AppResetProvider>
       </AuthProvider>
       <StatusBar style="auto" />
     </SafeAreaProvider>

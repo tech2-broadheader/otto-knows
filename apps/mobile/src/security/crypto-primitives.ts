@@ -17,7 +17,10 @@ export const expoCryptoPrimitives: CryptoPrimitives = {
     return Crypto.getRandomBytes(byteCount);
   },
   async sha256(input: Uint8Array): Promise<Uint8Array> {
-    const buffer = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, input);
+    // Copy into a fresh ArrayBuffer-backed view so the type is Uint8Array<ArrayBuffer>
+    // (TS 5.9 made Uint8Array generic over its buffer; digest wants a BufferSource).
+    const data = new Uint8Array(input);
+    const buffer = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, data);
     return new Uint8Array(buffer);
   },
 };
@@ -64,10 +67,10 @@ function keyFromBase64(value: string): Uint8Array {
  * regenerating (the previous ciphertext becomes unreadable, but the store stays
  * functional rather than throwing on every access).
  *
- * NOTE (still GATE-3): this only fixes KEY persistence. The symmetric cipher in
- * encryption.ts remains the documented SHA-256-keystream stopgap — see the
- * `TODO(security): … AES-GCM / SQLCipher … GATE-3` comment there, which stays in
- * place because expo-crypto exposes no AES primitive.
+ * Pairs with the real AES-256-GCM cipher in encryption.ts (@noble/ciphers): this
+ * provides the persisted 256-bit key, that authenticates + encrypts the data.
+ * GATE-3's technical encryption is now in place; the remaining GATE-3 item is the
+ * DPA consent/encryption review (process, not code).
  */
 export function createSecureStoreKeyStore(): KeyStore {
   let key: Uint8Array | undefined;

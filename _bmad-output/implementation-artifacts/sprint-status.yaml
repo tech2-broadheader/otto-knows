@@ -22,7 +22,7 @@ development_status:
   1-1-monorepo-tooling-scaffold: done
   1-2-shared-zod-contracts: done
   1-3-local-store-sqlite-drizzle: done
-  1-4-consent-privacy-spine: in-progress   # consent UI + audit + persistent SecureStore key done; remaining: real AES-GCM/SQLCipher cipher + GATE-3 (DPA review)
+  1-4-consent-privacy-spine: in-progress   # consent UI + audit + persistent SecureStore key + real AES-256-GCM at rest (@noble/ciphers, authenticated, legacy-decrypt fallback) done; remaining: GATE-3 DPA consent/encryption review (process) + account deletion
   epic-1-retrospective: optional
 
   epic-2: done

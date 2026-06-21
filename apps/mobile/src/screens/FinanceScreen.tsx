@@ -3,18 +3,37 @@
 // a clear upgrade prompt at the cap. Logic lives in useFinance; money is parsed
 // to centavos at this UI edge and formatted back for display.
 //
-// Visual: OTTO Money design — a budget Ring summary card, an amber "trending
-// over" note when real spend is pacing past budget, the Bills list, Recent
-// transactions, and the add forms revealed inline below.
+// Visual: OTTO Money design (otto/app-screens.jsx FinanceScreen), ported to RN
+// inline styles via the design kit — a budget Ring summary card, an amber
+// "trending over" note when real spend is pacing past budget, the Bills list,
+// Recent transactions, and the add forms revealed inline below. Data logic is
+// unchanged (useFinance); only the look is the inline-style kit (reliable on SDK
+// 54, unlike the prior NativeWind pass).
 import { useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { View, Text } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import type { IncomeCadence } from "@otto/schemas";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { useUpgradeNavigation } from "../hooks/useUpgradeNavigation";
 import { useFinance } from "../hooks/useFinance";
 import { AsyncBoundary } from "../components/AsyncBoundary";
-import { Banner, Button, Card, Icon, LabeledInput, OC, Pill, SectionLabel } from "../components/ui";
-import { Ring, ScreenContainer, ScreenHeader } from "../components/otto-ui";
+import {
+  Screen,
+  AppHeader,
+  Card,
+  SectionLabel,
+  Display,
+  Pill,
+  Ring,
+  AddButton,
+  Field,
+  TextField,
+  PrimaryButton,
+  GhostButton,
+  ProGate,
+} from "../design/kit";
+import { Icon } from "../design/Icon";
+import { OC, FONT, RADIUS, tint } from "../design/theme";
 import { formatPeso, parsePesoToCentavos } from "../lib/money";
 import { FREE_CAPS, upgradePromptFor } from "../lib/caps";
 import { todayDate } from "../lib/datetime";
@@ -27,8 +46,11 @@ function formatPesoWhole(amountMinor: number): string {
   return `₱${Math.round(amountMinor / 100).toLocaleString("en-PH")}`;
 }
 
+type Nav = { navigate: (s: "Upgrade" | "Settings") => void };
+
 export function FinanceScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
+  const navigation = useNavigation() as unknown as Nav;
   const goToUpgrade = useUpgradeNavigation();
   const { isPro } = useAuth();
   const finance = useFinance(deps);
@@ -131,234 +153,295 @@ export function FinanceScreen(): React.JSX.Element {
   }, [summary]);
 
   return (
-    <ScreenContainer>
-      <ScreenHeader title="Money" sub={`${summary.month} budget`} />
+    <Screen>
+      <AppHeader
+        title="Money"
+        sub={`${summary.month} budget`}
+        isPro={isPro}
+        onUpgrade={() => navigation.navigate("Upgrade")}
+        onSettings={() => navigation.navigate("Settings")}
+      />
 
-      <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Loading finances">
-        {/* Budget ring */}
-        <View className="mt-3.5">
-          <Card>
-            <View className="flex-row items-center gap-[18px]">
-              <Ring pct={pct} value={pctLabel} label="of budget" />
-              <View className="flex-1">
-                <Text className="font-body-bold text-[12.5px] text-ink-500">Spent this month</Text>
-                <Text className="mt-0.5 font-display text-[30px] text-ink">
-                  {formatPesoWhole(summary.totalSpentMinor)}
+      <View style={{ paddingHorizontal: 18 }}>
+        <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Loading finances">
+          {/* Budget ring */}
+          <Card style={{ marginTop: 14, flexDirection: "row", alignItems: "center", gap: 18 }}>
+            <Ring pct={pct} value={pctLabel} label="of budget" />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.ink500 }}>
+                Spent this month
+              </Text>
+              <Display style={{ fontSize: 30, marginTop: 2 }}>
+                {formatPesoWhole(summary.totalSpentMinor)}
+              </Display>
+              {summary.totalLimitMinor > 0 ? (
+                <Text style={{ fontFamily: FONT.body, fontSize: 13, color: OC.ink500, marginTop: 2 }}>
+                  of {formatPesoWhole(summary.totalLimitMinor)} ·{" "}
+                  <Text style={{ fontFamily: FONT.bodyBold, color: OC.green }}>
+                    {formatPesoWhole(Math.max(remainingMinor, 0))} left
+                  </Text>
                 </Text>
-                {summary.totalLimitMinor > 0 ? (
-                  <Text className="mt-0.5 font-body text-[13px] text-ink-500">
-                    of {formatPesoWhole(summary.totalLimitMinor)} ·{" "}
-                    <Text className="font-body-bold text-green">
-                      {formatPesoWhole(Math.max(remainingMinor, 0))} left
-                    </Text>
-                  </Text>
-                ) : (
-                  <Text className="mt-0.5 font-body text-[13px] text-ink-500">
-                    Add a budget category to track this.
-                  </Text>
-                )}
+              ) : (
+                <Text style={{ fontFamily: FONT.body, fontSize: 13, color: OC.ink500, marginTop: 2 }}>
+                  Add a budget category to track this.
+                </Text>
+              )}
+            </View>
+          </Card>
+
+          {/* Trending-over note — only when real spend is pacing over budget */}
+          {overBudget ? (
+            <View
+              style={{
+                marginTop: 14,
+                backgroundColor: OC.amberBg,
+                borderRadius: 16,
+                paddingHorizontal: 15,
+                paddingVertical: 13,
+                flexDirection: "row",
+                gap: 11,
+                alignItems: "flex-start",
+              }}
+            >
+              <View style={{ marginTop: 1 }}>
+                <Icon name="trend" size={20} color={OC.amber} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: FONT.bodyBold, fontSize: 13.5, color: OC.amberInk }}>
+                  Trending a little over
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: FONT.body,
+                    fontSize: 12.5,
+                    lineHeight: 18,
+                    color: OC.amberInk,
+                    marginTop: 2,
+                  }}
+                >
+                  {isPro
+                    ? "Easing off where you can keeps you in range."
+                    : "Otto can forecast where this lands — that's a Pro power."}
+                </Text>
               </View>
             </View>
-          </Card>
-        </View>
+          ) : null}
 
-        {/* Trending-over note — only when real spend is pacing over budget */}
-        {overBudget ? (
-          <View className="mt-3.5 flex-row items-start gap-3 rounded-inner bg-amber-bg px-4 py-3">
-            <View className="mt-0.5">
-              <Icon name="trend" size={20} color={OC.amber} />
-            </View>
-            <View className="flex-1">
-              <Text className="font-body-bold text-[13.5px] text-amber-ink">
-                Trending a little over
-              </Text>
-              <Text className="mt-0.5 font-body text-[12.5px] leading-[18px] text-amber-ink">
-                {isPro
-                  ? "Easing off where you can keeps you in range."
-                  : "Otto can forecast where this lands — that's a Pro power."}
-              </Text>
-            </View>
+          {/* Bills */}
+          <View style={{ marginTop: 22 }}>
+            <SectionLabel
+              right={
+                <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
+                  {bills.length} of {FREE_CAPS.bills} free
+                </Text>
+              }
+            >
+              Bills
+            </SectionLabel>
+            <Card pad={16} style={{ paddingTop: 4, paddingBottom: 4 }}>
+              {bills.length === 0 ? (
+                <Text style={{ paddingVertical: 16, fontFamily: FONT.body, fontSize: 13, color: OC.ink500 }}>
+                  No bills yet.
+                </Text>
+              ) : (
+                bills.map((bill, index) => {
+                  const tone = bill.isPaid ? OC.green : OC.sky;
+                  return (
+                    <View
+                      key={bill.id}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                        paddingVertical: 13,
+                        borderBottomWidth: index < bills.length - 1 ? 1 : 0,
+                        borderBottomColor: OC.line,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 11,
+                          backgroundColor: tint(tone),
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Icon name="peso" size={18} color={tone} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
+                          {bill.name}
+                        </Text>
+                        <Text style={{ fontFamily: FONT.body, fontSize: 12, color: OC.ink500, marginTop: 1 }}>
+                          Due {bill.dueDate}
+                        </Text>
+                      </View>
+                      {bill.isPaid ? <Pill tone="green">Paid</Pill> : null}
+                      <Display style={{ fontSize: 16, fontVariant: ["tabular-nums"] }}>
+                        {formatPeso(bill.amount.amountMinor)}
+                      </Display>
+                    </View>
+                  );
+                })
+              )}
+            </Card>
+            {billsAtCap ? (
+              <View style={{ marginTop: 12 }}>
+                <ProGate onUpgrade={goToUpgrade}>
+                  <Display style={{ fontSize: 17, color: "#fff", lineHeight: 21 }}>
+                    At your {FREE_CAPS.bills}-bill limit
+                  </Display>
+                  <Text style={{ fontSize: 13.5, color: OC.sage, marginTop: 6, lineHeight: 20, fontFamily: FONT.body }}>
+                    {upgradePromptFor("bills")}
+                  </Text>
+                </ProGate>
+              </View>
+            ) : null}
           </View>
-        ) : null}
 
-        {/* Bills */}
-        <View className="mt-5">
-          <SectionLabel
-            right={
-              <Text className="font-body-semibold text-[11.5px] text-ink-400">
-                {bills.length} of {FREE_CAPS.bills} free
-              </Text>
-            }
-          >
-            Bills
-          </SectionLabel>
-          <Card pad="px-4 py-1">
-            {bills.length === 0 ? (
-              <Text className="py-4 font-body text-[13px] text-ink-500">No bills yet.</Text>
-            ) : (
-              bills.map((bill, index) => (
-                <View
-                  key={bill.id}
-                  className={`flex-row items-center gap-3 py-3 ${index < bills.length - 1 ? "border-b border-line" : ""}`}
-                >
+          {/* Add a bill (opens the inline add forms) */}
+          {!showForms ? (
+            <AddButton label="Add a bill" onPress={() => setShowForms(true)} />
+          ) : null}
+
+          {/* Recent transactions */}
+          <View style={{ marginTop: 20 }}>
+            <SectionLabel>Recent</SectionLabel>
+            <Card pad={16} style={{ paddingTop: 4, paddingBottom: 4 }}>
+              {transactions.length === 0 ? (
+                <Text style={{ paddingVertical: 16, fontFamily: FONT.body, fontSize: 13, color: OC.ink500 }}>
+                  No transactions yet.
+                </Text>
+              ) : (
+                transactions.slice(0, 6).map((tx, index, arr) => (
                   <View
-                    className="h-[38px] w-[38px] items-center justify-center rounded-inner"
-                    style={{ backgroundColor: `${bill.isPaid ? OC.green : OC.sky}1a` }}
+                    key={tx.id}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 12,
+                      paddingVertical: 12,
+                      borderBottomWidth: index < arr.length - 1 ? 1 : 0,
+                      borderBottomColor: OC.line,
+                    }}
                   >
-                    <Icon name="peso" size={18} color={bill.isPaid ? OC.green : OC.sky} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14, color: OC.ink }}>
+                        {tx.description ?? "Transaction"}
+                      </Text>
+                    </View>
+                    <Display style={{ fontSize: 15, fontVariant: ["tabular-nums"] }}>
+                      -{formatPeso(tx.amount.amountMinor)}
+                    </Display>
                   </View>
-                  <View className="flex-1">
-                    <Text className="font-body-bold text-[14.5px] text-ink">{bill.name}</Text>
-                    <Text className="mt-px font-body text-[12px] text-ink-500">
-                      Due {bill.dueDate}
-                    </Text>
+                ))
+              )}
+            </Card>
+          </View>
+
+          {/* Add forms (collapsible — keeps every entry path intact) */}
+          {showForms ? (
+            <View style={{ marginTop: 16, gap: 16 }}>
+              {formError ? (
+                <View
+                  style={{
+                    backgroundColor: OC.amberBg,
+                    borderRadius: RADIUS.inner,
+                    paddingHorizontal: 14,
+                    paddingVertical: 11,
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 9,
+                  }}
+                >
+                  <View style={{ marginTop: 1 }}>
+                    <Icon name="trend" size={17} color={OC.amber} />
                   </View>
-                  {bill.isPaid ? <Pill tone="green">Paid</Pill> : null}
-                  <Text className="font-display text-[16px] text-ink">
-                    {formatPeso(bill.amount.amountMinor)}
+                  <Text style={{ flex: 1, fontFamily: FONT.bodySemi, fontSize: 12.5, lineHeight: 18, color: OC.amberInk }}>
+                    {formError}
                   </Text>
                 </View>
-              ))
-            )}
-          </Card>
-          {billsAtCap ? (
-            <View className="mt-2">
-              <Banner message={upgradePromptFor("bills")} tone="warning" />
-              <Button label="Upgrade to Pro" onPress={goToUpgrade} />
+              ) : null}
+
+              <Card>
+                <Display style={{ fontSize: 17, marginBottom: 14 }}>Add a transaction</Display>
+                <Field label="Amount (₱)">
+                  <TextField
+                    value={txAmount}
+                    onChangeText={setTxAmount}
+                    placeholder="0.00"
+                    prefix="₱"
+                  />
+                </Field>
+                <Field label="Description (optional)">
+                  <TextField value={txDesc} onChangeText={setTxDesc} placeholder="e.g. Groceries" />
+                </Field>
+                <PrimaryButton label="Add transaction" onPress={() => void handleAddTx()} />
+              </Card>
+
+              <Card>
+                <Display style={{ fontSize: 17, marginBottom: 14 }}>
+                  Bills ({bills.length}/{FREE_CAPS.bills})
+                </Display>
+                {billsAtCap ? (
+                  <Text style={{ fontFamily: FONT.body, fontSize: 13, lineHeight: 19, color: OC.ink500 }}>
+                    {upgradePromptFor("bills")}
+                  </Text>
+                ) : (
+                  <View>
+                    <Field label="Bill name">
+                      <TextField value={billName} onChangeText={setBillName} placeholder="e.g. Electric" />
+                    </Field>
+                    <Field label="Amount (₱)">
+                      <TextField value={billAmount} onChangeText={setBillAmount} placeholder="0.00" prefix="₱" />
+                    </Field>
+                    <Field label="Due date (YYYY-MM-DD)">
+                      <TextField value={billDue} onChangeText={setBillDue} placeholder="2026-06-16" />
+                    </Field>
+                    <PrimaryButton label="Add bill" onPress={() => void handleAddBill()} />
+                  </View>
+                )}
+              </Card>
+
+              <Card>
+                <Display style={{ fontSize: 17, marginBottom: 14 }}>
+                  Budget categories ({categories.length}/{FREE_CAPS.budgetCategories})
+                </Display>
+                {categoriesAtCap ? (
+                  <Text style={{ fontFamily: FONT.body, fontSize: 13, lineHeight: 19, color: OC.ink500 }}>
+                    {upgradePromptFor("budgetCategories")}
+                  </Text>
+                ) : (
+                  <View>
+                    <Field label="Category name">
+                      <TextField value={catName} onChangeText={setCatName} placeholder="e.g. Food" />
+                    </Field>
+                    <Field label="Monthly limit (₱, optional)">
+                      <TextField value={catLimit} onChangeText={setCatLimit} placeholder="0.00" prefix="₱" />
+                    </Field>
+                    <PrimaryButton label="Add category" onPress={() => void handleAddCategory()} />
+                  </View>
+                )}
+              </Card>
+
+              <Card>
+                <Display style={{ fontSize: 17, marginBottom: 14 }}>Income ({income.length})</Display>
+                <Field label="Source">
+                  <TextField value={incomeSource} onChangeText={setIncomeSource} placeholder="e.g. Salary" />
+                </Field>
+                <Field label="Amount (₱)">
+                  <TextField value={incomeAmount} onChangeText={setIncomeAmount} placeholder="0.00" prefix="₱" />
+                </Field>
+                <PrimaryButton label="Add income" onPress={() => void handleAddIncome()} />
+              </Card>
+
+              <GhostButton label="Done" onPress={() => setShowForms(false)} />
             </View>
           ) : null}
-        </View>
-
-        {/* Recent transactions */}
-        <View className="mt-5">
-          <SectionLabel>Recent</SectionLabel>
-          <Card pad="px-4 py-1">
-            {transactions.length === 0 ? (
-              <Text className="py-4 font-body text-[13px] text-ink-500">No transactions yet.</Text>
-            ) : (
-              transactions.slice(0, 6).map((tx, index, arr) => (
-                <View
-                  key={tx.id}
-                  className={`flex-row items-center gap-3 py-3 ${index < arr.length - 1 ? "border-b border-line" : ""}`}
-                >
-                  <View className="flex-1">
-                    <Text className="font-body-bold text-[14px] text-ink">
-                      {tx.description ?? "Transaction"}
-                    </Text>
-                  </View>
-                  <Text className="font-display text-[15px] text-ink">
-                    -{formatPeso(tx.amount.amountMinor)}
-                  </Text>
-                </View>
-              ))
-            )}
-          </Card>
-        </View>
-
-        {/* Add forms (collapsible — keeps every entry path intact) */}
-        {showForms ? (
-          <View className="mt-4 gap-4">
-            {formError ? <Banner message={formError} tone="warning" /> : null}
-
-            <Card title="Add a transaction">
-              <LabeledInput
-                label="Amount (₱)"
-                value={txAmount}
-                onChangeText={setTxAmount}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-              />
-              <LabeledInput
-                label="Description (optional)"
-                value={txDesc}
-                onChangeText={setTxDesc}
-                placeholder="e.g. Groceries"
-              />
-              <Button label="Add transaction" onPress={() => void handleAddTx()} />
-            </Card>
-
-            <Card title={`Bills (${bills.length}/${FREE_CAPS.bills})`}>
-              {billsAtCap ? (
-                <Banner message={upgradePromptFor("bills")} tone="warning" />
-              ) : (
-                <View>
-                  <LabeledInput
-                    label="Bill name"
-                    value={billName}
-                    onChangeText={setBillName}
-                    placeholder="e.g. Electric"
-                  />
-                  <LabeledInput
-                    label="Amount (₱)"
-                    value={billAmount}
-                    onChangeText={setBillAmount}
-                    placeholder="0.00"
-                    keyboardType="decimal-pad"
-                  />
-                  <LabeledInput
-                    label="Due date (YYYY-MM-DD)"
-                    value={billDue}
-                    onChangeText={setBillDue}
-                  />
-                  <Button label="Add bill" onPress={() => void handleAddBill()} />
-                </View>
-              )}
-            </Card>
-
-            <Card title={`Budget categories (${categories.length}/${FREE_CAPS.budgetCategories})`}>
-              {categoriesAtCap ? (
-                <Banner message={upgradePromptFor("budgetCategories")} tone="warning" />
-              ) : (
-                <View>
-                  <LabeledInput
-                    label="Category name"
-                    value={catName}
-                    onChangeText={setCatName}
-                    placeholder="e.g. Food"
-                  />
-                  <LabeledInput
-                    label="Monthly limit (₱, optional)"
-                    value={catLimit}
-                    onChangeText={setCatLimit}
-                    placeholder="0.00"
-                    keyboardType="decimal-pad"
-                  />
-                  <Button label="Add category" onPress={() => void handleAddCategory()} />
-                </View>
-              )}
-            </Card>
-
-            <Card title={`Income (${income.length})`}>
-              <LabeledInput
-                label="Source"
-                value={incomeSource}
-                onChangeText={setIncomeSource}
-                placeholder="e.g. Salary"
-              />
-              <LabeledInput
-                label="Amount (₱)"
-                value={incomeAmount}
-                onChangeText={setIncomeAmount}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-              />
-              <Button label="Add income" onPress={() => void handleAddIncome()} />
-            </Card>
-
-            <Button label="Done" variant="ghost" onPress={() => setShowForms(false)} />
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => setShowForms(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Add money entries"
-            className="mt-4 flex-row items-center justify-center gap-2 rounded-inner border-[1.5px] border-dashed border-line-strong bg-surface py-3.5"
-          >
-            <Icon name="plus" size={18} color={OC.green} />
-            <Text className="font-body-extra text-[14.5px] text-green">Add a bill or expense</Text>
-          </Pressable>
-        )}
-      </AsyncBoundary>
-    </ScreenContainer>
+        </AsyncBoundary>
+      </View>
+    </Screen>
   );
 }

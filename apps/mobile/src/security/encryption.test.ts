@@ -39,12 +39,33 @@ describe("encryption core (pure)", () => {
     expect(await decryptWith(ciphertext, KEY, primitives)).toBe(original);
   });
 
-  it("produces different ciphertext for the same plaintext (random IV)", async () => {
+  it("produces different ciphertext for the same plaintext (random nonce)", async () => {
     const a = await encryptWith("same", KEY, primitives);
     const b = await encryptWith("same", KEY, primitives);
     expect(a).not.toBe(b);
     expect(await decryptWith(a, KEY, primitives)).toBe("same");
     expect(await decryptWith(b, KEY, primitives)).toBe("same");
+  });
+
+  it("writes the authenticated AES-GCM format", async () => {
+    const ciphertext = await encryptWith("secret", KEY, primitives);
+    expect(ciphertext.startsWith("g1:")).toBe(true);
+  });
+
+  it("rejects tampered ciphertext (GCM authentication)", async () => {
+    const ciphertext = await encryptWith("Pay Meralco ₱2,480", KEY, primitives);
+    // Flip one base64 char in the middle of the payload — GCM's tag must catch it.
+    const body = ciphertext.slice(3); // strip "g1:"
+    const i = Math.floor(body.length / 2);
+    const ch = body[i] === "A" ? "B" : "A";
+    const tampered = "g1:" + body.slice(0, i) + ch + body.slice(i + 1);
+    await expect(decryptWith(tampered, KEY, primitives)).rejects.toThrow();
+  });
+
+  it("fails to decrypt with the wrong key", async () => {
+    const ciphertext = await encryptWith("private", KEY, primitives);
+    const otherKey = new Uint8Array(nodeRandomBytes(32));
+    await expect(decryptWith(ciphertext, otherKey, primitives)).rejects.toThrow();
   });
 });
 

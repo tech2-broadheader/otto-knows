@@ -7,7 +7,9 @@ import { isAuthConfigured, supabase } from "./supabase";
 import { setAuthTokenProvider } from "../lib/api-client";
 
 type Entitlement = "free" | "pro" | "lifetime";
-export type AuthAction = { ok: boolean; message?: string };
+/** `needsConfirmation` is true when sign-up succeeded but the user must click an
+ * email confirmation link before a session exists (Supabase mailer_autoconfirm off). */
+export type AuthAction = { ok: boolean; message?: string; needsConfirmation?: boolean };
 
 export type AuthState = {
   status: "loading" | "anonymous" | "signed-in";
@@ -107,8 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }): React.JSX.E
       },
       signUp: async (email, password) => {
         if (!supabase) return NOT_CONFIGURED;
-        const { error } = await supabase.auth.signUp({ email, password });
-        return error ? { ok: false, message: error.message } : { ok: true };
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) return { ok: false, message: error.message };
+        // No session back ⇒ email confirmation is required before they can sign in.
+        return { ok: true, needsConfirmation: !data.session };
       },
       signOut: async () => {
         await supabase?.auth.signOut();

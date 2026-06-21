@@ -13,6 +13,7 @@ import { composeBriefing, serializeContextForLlm } from "@otto/core";
 import type { LlmClient } from "./client";
 import { PROPOSAL_TOOLS, toolCallToProposal } from "./tools";
 import { BRIEF_SYSTEM } from "./prompts";
+import { currentTimeContext } from "./time";
 
 /** Request contract for POST /api/llm/brief, composed from shared schemas. */
 export const briefRequestSchema = z.object({
@@ -64,7 +65,7 @@ export async function generateBriefing(
 
   const result = await llm.generate({
     system: BRIEF_SYSTEM,
-    userText: `${context}\n\nWrite the ${request.slot} briefing for ${clock.date}.`,
+    userText: `${currentTimeContext(clock.now)}\n\n${context}\n\nWrite the ${request.slot} briefing for ${clock.date}.`,
     tools: PROPOSAL_TOOLS,
     thinking: true,
     effort: "medium",

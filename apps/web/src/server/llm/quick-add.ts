@@ -8,6 +8,7 @@ import {
 import type { LlmClient } from "./client";
 import { PROPOSAL_TOOLS, toolCallToProposal } from "./tools";
 import { QUICK_ADD_SYSTEM } from "./prompts";
+import { currentTimeContext } from "./time";
 
 export { quickAddRequestSchema, quickAddResponseSchema };
 export type { QuickAddRequest, QuickAddResponse };
@@ -25,7 +26,7 @@ export async function generateQuickAdd(
 ): Promise<QuickAddResponse> {
   const result = await llm.generate({
     system: QUICK_ADD_SYSTEM,
-    userText: `Current time: ${now}\n\nNote: ${request.text}`,
+    userText: `${currentTimeContext(now)}\n\nNote: ${request.text}`,
     tools: PROPOSAL_TOOLS,
     effort: "low",
     maxTokens: 1024,

@@ -7,16 +7,27 @@
 // Pro-gated: when not Pro (or the backend is unconfigured / 401 / 403) a calm
 // ProGate / banner shows instead of the form. Nothing ever crashes.
 //
-// Visual: OTTO Optimizer design — Otto's bubble, the focus-emerald input + chips,
-// the thinking pulse, the proposed reshaped day as a TimelineRow card, the "Why
-// this works" mint note, Adjust / Apply, and the applied success state.
+// Visual: OTTO Optimizer design — Otto's voice prompt, the focus-emerald input +
+// chips, the thinking pulse, the proposed reshaped day as a TLRow card, the "Why
+// this works" mint note, Adjust / Apply, and the applied success state. Ported to
+// the inline-style design kit (reliable on SDK 54, unlike the prior NativeWind
+// pass) — logic unchanged.
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NewRoutineRequest, ScheduleChange } from "@otto/schemas";
 import { useOptimizer } from "../hooks/useOptimizer";
-import { Banner, Card, Icon, OC, type IconName, type OttoTone } from "../components/ui";
-import { OttoAvatar, ProGate, ScreenContainer, TimelineRow } from "../components/otto-ui";
+import {
+  Card,
+  OttoVoice,
+  OverlayScreen,
+  PrimaryButton,
+  ProGate,
+  Display,
+  TLRow,
+} from "../design/kit";
+import { Icon, type IconName } from "../design/Icon";
+import { OC, FONT, RADIUS, eyebrow } from "../design/theme";
 import { getApiBaseUrl } from "../lib/api-client";
 import { useAuth } from "../auth/AuthProvider";
 import { proErrorBanner } from "../lib/pro-feature";
@@ -29,7 +40,7 @@ const EXAMPLE_CHIPS: readonly string[] = [
 ];
 
 /** Icon + tone for a proposed change row (added = exercise/green, kept = sky). */
-function changeStyle(change: ScheduleChange): { icon: IconName; tone: OttoTone } {
+function changeStyle(change: ScheduleChange): { icon: IconName; tone: string } {
   if (change.action === "add") return { icon: "dumbbell", tone: "green" };
   if (change.action === "move") return { icon: "clock", tone: "green" };
   return { icon: "cal", tone: "sky" };
@@ -58,40 +69,6 @@ export function OptimizerScreen(): React.JSX.Element {
   const thinking = status === "proposing";
   const configured = getApiBaseUrl() !== null;
 
-  const BackHeader = (
-    <View className="flex-row items-center gap-2 px-[18px] pb-1.5 pt-2">
-      <Pressable
-        onPress={() => navigation.goBack()}
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        className="h-[38px] w-[38px] items-center justify-center rounded-inner border border-line bg-surface"
-      >
-        <Icon name="chevL" size={20} color={OC.ink700} />
-      </Pressable>
-      <Text className="font-display text-[19px] text-ink">Routine optimizer</Text>
-    </View>
-  );
-
-  // Pre-request gate: not entitled or no backend → calm message, no form.
-  if (!isPro || !configured) {
-    return (
-      <ScreenContainer>
-        {BackHeader}
-        <View className="mt-4">
-          {!isPro ? (
-            <ProGate
-              title="The optimizer is a Pro power"
-              body="Tell Otto what to make room for and it reshapes your day with reasoning — then waits for your yes."
-              onUpgrade={() => navigation.navigate("Upgrade")}
-            />
-          ) : (
-            <Banner tone="info" message={proErrorBanner("NOT_CONFIGURED", "").text} />
-          )}
-        </View>
-      </ScreenContainer>
-    );
-  }
-
   const handleRun = (value?: string): void => {
     const next = value ?? text;
     if (value !== undefined) setText(value);
@@ -109,45 +86,69 @@ export function OptimizerScreen(): React.JSX.Element {
   };
 
   return (
-    <ScreenContainer>
-      {BackHeader}
-
-      {status === "applied" ? (
-        <View className="mt-8 items-center">
-          <View className="h-16 w-16 items-center justify-center rounded-card bg-mist">
-            <Icon name="check" size={32} color={OC.green} />
+    <OverlayScreen title="Routine optimizer" onBack={() => navigation.goBack()}>
+      {/* Pre-request gate: not entitled or no backend → calm message, no form. */}
+      {!isPro || !configured ? (
+        <View style={{ marginTop: 8 }}>
+          {!isPro ? (
+            <ProGate onUpgrade={() => navigation.navigate("Upgrade")}>
+              <Display style={{ fontSize: 19, color: "#fff", lineHeight: 23 }}>
+                The optimizer is a Pro power
+              </Display>
+              <Text
+                style={{ fontSize: 13.5, color: OC.sage, marginTop: 6, lineHeight: 20, fontFamily: FONT.body }}
+              >
+                Tell Otto what to make room for and it reshapes your day with reasoning — then waits
+                for your yes.
+              </Text>
+            </ProGate>
+          ) : (
+            <Card>
+              <Text
+                style={{ fontFamily: FONT.bodySemi, fontSize: 13.5, lineHeight: 20, color: OC.skyInk }}
+              >
+                {proErrorBanner("NOT_CONFIGURED", "").text}
+              </Text>
+            </Card>
+          )}
+        </View>
+      ) : status === "applied" ? (
+        /* Applied success state */
+        <View style={{ marginTop: 24, alignItems: "center" }}>
+          <View
+            style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: OC.mist, alignItems: "center", justifyContent: "center", marginBottom: 14 }}
+          >
+            <Icon name="check" size={32} color={OC.green} stroke={2.6} />
           </View>
-          <Text className="mt-3.5 font-display text-[21px] text-ink">
-            Your day&apos;s reshaped.
-          </Text>
-          <Text className="mt-1.5 text-center font-body text-[14px] leading-[21px] text-ink-500">
+          <Display style={{ fontSize: 21, textAlign: "center" }}>Your day&apos;s reshaped.</Display>
+          <Text
+            style={{ fontSize: 14, color: OC.ink500, marginTop: 6, lineHeight: 21, textAlign: "center", fontFamily: FONT.body }}
+          >
             It&apos;s in. Otto will adapt the times as it learns when you actually move.
           </Text>
           <Pressable
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
             accessibilityLabel="Back to Today"
-            className="mt-5 rounded-btn bg-green px-6 py-3.5"
+            style={({ pressed }) => [
+              { marginTop: 18, backgroundColor: OC.green, borderRadius: RADIUS.btn, paddingVertical: 13, paddingHorizontal: 24, opacity: pressed ? 0.9 : 1 },
+            ]}
           >
-            <Text className="font-body-extra text-[14.5px] text-white">Back to Today</Text>
+            <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 14.5 }}>Back to Today</Text>
           </Pressable>
         </View>
       ) : (
         <>
-          {/* Otto's bubble */}
-          <View className="mt-3 flex-row items-start gap-3">
-            <OttoAvatar />
-            <View className="flex-1 rounded-[6px_18px_18px_18px] border border-line bg-surface px-4 py-3.5">
-              <Text className="font-body text-[14.5px] leading-[22px] text-ink-700">
-                What do you want to make room for? I&apos;ll work around what&apos;s already fixed.
-              </Text>
-            </View>
+          {/* Otto's voice prompt */}
+          <View style={{ marginTop: 4 }}>
+            <OttoVoice tone="light">
+              What do you want to make room for? I&apos;ll work around what&apos;s already fixed.
+            </OttoVoice>
           </View>
 
-          {/* Input */}
+          {/* Input — emerald border while thinking or focused */}
           <View
-            className="mt-4 rounded-card bg-surface px-4 py-3.5"
-            style={{ borderWidth: 2, borderColor: thinking || focused ? OC.emerald : OC.line }}
+            style={{ marginTop: 16, backgroundColor: OC.surface, borderRadius: RADIUS.card, borderWidth: 2, borderColor: thinking || focused ? OC.emerald : OC.line, paddingHorizontal: 16, paddingVertical: 14 }}
           >
             <TextInput
               value={text}
@@ -158,18 +159,20 @@ export function OptimizerScreen(): React.JSX.Element {
               placeholderTextColor={OC.ink400}
               multiline
               editable={!thinking}
-              className="min-h-[44px] font-body text-[15.5px] leading-[22px] text-ink"
+              style={{ minHeight: 44, fontFamily: FONT.body, fontSize: 15.5, lineHeight: 22, color: OC.ink, padding: 0 }}
               accessibilityLabel="What do you want to make room for?"
             />
-            <View className="mt-1.5 flex-row justify-end">
+            <View style={{ marginTop: 6, flexDirection: "row", justifyContent: "flex-end" }}>
               <Pressable
                 onPress={() => handleRun()}
                 disabled={!hasText || thinking}
                 accessibilityRole="button"
                 accessibilityLabel="Reshape my day"
-                className={`rounded-btn px-4 py-2.5 ${hasText && !thinking ? "bg-green" : "bg-line"}`}
+                style={({ pressed }) => [
+                  { backgroundColor: hasText && !thinking ? OC.green : OC.line, borderRadius: 11, paddingHorizontal: 16, paddingVertical: 9, opacity: pressed && hasText && !thinking ? 0.9 : 1 },
+                ]}
               >
-                <Text className="font-body-extra text-[13.5px] text-white">
+                <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 13.5 }}>
                   {thinking ? "Reshaping…" : "Reshape my day"}
                 </Text>
               </Pressable>
@@ -177,7 +180,7 @@ export function OptimizerScreen(): React.JSX.Element {
           </View>
 
           {/* Chips */}
-          <View className="mt-3 flex-row flex-wrap gap-2">
+          <View style={{ marginTop: 12, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {EXAMPLE_CHIPS.map((chip) => (
               <Pressable
                 key={chip}
@@ -185,18 +188,20 @@ export function OptimizerScreen(): React.JSX.Element {
                 disabled={thinking}
                 accessibilityRole="button"
                 accessibilityLabel={chip}
-                className="rounded-pill bg-mist px-3 py-2"
+                style={({ pressed }) => [
+                  { backgroundColor: OC.mist, borderRadius: RADIUS.pill, paddingHorizontal: 13, paddingVertical: 8, opacity: pressed ? 0.7 : 1 },
+                ]}
               >
-                <Text className="font-body-bold text-[12.5px] text-forest">{chip}</Text>
+                <Text style={{ color: OC.forest, fontFamily: FONT.bodyBold, fontSize: 12.5 }}>{chip}</Text>
               </Pressable>
             ))}
           </View>
 
-          {/* Thinking */}
+          {/* Thinking pulse */}
           {thinking ? (
-            <View className="mt-6 flex-row items-center justify-center gap-2.5">
-              <View className="h-2.5 w-2.5 rounded-full bg-emerald" />
-              <Text className="font-body-semibold text-[14px] text-ink-500">
+            <View style={{ marginTop: 24, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <View style={{ width: 9, height: 9, borderRadius: 99, backgroundColor: OC.emerald }} />
+              <Text style={{ fontFamily: FONT.bodySemi, fontSize: 14, color: OC.ink500 }}>
                 Reading your routine &amp; calendar…
               </Text>
             </View>
@@ -204,37 +209,42 @@ export function OptimizerScreen(): React.JSX.Element {
 
           {/* Error */}
           {status === "error" && error ? (
-            <View className="mt-5">
-              <Banner
-                tone={proErrorBanner(errorCode, error).tone}
-                message={proErrorBanner(errorCode, error).text}
-              />
+            <View style={{ marginTop: 20 }}>
+              <Card>
+                <Text
+                  style={{ fontFamily: FONT.bodySemi, fontSize: 13.5, lineHeight: 20, color: OC.coralInk }}
+                >
+                  {proErrorBanner(errorCode, error).text}
+                </Text>
+              </Card>
               <Pressable
                 onPress={discard}
                 accessibilityRole="button"
                 accessibilityLabel="Back"
-                className="mt-2 items-center rounded-btn border-[1.5px] border-line-strong py-3"
+                style={({ pressed }) => [
+                  { marginTop: 8, alignItems: "center", borderRadius: RADIUS.btn, borderWidth: 1.5, borderColor: OC.lineStrong, paddingVertical: 13, opacity: pressed ? 0.7 : 1 },
+                ]}
               >
-                <Text className="font-body-bold text-[14.5px] text-ink-700">Back</Text>
+                <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink700 }}>Back</Text>
               </Pressable>
             </View>
           ) : null}
 
           {/* Proposal */}
           {(status === "proposed" || status === "applying") && proposal ? (
-            <View className="mt-5">
-              <Text className="mb-2.5 font-mono-bold text-[10.5px] uppercase tracking-[1px] text-ink-400">
+            <View style={{ marginTop: 22 }}>
+              <Text style={[eyebrow, { fontSize: 10.5, marginBottom: 10 }]}>
                 Otto proposes a reshaped day
               </Text>
-              <Card pad="px-4 py-3.5">
+              <Card pad={16}>
                 {proposal.changes.map((change, index) => {
-                  const style = changeStyle(change);
+                  const s = changeStyle(change);
                   return (
-                    <TimelineRow
+                    <TLRow
                       key={`change-${index}`}
                       time={change.toTime}
-                      icon={style.icon}
-                      tone={style.tone}
+                      icon={s.icon}
+                      tone={s.tone}
                       title={change.label}
                       sub={changeSub(change)}
                       last={index === proposal.changes.length - 1}
@@ -243,41 +253,39 @@ export function OptimizerScreen(): React.JSX.Element {
                 })}
               </Card>
 
-              <View className="mt-3 rounded-inner bg-mist px-3.5 py-3">
-                <Text className="font-body text-[13px] leading-[19px] text-forest">
-                  <Text className="font-body-bold">Why this works: </Text>
+              <View
+                style={{ marginTop: 12, backgroundColor: OC.mist, borderRadius: RADIUS.inner, paddingHorizontal: 14, paddingVertical: 12 }}
+              >
+                <Text style={{ fontFamily: FONT.body, fontSize: 13, lineHeight: 20, color: OC.forest }}>
+                  <Text style={{ fontFamily: FONT.bodyBold }}>Why this works: </Text>
                   {proposal.summary}
                 </Text>
               </View>
 
-              <View className="mt-3.5 flex-row gap-2.5">
+              <View style={{ marginTop: 14, flexDirection: "row", gap: 10 }}>
                 <Pressable
                   onPress={discard}
                   disabled={status === "applying"}
                   accessibilityRole="button"
                   accessibilityLabel="Adjust"
-                  className="flex-1 items-center rounded-btn border-[1.5px] border-line-strong py-3.5"
+                  style={({ pressed }) => [
+                    { flex: 1, alignItems: "center", borderRadius: RADIUS.btn, borderWidth: 1.5, borderColor: OC.lineStrong, paddingVertical: 13, opacity: pressed ? 0.7 : 1 },
+                  ]}
                 >
-                  <Text className="font-body-bold text-[14.5px] text-ink-700">Adjust</Text>
+                  <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink700 }}>Adjust</Text>
                 </Pressable>
-                <Pressable
+                <PrimaryButton
+                  label={status === "applying" ? "Applying…" : "Apply to my day"}
+                  icon="check"
                   onPress={() => void apply()}
                   disabled={status === "applying"}
-                  accessibilityRole="button"
-                  accessibilityLabel="Apply to my day"
-                  style={{ flex: 1.5 }}
-                  className="flex-row items-center justify-center gap-2 rounded-btn bg-green py-3.5"
-                >
-                  <Icon name="check" size={18} color="#fff" />
-                  <Text className="font-body-extra text-[14.5px] text-white">
-                    {status === "applying" ? "Applying…" : "Apply to my day"}
-                  </Text>
-                </Pressable>
+                  style={{ flex: 1.5, paddingVertical: 13 }}
+                />
               </View>
             </View>
           ) : null}
         </>
       )}
-    </ScreenContainer>
+    </OverlayScreen>
   );
 }

@@ -1,0 +1,63 @@
+/* Dev playground — styles layer on top of the OTTO design tokens imported from
+   the marketing stylesheet (page.tsx imports marketing.css first for :root vars,
+   body, .btn, .pill, .card, .eyebrow). This file only adds the playground layout. */
+
+.pg { max-width: 760px; margin: 0 auto; padding: 56px 24px 96px; }
+.pg__head { margin-bottom: 28px; }
+.pg__head h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 5vw, 48px);
+  line-height: 1.02; letter-spacing: -.025em; color: var(--ink-900); margin: 12px 0 0; }
+.pg__head p { font-size: 17px; color: var(--ink-500); line-height: 1.55; margin: 14px 0 0; max-width: 56ch; }
+
+.pg__form { margin-top: 26px; }
+.pg__input {
+  width: 100%; min-height: 96px; resize: vertical;
+  font-family: var(--font-body); font-size: 16px; line-height: 1.5; color: var(--ink-900);
+  background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: var(--r-inner);
+  padding: 16px 18px; box-shadow: var(--sh-sm); outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.pg__input:focus { border-color: var(--otto-green); box-shadow: 0 0 0 4px rgba(0,122,51,.12); }
+.pg__actions { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+.pg__hint { font-size: 13px; color: var(--ink-400); }
+
+.pg__examples { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
+.chip {
+  font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--ink-700);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pill);
+  padding: 8px 14px; cursor: pointer; transition: all .15s ease;
+}
+.chip:hover { border-color: var(--otto-sage); color: var(--otto-green); background: rgba(102,179,161,.08); }
+
+.pg__error {
+  margin-top: 26px; background: var(--coral-bg); color: #a83323; border: 1px solid #f3c9c1;
+  border-radius: var(--r-inner); padding: 14px 18px; font-size: 14.5px; font-weight: 600;
+}
+.pg__empty { margin-top: 26px; color: var(--ink-500); font-size: 15px; }
+
+.pg__results { margin-top: 32px; }
+.pg__results-head { font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .12em; font-size: 12px; color: var(--ink-400); margin: 0 0 16px; }
+.pg__cards { display: grid; gap: 16px; }
+
+.pg-card { padding: 22px 22px 18px; }
+.pg-card.is-resolved { opacity: .55; }
+.pg-card__top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.pg-dot { width: 10px; height: 10px; border-radius: 999px; flex: 0 0 10px; }
+.pg-card__label { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--ink-900); letter-spacing: -.01em; }
+.pg-status { margin-left: auto; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-400); }
+.pg-status.accepted { color: var(--otto-green); }
+.pg-status.dismissed { color: var(--coral); }
+.pg-card__rationale { font-size: 14.5px; line-height: 1.5; color: var(--ink-700); margin: 0 0 14px; }
+
+.pg-card__rows { display: grid; gap: 7px; margin: 0 0 16px; }
+.pg-row { display: flex; gap: 12px; font-size: 14px; }
+.pg-row dt { flex: 0 0 88px; color: var(--ink-400); font-weight: 600; }
+.pg-row dd { margin: 0; color: var(--ink-900); font-weight: 600; }
+.pg-row dd.amt { font-family: var(--font-mono); }
+
+.pg-card__buttons { display: flex; gap: 10px; }
+.pg-mini { padding: 9px 18px; font-size: 13px; }
+
+.pg__foot { margin-top: 40px; font-size: 12.5px; color: var(--ink-400); line-height: 1.6;
+  border-top: 1px solid var(--line); padding-top: 18px; }

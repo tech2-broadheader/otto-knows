@@ -174,3 +174,32 @@ export function ensureSchema(): void {
     handle.execSync(statement);
   }
 }
+
+/** Every table name — kept in sync with the schema; used by wipeAllData(). */
+const ALL_TABLES: readonly string[] = [
+  "routine",
+  "routine_anchors",
+  "reminders",
+  "medications",
+  "bills",
+  "income",
+  "transactions",
+  "budget_categories",
+  "calendar_events",
+  "context_items",
+  "consents",
+  "audit_entries",
+];
+
+/**
+ * Delete every row from every table (account/data deletion — DPA erasure). The
+ * schema (empty tables) remains so the app keeps working; on next boot, with no
+ * routine, the app returns to onboarding.
+ */
+export function wipeAllData(): void {
+  const handle = rawDb ?? openDatabaseSync(DATABASE_NAME);
+  rawDb = handle;
+  for (const table of ALL_TABLES) {
+    handle.execSync(`DELETE FROM ${table};`);
+  }
+}

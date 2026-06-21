@@ -1,21 +1,44 @@
-// Medications (Health). List / add / edit / delete medications via the sensitive
-// medication repository. Fields: name, dosage, dose times (one or more HH:mm) and
-// recurrence. Validated with medicationSchema (in the hook). Free cap enforced
-// with a ProGate at the cap. Logic lives in useMedications; this screen is
-// presentational + form state only.
+// Medications (Health) — OTTO Health design (otto/app-screens.jsx HealthScreen),
+// ported to RN inline styles via the design kit. List / add / edit / delete
+// medications via the sensitive medication repository. Fields: name, dosage, dose
+// times (one or more HH:mm) and recurrence. Validated with medicationSchema (in
+// the hook). Free cap enforced with a ProGate at the cap. Logic lives in
+// useMedications; this screen is presentational + form state only.
 //
-// Visual: OTTO Health design — a dark "Next dose" hero, the meds as CheckRows
-// (tap a row to edit it) with a refill Pill when stock is low, and a ProGate at
-// the free 3-med cap. The add/edit form reveals inline below the list.
+// Visual: a dark "Next dose" hero (GradientCard), the meds as CheckRows (tap a row
+// to edit it) with a refill Pill when stock is low, a dashed "Add a medication"
+// affordance, and a ProGate at the free 3-med cap. The add/edit form reveals
+// inline below the list. Only the look changed; data logic is unchanged.
 import { useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import type { Medication } from "@otto/schemas";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { useMedications, type MedicationInput } from "../hooks/useMedications";
-import { AsyncBoundary, EmptyState } from "../components/AsyncBoundary";
-import { Banner, Button, Card, Icon, LabeledInput, OC, Pill, SectionLabel } from "../components/ui";
-import { CheckRow, ProGate, ScreenContainer, ScreenHeader } from "../components/otto-ui";
+import { AsyncBoundary } from "../components/AsyncBoundary";
+import {
+  Screen,
+  AppHeader,
+  GradientCard,
+  SectionLabel,
+  Card,
+  CheckRow,
+  Pill,
+  AddButton,
+  ProGate,
+  Display,
+  EmptyState,
+  Field,
+  TextField,
+  ChoicePills,
+  SaveBar,
+  GhostButton,
+  type Option,
+} from "../design/kit";
+import { Icon } from "../design/Icon";
+import { OC, FONT } from "../design/theme";
+import { useAuth } from "../auth/AuthProvider";
 import { useUpgradeNavigation } from "../hooks/useUpgradeNavigation";
+import { useSettingsNavigation } from "../hooks/useSettingsNavigation";
 import { FREE_CAPS } from "../lib/caps";
 import {
   MED_RECURRENCE_FREQS,
@@ -32,45 +55,20 @@ const FREQ_LABEL: Record<MedRecurrenceFreq, string> = {
   monthly: "Monthly",
 };
 
+/** Recurrence options for the ChoicePills selector. */
+const FREQ_OPTIONS: Option[] = MED_RECURRENCE_FREQS.map((freq) => ({
+  k: freq,
+  l: FREQ_LABEL[freq],
+}));
+
 /** Low-stock threshold (doses) that surfaces a "refill" pill on the row. */
 const REFILL_THRESHOLD = 7;
-
-/** A simple single-select chip row for the recurrence frequency. */
-function FreqSelect({
-  value,
-  onChange,
-}: {
-  value: MedRecurrenceFreq;
-  onChange: (next: MedRecurrenceFreq) => void;
-}): React.JSX.Element {
-  return (
-    <View className="mb-3">
-      <Text className="mb-1 font-body-medium text-sm text-ink-500">Repeats</Text>
-      <View className="flex-row flex-wrap gap-2">
-        {MED_RECURRENCE_FREQS.map((freq) => (
-          <Pressable
-            key={freq}
-            onPress={() => onChange(freq)}
-            accessibilityRole="button"
-            accessibilityLabel={FREQ_LABEL[freq]}
-            accessibilityState={{ selected: freq === value }}
-            className={`rounded-pill px-3 py-1.5 ${freq === value ? "bg-green" : "bg-mist"}`}
-          >
-            <Text
-              className={`font-body-bold text-[12.5px] ${freq === value ? "text-white" : "text-forest"}`}
-            >
-              {FREQ_LABEL[freq]}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-}
 
 export function MedicationsScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
   const goToUpgrade = useUpgradeNavigation();
+  const goToSettings = useSettingsNavigation();
+  const { isPro } = useAuth();
   const {
     state,
     error,
@@ -145,141 +143,224 @@ export function MedicationsScreen(): React.JSX.Element {
   }, [medications]);
 
   return (
-    <ScreenContainer>
-      <ScreenHeader title="Health" sub="Medications" />
+    <Screen>
+      <AppHeader
+        title="Health"
+        sub="Medications"
+        isPro={isPro}
+        onUpgrade={goToUpgrade}
+        onSettings={goToSettings}
+      />
 
-      <AsyncBoundary
-        state={state}
-        error={error}
-        onRetry={reload}
-        loadingLabel="Loading medications"
-      >
-        {/* Next dose hero */}
-        {nextDose ? (
-          <View className="mt-3.5 overflow-hidden rounded-card bg-dark p-[18px]">
-            <Text className="font-mono-bold text-[11px] uppercase tracking-[1.6px] text-emerald">
-              Next dose
-            </Text>
-            <View className="mt-2.5 flex-row items-end justify-between">
-              <View className="flex-1 pr-3">
-                <Text className="font-display text-[26px] leading-[28px] text-white">
-                  {nextDose.med.name}
-                  {nextDose.med.dosage ? ` ${nextDose.med.dosage}` : ""}
+      <View style={{ paddingHorizontal: 18 }}>
+        <AsyncBoundary
+          state={state}
+          error={error}
+          onRetry={reload}
+          loadingLabel="Loading medications"
+        >
+          {/* Next dose hero */}
+          {nextDose ? (
+            <View style={{ marginTop: 14 }}>
+              <GradientCard>
+                <Text
+                  style={{
+                    fontFamily: FONT.monoBold,
+                    fontSize: 11,
+                    letterSpacing: 1.6,
+                    textTransform: "uppercase",
+                    color: OC.emerald,
+                  }}
+                >
+                  Next dose
                 </Text>
-                <Text className="mt-1.5 font-body-semibold text-[13.5px] text-sage">
-                  {nextDose.time}
-                </Text>
-              </View>
-              <Pill tone="green">{nextDose.time}</Pill>
-            </View>
-          </View>
-        ) : null}
-
-        {/* Meds list */}
-        <View className="mt-5">
-          <SectionLabel
-            right={
-              <Text className="font-body-semibold text-[11.5px] text-ink-400">
-                {medications.length} of {FREE_CAPS.medications} free
-              </Text>
-            }
-          >
-            Your medications
-          </SectionLabel>
-          <Card pad="px-3.5 py-1">
-            {medications.length === 0 ? (
-              <EmptyState title="No medications yet" hint="Add one below to get dose reminders." />
-            ) : (
-              medications.map((med, index) => {
-                const low =
-                  med.quantityRemaining !== undefined && med.quantityRemaining <= REFILL_THRESHOLD;
-                return (
-                  <View
-                    key={med.id}
-                    className={index < medications.length - 1 ? "border-b border-line" : ""}
-                  >
-                    <CheckRow
-                      checked={false}
-                      onToggle={() => startEdit(med)}
-                      icon="pill"
-                      tone={low ? "coral" : "green"}
-                      title={med.name}
-                      sub={`${med.dosage ? `${med.dosage} · ` : ""}${med.times.join(", ")}`}
-                      right={
-                        low ? <Pill tone="coral">{med.quantityRemaining} left</Pill> : undefined
-                      }
-                    />
+                <View
+                  style={{
+                    marginTop: 10,
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <Display style={{ fontSize: 26, lineHeight: 28, color: "#fff" }}>
+                      {nextDose.med.name}
+                      {nextDose.med.dosage ? ` ${nextDose.med.dosage}` : ""}
+                    </Display>
+                    <Text
+                      style={{
+                        marginTop: 6,
+                        fontFamily: FONT.bodySemi,
+                        fontSize: 13.5,
+                        color: OC.sage,
+                      }}
+                    >
+                      {nextDose.time}
+                    </Text>
                   </View>
-                );
-              })
-            )}
-          </Card>
-        </View>
-
-        {/* Cap → ProGate; otherwise the add/edit affordance */}
-        {medicationsAtCap && !editingId ? (
-          <View className="mt-4">
-            <ProGate
-              title="At your 3-med limit"
-              body="Pro tracks unlimited meds, warns you before refills run out, and adds gentle health tips from your wearable."
-              onUpgrade={goToUpgrade}
-            />
-          </View>
-        ) : showForm ? (
-          <View className="mt-4">
-            <Card title={editingId ? "Edit medication" : "Add a medication"}>
-              {formError ? <Banner message={formError} tone="warning" /> : null}
-              <LabeledInput
-                label="Name"
-                value={name}
-                onChangeText={setName}
-                placeholder="e.g. Metformin"
-              />
-              <LabeledInput
-                label="Dosage (optional)"
-                value={dosage}
-                onChangeText={setDosage}
-                placeholder="e.g. 500mg"
-              />
-              <LabeledInput
-                label="Dose times (HH:mm, comma-separated)"
-                value={timesText}
-                onChangeText={setTimesText}
-                placeholder="e.g. 08:00, 20:00"
-              />
-              <FreqSelect value={freq} onChange={setFreq} />
-              <Button
-                label={editingId ? "Save changes" : "Add medication"}
-                onPress={() => void handleSubmit()}
-              />
-              <View className="mt-2 flex-row gap-2">
-                <View className="flex-1">
-                  <Button label="Cancel" variant="ghost" onPress={resetForm} />
+                  <Pill tone="green" style={{ backgroundColor: OC.emerald }}>
+                    {nextDose.time}
+                  </Pill>
                 </View>
+              </GradientCard>
+            </View>
+          ) : null}
+
+          {/* Meds list */}
+          <View style={{ marginTop: 20 }}>
+            <SectionLabel
+              right={
+                <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
+                  {medications.length} of {FREE_CAPS.medications} free
+                </Text>
+              }
+            >
+              Your medications
+            </SectionLabel>
+            <Card pad={0} style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
+              {medications.length === 0 ? (
+                <EmptyState
+                  title="No medications yet"
+                  body="Add one below to get dose reminders."
+                />
+              ) : (
+                medications.map((med, index) => {
+                  const low =
+                    med.quantityRemaining !== undefined &&
+                    med.quantityRemaining <= REFILL_THRESHOLD;
+                  return (
+                    <View
+                      key={med.id}
+                      style={
+                        index < medications.length - 1
+                          ? { borderBottomWidth: 1, borderBottomColor: OC.line }
+                          : undefined
+                      }
+                    >
+                      <CheckRow
+                        checked={false}
+                        onToggle={() => startEdit(med)}
+                        icon="pill"
+                        tone={low ? "coral" : "green"}
+                        title={med.name}
+                        sub={`${med.dosage ? `${med.dosage} · ` : ""}${med.times.join(", ")}`}
+                        right={
+                          low ? (
+                            <Pill tone="coral">
+                              <Icon name="refresh" size={12} color={OC.coralInk} />
+                              <Text
+                                style={{
+                                  color: OC.coralInk,
+                                  fontFamily: FONT.bodyBold,
+                                  fontSize: 11.5,
+                                }}
+                              >
+                                {med.quantityRemaining} left
+                              </Text>
+                            </Pill>
+                          ) : undefined
+                        }
+                      />
+                    </View>
+                  );
+                })
+              )}
+            </Card>
+          </View>
+
+          {/* Cap → ProGate; otherwise the add/edit affordance */}
+          {medicationsAtCap && !editingId ? (
+            <View style={{ marginTop: 18 }}>
+              <ProGate onUpgrade={goToUpgrade}>
+                <Display style={{ fontSize: 17, color: "#fff", lineHeight: 22 }}>
+                  At your 3-med limit
+                </Display>
+                <Text
+                  style={{
+                    fontSize: 13.5,
+                    color: OC.sage,
+                    marginTop: 6,
+                    lineHeight: 20,
+                    fontFamily: FONT.body,
+                  }}
+                >
+                  Pro tracks unlimited meds, warns you before refills run out, and adds gentle
+                  health tips from your wearable.
+                </Text>
+              </ProGate>
+            </View>
+          ) : showForm ? (
+            <View style={{ marginTop: 16 }}>
+              <Card>
+                <Display style={{ fontSize: 18, marginBottom: 14 }}>
+                  {editingId ? "Edit medication" : "Add a medication"}
+                </Display>
+                {formError ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "flex-start",
+                      gap: 9,
+                      borderRadius: 14,
+                      backgroundColor: OC.amberBg,
+                      paddingHorizontal: 14,
+                      paddingVertical: 11,
+                      marginBottom: 14,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontFamily: FONT.bodySemi,
+                        fontSize: 13,
+                        lineHeight: 19,
+                        color: OC.amberInk,
+                      }}
+                    >
+                      {formError}
+                    </Text>
+                  </View>
+                ) : null}
+                <Field label="Name">
+                  <TextField value={name} onChangeText={setName} placeholder="e.g. Metformin" />
+                </Field>
+                <Field label="Dosage" hint="optional">
+                  <TextField value={dosage} onChangeText={setDosage} placeholder="e.g. 500mg" />
+                </Field>
+                <Field label="Dose times" hint="HH:mm, comma-separated">
+                  <TextField
+                    value={timesText}
+                    onChangeText={setTimesText}
+                    placeholder="e.g. 08:00, 20:00"
+                  />
+                </Field>
+                <Field label="Repeats">
+                  <ChoicePills
+                    options={FREQ_OPTIONS}
+                    value={freq}
+                    onChange={(k) => setFreq(k as MedRecurrenceFreq)}
+                  />
+                </Field>
+                <SaveBar
+                  onCancel={resetForm}
+                  onSave={() => void handleSubmit()}
+                  label={editingId ? "Save changes" : "Add medication"}
+                />
                 {editingId ? (
-                  <View className="flex-1">
-                    <Button
+                  <View style={{ marginTop: 10 }}>
+                    <GhostButton
                       label="Delete"
-                      variant="danger"
                       onPress={() => void deleteMedication(editingId).then(resetForm)}
                     />
                   </View>
                 ) : null}
-              </View>
-            </Card>
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => setShowForm(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Add a medication"
-            className="mt-4 flex-row items-center justify-center gap-2 rounded-inner border-[1.5px] border-dashed border-line-strong bg-surface py-3.5"
-          >
-            <Icon name="plus" size={18} color={OC.green} />
-            <Text className="font-body-extra text-[14.5px] text-green">Add a medication</Text>
-          </Pressable>
-        )}
-      </AsyncBoundary>
-    </ScreenContainer>
+              </Card>
+            </View>
+          ) : (
+            <AddButton label="Add a medication" onPress={() => setShowForm(true)} />
+          )}
+        </AsyncBoundary>
+      </View>
+    </Screen>
   );
 }

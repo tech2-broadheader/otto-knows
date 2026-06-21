@@ -37,6 +37,7 @@ import {
   type Transaction,
 } from "@otto/schemas";
 import { getDatabase } from "../db/client";
+import { newUuid } from "../lib/id";
 import { tables } from "../db/schema";
 import type { EncryptionProvider } from "../security/encryption";
 import { requireConsent } from "../security/consent";
@@ -314,10 +315,10 @@ export function makeContextItemRepository(deps: Pick<RepositoryDeps, "loadConsen
 // --- SENSITIVE repositories (encrypt + audit) --------------------------------
 
 function newId(): string {
-  // Audit ids: prefer the platform UUID, fall back to a random token. Imported
-  // lazily through globalThis.crypto to keep this file free of native imports.
-  const g = globalThis as { crypto?: { randomUUID?: () => string } };
-  return g.crypto?.randomUUID ? g.crypto.randomUUID() : `audit-${Date.now()}-${Math.random()}`;
+  // Audit ids must be RFC-4122 UUIDs (auditEntrySchema.id is uuid). Hermes/Expo Go
+  // has no globalThis.crypto.randomUUID, so use expo-crypto's native generator
+  // (same as the UI edge). This file already imports native db, so that's fine.
+  return newUuid();
 }
 
 function nowIso(): string {

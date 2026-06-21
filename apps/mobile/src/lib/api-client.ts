@@ -220,6 +220,17 @@ export async function optimize(
 }
 
 /**
+ * Permanently delete the signed-in user's cloud account (DPA erasure). The proxy
+ * verifies the bearer token and deletes the auth user + profile. On-device data
+ * is wiped separately by the caller. Returns `{ deleted: true }` on success.
+ */
+export async function deleteAccount(
+  fetchImpl: typeof fetch = fetch,
+): Promise<ApiResult<{ deleted: boolean }>> {
+  return postEnvelope<{ deleted: boolean }>("/api/account/delete", {}, fetchImpl);
+}
+
+/**
  * Tips (FR-T1/FR-T2, Pro): POST `{ domain }` → a validated list of general,
  * non-prescriptive tips. The response is parsed through `tipsResponseSchema`.
  */

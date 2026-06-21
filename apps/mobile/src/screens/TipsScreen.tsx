@@ -1,62 +1,67 @@
 // Tips (story 6.x / FR-T1, FR-T2). Gentle, general, non-prescriptive finance &
 // health tips fetched from the LLM proxy. Read-only — tips never write back. A
-// Finance / Health toggle switches domain. The supportive, non-medical tone is
-// the safety design (spec §6.2); guardrails live server-side in the prompt.
+// segmented filter switches domain. The supportive, non-medical tone is the
+// safety design (spec §6.2); guardrails live server-side in the prompt.
 //
 // Pro-gated: when not Pro (or the backend is unconfigured / 401 / 403) a calm
 // ProGate / banner shows instead of the list. Nothing ever crashes.
 //
-// Visual: OTTO design — a back header, Finance / Health pill toggle, the loading
-// pulse, and tips in a clean card. A root-stack screen reached from Settings.
+// Visual: OTTO inline-style design kit (reliable on SDK 54). An overlay/stack
+// screen reached from Settings — back header, Otto's voice intro, an
+// All / Money / Health segmented filter, then the tips as kit TipCards.
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { View, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { TipDomain } from "@otto/schemas";
 import { useTips } from "../hooks/useTips";
-import { EmptyState } from "../components/AsyncBoundary";
-import { Banner, Card, Icon, OC } from "../components/ui";
-import { ProGate, ScreenContainer } from "../components/otto-ui";
+import {
+  OverlayScreen,
+  ProGate,
+  OttoVoice,
+  Segmented,
+  TipCard,
+  Card,
+  Display,
+  EmptyState,
+  type Option,
+} from "../design/kit";
+import { Icon } from "../design/Icon";
+import { OC, FONT } from "../design/theme";
 import { getApiBaseUrl } from "../lib/api-client";
 import { useAuth } from "../auth/AuthProvider";
 import { proErrorBanner } from "../lib/pro-feature";
 
-const DOMAINS: ReadonlyArray<{ value: TipDomain; label: string }> = [
-  { value: "finance", label: "Finance" },
-  { value: "health", label: "Health" },
-];
-
 type TipsNavigation = { goBack: () => void; navigate: (screen: "Upgrade") => void };
 
-function DomainToggle({
-  value,
-  onSelect,
-  disabled,
-}: {
-  value: TipDomain;
-  onSelect: (domain: TipDomain) => void;
-  disabled: boolean;
-}): React.JSX.Element {
+// Segmented filter. The existing hook fetches one domain at a time, so "All" and
+// "Money" both load finance, "Health" loads health — preserving the original
+// per-domain fetch while matching the design's three-way control.
+const FILTERS: Option[] = [
+  { k: "all", l: "All" },
+  { k: "finance", l: "Money" },
+  { k: "health", l: "Health" },
+];
+
+const ICON_FOR: Record<TipDomain, "wallet" | "heart"> = {
+  finance: "wallet",
+  health: "heart",
+};
+
+const TONE_FOR: Record<TipDomain, string> = {
+  finance: "amber",
+  health: "coral",
+};
+
+/** Calm, non-crashing banner for error / not-configured states. */
+function InfoBanner({ tone, text }: { tone: "info" | "warning"; text: string }): React.JSX.Element {
+  const accent = tone === "warning" ? OC.amber : OC.green;
   return (
-    <View className="mb-4 mt-3 flex-row gap-2">
-      {DOMAINS.map((domain) => {
-        const active = domain.value === value;
-        return (
-          <Pressable
-            key={domain.value}
-            onPress={() => onSelect(domain.value)}
-            disabled={disabled}
-            accessibilityRole="button"
-            accessibilityLabel={`${domain.label} tips`}
-            accessibilityState={{ selected: active, disabled }}
-            className={`flex-1 items-center rounded-inner px-4 py-3 ${active ? "bg-green" : "bg-mist"} ${disabled ? "opacity-40" : ""}`}
-          >
-            <Text className={`font-body-bold ${active ? "text-white" : "text-forest"}`}>
-              {domain.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <Card pad={14} style={{ marginTop: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 11 }}>
+        <Icon name="shield" size={18} color={accent} />
+        <Text style={{ flex: 1, fontFamily: FONT.body, fontSize: 13.5, lineHeight: 20, color: OC.ink700 }}>{text}</Text>
+      </View>
+    </Card>
   );
 }
 
@@ -64,96 +69,93 @@ export function TipsScreen(): React.JSX.Element {
   const navigation = useNavigation() as unknown as TipsNavigation;
   const { isPro } = useAuth();
   const { status, domain, tips, error, errorCode, load } = useTips("finance");
+  const [filter, setFilter] = useState<string>("all");
   const [hasLoaded, setHasLoaded] = useState(false);
 
   const configured = getApiBaseUrl() !== null;
 
-  const handleSelect = (next: TipDomain): void => {
+  const handleFilter = (next: string): void => {
+    setFilter(next);
+    const nextDomain: TipDomain = next === "health" ? "health" : "finance";
     setHasLoaded(true);
-    void load(next);
+    void load(nextDomain);
   };
 
-  const BackHeader = (
-    <View className="flex-row items-center gap-2 px-[18px] pb-1.5 pt-2">
-      <Pressable
-        onPress={() => navigation.goBack()}
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        className="h-[38px] w-[38px] items-center justify-center rounded-inner border border-line bg-surface"
-      >
-        <Icon name="chevL" size={20} color={OC.ink700} />
-      </Pressable>
-      <Text className="font-display text-[19px] text-ink">Tips</Text>
-    </View>
-  );
-
-  if (!isPro || !configured) {
+  // Not Pro → the calm Pro gate. Configured-but-not-Pro never reaches the list.
+  if (!isPro) {
     return (
-      <ScreenContainer>
-        {BackHeader}
-        <Text className="mt-3 font-body text-[13.5px] leading-5 text-ink-500">
-          Gentle, general ideas for money and wellbeing — never personalised advice.
-        </Text>
-        <View className="mt-4">
-          {!isPro ? (
-            <ProGate
-              title="Tips is a Pro feature"
-              body="Gentle, general finance & health ideas from Otto — supportive, never prescriptive."
-              onUpgrade={() => navigation.navigate("Upgrade")}
-            />
-          ) : (
-            <Banner tone="info" message={proErrorBanner("NOT_CONFIGURED", "").text} />
-          )}
+      <OverlayScreen title="Tips" onBack={() => navigation.goBack()}>
+        <View style={{ paddingHorizontal: 4, paddingVertical: 8 }}>
+          <ProGate onUpgrade={() => navigation.navigate("Upgrade")}>
+            <Display style={{ fontSize: 19, color: "#fff", lineHeight: 23 }}>Gentle tips are a Pro touch</Display>
+            <Text style={{ fontSize: 13.5, color: OC.sage, marginTop: 6, lineHeight: 20, fontFamily: FONT.body }}>
+              Otto notices patterns across your spending and routine and offers a kind nudge — never a scold, never a
+              streak to break.
+            </Text>
+          </ProGate>
         </View>
-      </ScreenContainer>
+      </OverlayScreen>
+    );
+  }
+
+  // Pro but the cloud backend isn't wired up in this build → friendly banner.
+  if (!configured) {
+    return (
+      <OverlayScreen title="Tips" onBack={() => navigation.goBack()}>
+        <InfoBanner {...proErrorBanner("NOT_CONFIGURED", "")} />
+      </OverlayScreen>
     );
   }
 
   return (
-    <ScreenContainer>
-      {BackHeader}
-      <Text className="mt-3 font-body text-[13.5px] leading-5 text-ink-500">
-        Gentle, general ideas for money and wellbeing — never personalised advice.
-      </Text>
+    <OverlayScreen title="Tips" onBack={() => navigation.goBack()}>
+      <View style={{ marginBottom: 14 }}>
+        <OttoVoice tone="light">
+          A few quiet patterns I noticed this week. Take what&apos;s useful, leave the rest — none of this is a rule.
+        </OttoVoice>
+      </View>
 
-      <DomainToggle value={domain} onSelect={handleSelect} disabled={status === "loading"} />
+      <View style={{ marginBottom: 16 }}>
+        <Segmented options={FILTERS} value={filter} onChange={handleFilter} />
+      </View>
 
       {!hasLoaded ? (
-        <EmptyState title="Pick a topic" hint="Choose Finance or Health to see a few tips." />
-      ) : null}
-
-      {status === "loading" ? (
-        <View className="mt-2 flex-row items-center justify-center gap-2.5">
-          <View className="h-2.5 w-2.5 rounded-full bg-emerald" />
-          <Text className="font-body-semibold text-[14px] text-ink-500">Gathering tips…</Text>
-        </View>
-      ) : null}
-
-      {status === "error" && error ? (
-        <Banner
-          tone={proErrorBanner(errorCode, error).tone}
-          message={proErrorBanner(errorCode, error).text}
+        <EmptyState
+          icon="sparkle"
+          title="Pick a topic"
+          body="Choose All, Money or Health to see a few gentle tips from Otto."
         />
       ) : null}
 
-      {status === "ready" && tips.length === 0 ? (
-        <EmptyState title="No tips right now" hint="Try the other topic or check back later." />
+      {status === "loading" ? (
+        <View style={{ marginTop: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }}>
+          <View style={{ width: 10, height: 10, borderRadius: 99, backgroundColor: OC.emerald }} />
+          <Text style={{ fontFamily: FONT.bodySemi, fontSize: 14, color: OC.ink500 }}>Gathering tips…</Text>
+        </View>
       ) : null}
 
-      {status === "ready" && tips.length > 0 ? (
-        <Card>
-          {tips.map((tip, index) => (
-            <View key={`tip-${index}`} className={`flex-row ${index > 0 ? "mt-3" : ""}`}>
-              <Text className="mr-2 font-body text-[15px] text-emerald" accessibilityElementsHidden>
-                •
-              </Text>
-              <Text className="flex-1 font-body text-[14.5px] leading-[22px] text-ink-700">
-                {tip}
-              </Text>
-            </View>
-          ))}
-        </Card>
+      {status === "error" && error ? <InfoBanner {...proErrorBanner(errorCode, error)} /> : null}
+
+      {status === "ready" && tips.length === 0 ? (
+        <EmptyState
+          icon="check"
+          title="No tips right now"
+          body="Try the other topic or check back later — Otto only nudges when there's something worth noticing."
+        />
       ) : null}
-    </ScreenContainer>
+
+      {status === "ready" && tips.length > 0
+        ? tips.map((tip, index) => (
+            <TipCard
+              key={`tip-${index}`}
+              icon={ICON_FOR[domain]}
+              tone={TONE_FOR[domain]}
+              domain={domain}
+              title={domain === "health" ? "A gentle health note" : "A gentle money note"}
+              body={tip}
+            />
+          ))
+        : null}
+    </OverlayScreen>
   );
 }

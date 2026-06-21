@@ -1,19 +1,32 @@
-// Settings. Manage consent (the same granular, revocable toggles), reach the Pro
-// surfaces (Optimizer, Tips), connect Google Calendar, and show app/version info.
-// A root-stack screen reached from each main screen's header gear; its rows
-// navigate to the sibling Optimizer / Tips / Upgrade screens. Consent logic lives
-// in useConsents; nothing reads a source without granted consent.
-//
-// Visual: OTTO Settings design — a dark profile card, Connections, Consent
-// toggles with the encryption note, Pro tools rows, and the About footer.
-import { Pressable, Switch, Text, View } from "react-native";
+// Settings — OTTO app design (otto/app-screens.jsx SettingsScreen + app-extra.jsx
+// CalendarConnectCard), ported to RN inline styles via the design kit. A dark
+// profile header, Connections (Google Calendar connect card), Consent toggles with
+// the encryption note, Pro tools rows, and the About footer. All data logic is
+// unchanged (useConsents, useAuth, useGoogleCalendar); only the look is the
+// inline-style design kit (reliable on SDK 54, unlike the prior NativeWind pass).
+import { useState } from "react";
+import { View, Text, Pressable, Image, Alert } from "react-native";
 import type { DataSource } from "@otto/schemas";
 import { useConsents } from "../hooks/useConsents";
+import { useGoogleCalendar } from "../hooks/useGoogleCalendar";
+import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { AsyncBoundary } from "../components/AsyncBoundary";
-import { Card, Icon, OC, Pill, SectionLabel, type IconName } from "../components/ui";
-import { OttoAvatar, ScreenContainer } from "../components/otto-ui";
-import { GoogleCalendarCard } from "../components/GoogleCalendarCard";
+import {
+  OverlayScreen,
+  GradientCard,
+  Card,
+  SectionLabel,
+  Pill,
+  ToggleRow,
+  Display,
+  CLAM_ASSET,
+} from "../design/kit";
+import { Icon, type IconName } from "../design/Icon";
+import { OC, FONT, RADIUS, tint } from "../design/theme";
 import { useAuth } from "../auth/AuthProvider";
+import { useAppReset } from "../lib/app-reset";
+import { wipeLocalData } from "../lib/account";
+import { deleteAccount } from "../lib/api-client";
 import { CONSENT_POLICY_VERSION } from "../lib/constants";
 import appConfig from "../../app.json";
 
@@ -35,7 +48,7 @@ const SOURCES: ReadonlyArray<{
     description: "Read your schedule to time things right",
     purpose: "Read calendar events to build your daily briefing",
     icon: "cal",
-    tone: OC.sky,
+    tone: "sky",
   },
   {
     source: "finance",
@@ -43,7 +56,7 @@ const SOURCES: ReadonlyArray<{
     description: "Bills, budget & income you enter",
     purpose: "Store and read your finances to track budget and bills",
     icon: "peso",
-    tone: OC.green,
+    tone: "green",
   },
   {
     source: "health",
@@ -51,7 +64,7 @@ const SOURCES: ReadonlyArray<{
     description: "Most sensitive · off unless you say so",
     purpose: "Store and read medications to time dose reminders",
     icon: "heart",
-    tone: OC.coral,
+    tone: "coral",
   },
 ];
 
@@ -62,32 +75,256 @@ function NavRow({
   subtitle,
   onPress,
   locked = false,
+  last = false,
 }: {
   icon: IconName;
   title: string;
   subtitle: string;
   onPress: () => void;
   locked?: boolean;
+  last?: boolean;
 }): React.JSX.Element {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={title}
-      className="flex-row items-center gap-3 py-3.5"
+      style={({ pressed }) => [
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 13,
+          paddingVertical: 14,
+          borderBottomWidth: last ? 0 : 1,
+          borderBottomColor: OC.line,
+          opacity: pressed ? 0.6 : 1,
+        },
+      ]}
     >
       <View
-        className="h-[38px] w-[38px] items-center justify-center rounded-inner"
-        style={{ backgroundColor: `${OC.green}1a` }}
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 11,
+          backgroundColor: tint(OC.green),
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <Icon name={icon} size={18} color={OC.green} />
       </View>
-      <View className="flex-1">
-        <Text className="font-body-bold text-[14.5px] text-ink">{title}</Text>
-        <Text className="mt-px font-body text-[12px] text-ink-500">{subtitle}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>{title}</Text>
+        <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
+          {subtitle}
+        </Text>
       </View>
       {locked ? <Pill tone="pro">PRO</Pill> : <Icon name="chevR" size={18} color={OC.ink400} />}
     </Pressable>
+  );
+}
+
+/**
+ * Google Calendar connect card — design's connected / connecting / disconnected
+ * states, wired to the real on-device connector (useGoogleCalendar). Presentational
+ * shell only; every action (connect / sync / disconnect) stays an explicit tap.
+ */
+function CalendarConnectCard(): React.JSX.Element {
+  const deps = useRepositoryDeps();
+  const { configured, connected, busy, message, connect, syncToday, disconnect } =
+    useGoogleCalendar(deps);
+
+  const glyph = (
+    <View
+      style={{
+        width: 42,
+        height: 42,
+        borderRadius: 12,
+        backgroundColor: OC.surface,
+        borderWidth: 1,
+        borderColor: OC.line,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Icon name="cal" size={22} color={OC.sky} />
+    </View>
+  );
+
+  // Connecting / syncing — the design's "connecting" state.
+  if (connected && busy) {
+    return (
+      <Card pad={16}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
+          {glyph}
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
+              Syncing your calendar…
+            </Text>
+            <Text style={{ marginTop: 2, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
+              Reading today&apos;s events
+            </Text>
+          </View>
+          <View style={{ width: 11, height: 11, borderRadius: 99, backgroundColor: OC.emerald }} />
+        </View>
+        {message ? (
+          <Text style={{ marginTop: 12, fontFamily: FONT.body, fontSize: 12.5, color: OC.ink500 }}>
+            {message}
+          </Text>
+        ) : null}
+      </Card>
+    );
+  }
+
+  // Connected — the design's "connected" state with sync/disconnect actions.
+  if (connected) {
+    return (
+      <Card pad={16}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          {glyph}
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
+              Google Calendar
+            </Text>
+            <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
+              Read-only · on your device
+            </Text>
+          </View>
+          <Pill tone="green">
+            <Icon name="check" size={12} color="#fff" stroke={3} />
+            <Text style={{ color: "#fff", fontFamily: FONT.bodyBold, fontSize: 11.5 }}>
+              Connected
+            </Text>
+          </Pill>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 12,
+            paddingTop: 12,
+            borderTopWidth: 1,
+            borderTopColor: OC.line,
+            gap: 10,
+          }}
+        >
+          <Pressable
+            onPress={() => void syncToday()}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Sync today"
+            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ color: OC.green, fontFamily: FONT.bodyX, fontSize: 12.5 }}>
+              Sync today
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => void disconnect()}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Disconnect Google Calendar"
+            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ color: OC.coral, fontFamily: FONT.bodyBold, fontSize: 12.5 }}>
+              Disconnect
+            </Text>
+          </Pressable>
+        </View>
+        {message ? (
+          <Text style={{ marginTop: 10, fontFamily: FONT.body, fontSize: 12.5, color: OC.ink500 }}>
+            {message}
+          </Text>
+        ) : null}
+      </Card>
+    );
+  }
+
+  // Disconnected — the design's centered "connect" call to action.
+  return (
+    <Card pad={16} style={{ alignItems: "center" }}>
+      <View
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: 14,
+          backgroundColor: OC.surface,
+          borderWidth: 1,
+          borderColor: OC.line,
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 12,
+        }}
+      >
+        <Icon name="cal" size={26} color={OC.sky} />
+      </View>
+      <Display style={{ fontSize: 17, textAlign: "center" }}>Connect Google Calendar</Display>
+      <Text
+        style={{
+          fontFamily: FONT.body,
+          fontSize: 13,
+          color: OC.ink500,
+          marginTop: 5,
+          lineHeight: 20,
+          textAlign: "center",
+          maxWidth: 280,
+        }}
+      >
+        So Otto can time reminders around your real schedule. Read-only — it never edits your events
+        without asking.
+      </Text>
+      <Pressable
+        onPress={() => void connect()}
+        disabled={busy || !configured}
+        accessibilityRole="button"
+        accessibilityLabel="Connect with Google"
+        style={({ pressed }) => [
+          {
+            marginTop: 14,
+            alignSelf: "stretch",
+            backgroundColor: busy || !configured ? OC.line : OC.ink,
+            borderRadius: RADIUS.btn,
+            paddingVertical: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 9,
+            opacity: pressed ? 0.9 : 1,
+          },
+        ]}
+      >
+        <Icon name="cal" size={18} color="#fff" />
+        <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 14.5 }}>
+          Connect with Google
+        </Text>
+      </Pressable>
+      {!configured ? (
+        <Text
+          style={{
+            marginTop: 10,
+            fontFamily: FONT.body,
+            fontSize: 12,
+            color: OC.amberInk,
+            textAlign: "center",
+          }}
+        >
+          Google Calendar isn&apos;t set up in this build (missing client id).
+        </Text>
+      ) : message ? (
+        <Text
+          style={{
+            marginTop: 10,
+            fontFamily: FONT.body,
+            fontSize: 12.5,
+            color: OC.ink500,
+            textAlign: "center",
+          }}
+        >
+          {message}
+        </Text>
+      ) : null}
+    </Card>
   );
 }
 
@@ -101,31 +338,66 @@ export function SettingsScreen({
   const { state, error, isGranted, setConsent, reload } = useConsents();
   const { status, email, isPro, signOut } = useAuth();
   const signedIn = status === "signed-in";
+  const reset = useAppReset();
+  const [deleting, setDeleting] = useState(false);
+
+  const runDelete = async (): Promise<void> => {
+    setDeleting(true);
+    try {
+      // Delete the cloud account first (only if signed in); if that fails, keep
+      // local data intact so the user can retry rather than lose it silently.
+      if (signedIn) {
+        const res = await deleteAccount();
+        if (!res.ok) {
+          Alert.alert("Couldn't delete your account", `${res.message} Your data is unchanged — please try again.`);
+          return;
+        }
+      }
+      await wipeLocalData();
+      await signOut();
+      reset(); // back to first-run onboarding
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const confirmDelete = (): void => {
+    Alert.alert(
+      "Delete account & data?",
+      "This permanently deletes your Otto account and erases all data on this device. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => void runDelete() },
+      ],
+    );
+  };
 
   return (
-    <ScreenContainer>
-      {/* Back header */}
-      <View className="flex-row items-center gap-2 px-[18px] pb-1.5 pt-2">
-        <Pressable
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          className="h-[38px] w-[38px] items-center justify-center rounded-inner border border-line bg-surface"
-        >
-          <Icon name="chevL" size={20} color={OC.ink700} />
-        </Pressable>
-        <Text className="font-display text-[19px] text-ink">Settings</Text>
-      </View>
-
-      {/* Profile card — driven by the live auth session. */}
-      <View className="mt-3 rounded-card bg-dark p-4">
-        <View className="flex-row items-center gap-3">
-          <OttoAvatar dark={false} size={46} />
-          <View className="flex-1">
-            <Text className="font-display text-[18px] text-white" numberOfLines={1}>
+    <OverlayScreen title="Settings" onBack={() => navigation.goBack()}>
+      {/* Profile header — dark gradient, driven by the live auth session. */}
+      <GradientCard style={{ marginBottom: 18 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
+          <View
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 14,
+              backgroundColor: OC.mist,
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <Image source={CLAM_ASSET} style={{ width: 36, height: 36, resizeMode: "contain" }} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{ fontFamily: FONT.display, fontSize: 18, color: "#fff" }}
+              numberOfLines={1}
+            >
               {signedIn && email ? email : "Your Otto"}
             </Text>
-            <Text className="mt-px font-body text-[12.5px] text-sage">
+            <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12.5, color: OC.sage }}>
               {isPro ? "Otto Pro" : signedIn ? "Free plan" : "Local & anonymous"}
             </Text>
           </View>
@@ -136,90 +408,142 @@ export function SettingsScreen({
               onPress={() => navigation.navigate("Upgrade")}
               accessibilityRole="button"
               accessibilityLabel="Upgrade to Pro"
-              className="rounded-pill bg-emerald px-3.5 py-2"
+              style={({ pressed }) => [
+                {
+                  backgroundColor: OC.emerald,
+                  borderRadius: RADIUS.pill,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
             >
-              <Text className="font-body-extra text-[12.5px] text-white">Upgrade</Text>
+              <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 12.5 }}>Upgrade</Text>
             </Pressable>
           ) : (
             <Pressable
               onPress={() => navigation.navigate("Login")}
               accessibilityRole="button"
               accessibilityLabel="Sign in"
-              className="rounded-pill bg-emerald px-3.5 py-2"
+              style={({ pressed }) => [
+                {
+                  backgroundColor: OC.emerald,
+                  borderRadius: RADIUS.pill,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
             >
-              <Text className="font-body-extra text-[12.5px] text-white">Sign in</Text>
+              <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 12.5 }}>Sign in</Text>
             </Pressable>
           )}
         </View>
 
         {/* Signed-in: an Upgrade affordance for free + a Sign out row. */}
         {signedIn ? (
-          <View className="mt-3 flex-row items-center gap-2 border-t border-white/10 pt-3">
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 13,
+              paddingTop: 13,
+              borderTopWidth: 1,
+              borderTopColor: "rgba(255,255,255,0.1)",
+            }}
+          >
             {!isPro ? (
               <Pressable
                 onPress={() => navigation.navigate("Upgrade")}
                 accessibilityRole="button"
                 accessibilityLabel="Upgrade to Pro"
-                className="flex-1 items-center rounded-inner bg-white/10 py-2.5"
+                style={({ pressed }) => [
+                  {
+                    flex: 1,
+                    alignItems: "center",
+                    borderRadius: RADIUS.inner,
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    paddingVertical: 10,
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
               >
-                <Text className="font-body-bold text-[12.5px] text-mint">Upgrade to Pro</Text>
+                <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.mint }}>
+                  Upgrade to Pro
+                </Text>
               </Pressable>
             ) : null}
             <Pressable
               onPress={() => void signOut()}
               accessibilityRole="button"
               accessibilityLabel="Sign out"
-              className={`items-center rounded-inner bg-white/10 px-4 py-2.5 ${isPro ? "flex-1" : ""}`}
+              style={({ pressed }) => [
+                {
+                  flex: isPro ? 1 : undefined,
+                  alignItems: "center",
+                  borderRadius: RADIUS.inner,
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
             >
-              <Text className="font-body-bold text-[12.5px] text-sage">Sign out</Text>
+              <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.sage }}>
+                Sign out
+              </Text>
             </Pressable>
           </View>
         ) : null}
-      </View>
+      </GradientCard>
 
       <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Loading settings">
         {/* Connections */}
-        <View className="mt-5">
-          <SectionLabel>Connections</SectionLabel>
-          <GoogleCalendarCard />
-        </View>
+        <SectionLabel>Connections</SectionLabel>
+        <CalendarConnectCard />
 
         {/* Consent */}
-        <View className="mt-5">
+        <View style={{ marginTop: 18 }}>
           <SectionLabel>Consent</SectionLabel>
-          <Card pad="px-4 py-1">
+          <Card pad={16} style={{ paddingVertical: 2 }}>
             {SOURCES.map((s, index) => (
-              <View
+              <ToggleRow
                 key={s.source}
-                className={`flex-row items-center gap-3 py-3 ${index < SOURCES.length - 1 ? "border-b border-line" : ""}`}
-              >
-                <View
-                  className="h-[38px] w-[38px] items-center justify-center rounded-inner"
-                  style={{ backgroundColor: `${s.tone}1a` }}
-                >
-                  <Icon name={s.icon} size={18} color={s.tone} />
-                </View>
-                <View className="flex-1">
-                  <Text className="font-body-bold text-[14.5px] text-ink">{s.title}</Text>
-                  <Text className="mt-px font-body text-[12px] text-ink-500">{s.description}</Text>
-                </View>
-                <Switch
-                  value={isGranted(s.source)}
-                  onValueChange={(next) => void setConsent(s.source, next, s.purpose)}
-                  trackColor={{ false: OC.lineStrong, true: OC.green }}
-                  thumbColor="#fff"
-                  accessibilityLabel={`Allow ${s.title}`}
-                  accessibilityRole="switch"
-                  accessibilityState={{ checked: isGranted(s.source) }}
-                />
-              </View>
+                icon={s.icon}
+                tone={s.tone}
+                title={s.title}
+                sub={s.description}
+                on={isGranted(s.source)}
+                onToggle={() => void setConsent(s.source, !isGranted(s.source), s.purpose)}
+                last={index === SOURCES.length - 1}
+              />
             ))}
           </Card>
-          <View className="mt-3 flex-row items-start gap-2.5 rounded-inner bg-mist px-3.5 py-3">
-            <View className="mt-px">
+          <View
+            style={{
+              marginTop: 12,
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: 10,
+              borderRadius: RADIUS.inner,
+              backgroundColor: OC.mist,
+              paddingHorizontal: 14,
+              paddingVertical: 12,
+            }}
+          >
+            <View style={{ marginTop: 1 }}>
               <Icon name="lock" size={17} color={OC.green} />
             </View>
-            <Text className="flex-1 font-body text-[12.5px] leading-[19px] text-forest">
+            <Text
+              style={{
+                flex: 1,
+                fontFamily: FONT.body,
+                fontSize: 12.5,
+                lineHeight: 19,
+                color: OC.forest,
+              }}
+            >
               Encrypted on your device, DPA-compliant, and never sold. Every access to health and
               finance data is logged for your records.
             </Text>
@@ -227,43 +551,91 @@ export function SettingsScreen({
         </View>
 
         {/* Pro tools */}
-        <View className="mt-5">
+        <View style={{ marginTop: 18 }}>
           <SectionLabel>Pro tools</SectionLabel>
-          <Card pad="px-4 py-1">
-            <View className="border-b border-line">
-              <NavRow
-                icon="dumbbell"
-                title="Routine optimizer"
-                subtitle="Reshape your day — you confirm"
-                onPress={() => navigation.navigate("Optimizer")}
-              />
-            </View>
+          <Card pad={16} style={{ paddingVertical: 2 }}>
+            <NavRow
+              icon="dumbbell"
+              title="Routine optimizer"
+              subtitle="Reshape your day — you confirm"
+              onPress={() => navigation.navigate("Optimizer")}
+            />
             <NavRow
               icon="sparkle"
               title="Tips"
               subtitle="Gentle finance & health"
               onPress={() => navigation.navigate("Tips")}
               locked={!isPro}
+              last
+            />
+          </Card>
+        </View>
+
+        {/* Help */}
+        <View style={{ marginTop: 18 }}>
+          <SectionLabel>Help</SectionLabel>
+          <Card pad={16} style={{ paddingVertical: 2 }}>
+            <NavRow
+              icon="sparkle"
+              title="How Otto works"
+              subtitle="A quick tour of the basics"
+              onPress={() => navigation.navigate("HowItWorks")}
+              last
             />
           </Card>
         </View>
 
         {/* About */}
-        <View className="mt-5">
+        <View style={{ marginTop: 18 }}>
           <SectionLabel>About</SectionLabel>
           <Card>
-            <Text className="font-body-bold text-[15px] text-ink">{APP_NAME}</Text>
-            <Text className="mt-px font-body italic text-[13px] text-ink-500">Otto knows.</Text>
-            <Text className="mt-2 font-body text-[13px] text-ink-400">Version {APP_VERSION}</Text>
-            <Text className="mt-px font-body text-[13px] text-ink-400">
+            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 15, color: OC.ink }}>
+              {APP_NAME}
+            </Text>
+            <Text
+              style={{ marginTop: 1, fontFamily: FONT.body, fontStyle: "italic", fontSize: 13, color: OC.ink500 }}
+            >
+              Otto knows.
+            </Text>
+            <Text style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 13, color: OC.ink400 }}>
+              Version {APP_VERSION}
+            </Text>
+            <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 13, color: OC.ink400 }}>
               Privacy policy version {CONSENT_POLICY_VERSION}
             </Text>
-            <Text className="mt-2 font-body text-[12px] text-ink-400">
+            <Text style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 12, color: OC.ink400 }}>
               Free tier runs entirely on your device. Your data stays local.
             </Text>
           </Card>
         </View>
+
+        {/* Danger zone — DPA right to erasure */}
+        <View style={{ marginTop: 18, marginBottom: 10 }}>
+          <SectionLabel>Account</SectionLabel>
+          <Pressable
+            onPress={confirmDelete}
+            disabled={deleting}
+            accessibilityRole="button"
+            accessibilityLabel="Delete account and data"
+            style={({ pressed }) => ({
+              borderRadius: RADIUS.btn,
+              borderWidth: 1.5,
+              borderColor: OC.coral,
+              backgroundColor: OC.surface,
+              paddingVertical: 13,
+              alignItems: "center",
+              opacity: pressed || deleting ? 0.6 : 1,
+            })}
+          >
+            <Text style={{ color: OC.coral, fontFamily: FONT.bodyX, fontSize: 14.5 }}>
+              {deleting ? "Deleting…" : "Delete account & data"}
+            </Text>
+          </Pressable>
+          <Text style={{ marginTop: 8, textAlign: "center", fontFamily: FONT.body, fontSize: 12, color: OC.ink400 }}>
+            Permanently erases your account and all on-device data. This can&apos;t be undone.
+          </Text>
+        </View>
       </AsyncBoundary>
-    </ScreenContainer>
+    </OverlayScreen>
   );
 }

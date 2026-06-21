@@ -44,3 +44,4 @@ Cross-domain finance + health data is DPA-regulated and platform-restricted. Gra
 
 ## Working with this repo
 This project runs **BMAD** (v6.8.0) inside Claude Code. Planning artifacts are in `_bmad-output/`. Next step out of planning is **M1 (UX + Claude Design pass)** then **M2/M3 (Phase 1 organizer core)**.
+# otto-knows

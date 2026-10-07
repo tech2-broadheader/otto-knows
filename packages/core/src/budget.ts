@@ -1,5 +1,6 @@
 // Budget math — spent vs limit per category for a month. Pure.
 import type { BudgetCategory, Transaction } from "@otto/schemas";
+import { isInMonth } from "./month";
 
 export type CategorySpend = {
   categoryId: string;
@@ -19,11 +20,6 @@ export type BudgetSummary = {
   uncategorizedMinor: number;
   categories: CategorySpend[];
 };
-
-/** True if the ISO datetime falls within the given YYYY-MM month. */
-function isInMonth(occurredAt: string, month: string): boolean {
-  return occurredAt.startsWith(`${month}-`) || occurredAt.startsWith(month);
-}
 
 /**
  * Summarize spending for `month` (YYYY-MM). Sums transactions per category,

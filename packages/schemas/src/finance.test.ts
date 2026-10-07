@@ -3,6 +3,7 @@ import {
   accountSchema,
   expenseDraftSchema,
   isSensitiveEntity,
+  monthlyReportSchema,
   nudgeKindSchema,
   safeToSpendSchema,
   transactionSchema,
@@ -133,7 +134,13 @@ describe("safeToSpendSchema", () => {
   };
 
   it("accepts an ok result and a no-income result", () => {
-    const ok = { ...common, status: "ok", nextPayday: "2026-10-15", daysUntilPayday: 7, perDayMinor: 0 };
+    const ok = {
+      ...common,
+      status: "ok",
+      nextPayday: "2026-10-15",
+      daysUntilPayday: 7,
+      perDayMinor: 0,
+    };
     expect(safeToSpendSchema.safeParse(ok).success).toBe(true);
     expect(safeToSpendSchema.safeParse({ ...common, status: "no-income" }).success).toBe(true);
     expect(safeToSpendSchema.safeParse({ ...common, status: "maybe" }).success).toBe(false);
@@ -141,5 +148,31 @@ describe("safeToSpendSchema", () => {
 
   it("adds a safe-to-spend nudge kind", () => {
     expect(nudgeKindSchema.safeParse("safe-to-spend").success).toBe(true);
+  });
+});
+
+describe("monthlyReportSchema", () => {
+  const report = {
+    month: "2026-10",
+    currency: "PHP",
+    incomeMinor: 100,
+    spendingMinor: 50,
+    netMinor: 50,
+    categories: [
+      {
+        categoryId: null,
+        name: "Uncategorized",
+        spentMinor: 50,
+        previousMinor: 0,
+        changeMinor: 50,
+        changePct: null,
+      },
+    ],
+    previous: null,
+  };
+
+  it("accepts a report and rejects a malformed month", () => {
+    expect(monthlyReportSchema.safeParse(report).success).toBe(true);
+    expect(monthlyReportSchema.safeParse({ ...report, month: "Oct 2026" }).success).toBe(false);
   });
 });

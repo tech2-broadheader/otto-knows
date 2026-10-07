@@ -65,7 +65,7 @@ development_status:
   11-2-wallets-accounts: in-progress            # logic (tasks 1-4) done; UI blocked on Claude Design
   11-3-income-transfer-transactions: in-progress # logic (tasks 1-5) done; UI blocked on Claude Design
   11-4-safe-to-spend: in-progress               # logic + Today line done; Finance hero UI blocked on Claude Design
-  11-5-monthly-report: backlog                  # story file drafted; after 11.3; UI blocked on Claude Design
+  11-5-monthly-report: in-progress              # logic done; report screen blocked on Claude Design
   epic-11-retrospective: optional
 
   # --- Daily tasks (planned 2026-10-08; see sprint-change-proposal-2026-10-08.md) ---

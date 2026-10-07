@@ -135,3 +135,29 @@ export const safeToSpendSchema = z.object({
   currency: z.string().min(1),
 });
 export type SafeToSpend = z.infer<typeof safeToSpendSchema>;
+
+/** Spending in one category for a month vs the month before (story 11.5). */
+export const categoryReportLineSchema = z.object({
+  /** null = Uncategorized (no category, or a deleted one). */
+  categoryId: idSchema.nullable(),
+  name: z.string().min(1),
+  spentMinor: z.number().int().min(0),
+  previousMinor: z.number().int().min(0),
+  changeMinor: z.number().int(),
+  /** % change vs last month, one decimal; null when last month was 0 ("new"). */
+  changePct: z.number().nullable(),
+});
+export type CategoryReportLine = z.infer<typeof categoryReportLineSchema>;
+
+/** Monthly report: income, spending (expenses only), net, by category. */
+export const monthlyReportSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/, "Expected YYYY-MM"),
+  currency: z.string().min(1),
+  incomeMinor: z.number().int().min(0),
+  spendingMinor: z.number().int().min(0),
+  netMinor: z.number().int(),
+  categories: z.array(categoryReportLineSchema),
+  /** Last month's totals, or null when there was no activity to compare with. */
+  previous: z.object({ incomeMinor: z.number().int(), spendingMinor: z.number().int() }).nullable(),
+});
+export type MonthlyReport = z.infer<typeof monthlyReportSchema>;

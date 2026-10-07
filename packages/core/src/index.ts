@@ -21,6 +21,8 @@ export * from "./accounts";
 export * from "./payday";
 export * from "./safe-to-spend";
 export * from "./format";
+// Story 11.5 — monthly report.
+export * from "./monthly-report";
 // Cross-domain insights (payday-vs-bill nudges, …).
 export * from "./insights";
 // Story 4.2 — template-based briefing composer (free tier).

@@ -1,6 +1,6 @@
 # Story 11.5: Monthly report
 
-Status: drafted — logic tasks ready after 11.3; UI tasks blocked on Claude Design approval
+Status: in-progress — Tasks 1–2 (logic) done; Tasks 3–4 (report screen, manual check) blocked on Claude Design approval
 
 ## Story
 
@@ -20,12 +20,12 @@ so that I can see where my money went and whether I'm improving.
 
 **Design-independent**
 
-- [ ] **Task 1 — Contract** (AC: 1, 2)
-  - [ ] 1.1 `packages/schemas/src/finance.ts`: `monthlyReportSchema` `{ month: "YYYY-MM", currency, incomeMinor, spendingMinor, netMinor, categories: [{ categoryId: id | null, name, spentMinor, previousMinor, changeMinor, changePct: number | null }], previous: { incomeMinor, spendingMinor } | null }`. Tests.
-- [ ] **Task 2 — Core** (AC: 1–3)
-  - [ ] 2.1 `packages/core/src/monthly-report.ts`: `computeMonthlyReport(categories, transactions, month)`. Reuse the month-matching rule from `budget.ts` (`isInMonth` — extract to a shared helper rather than copy).
-  - [ ] 2.2 `previousMonth("2026-01") === "2025-12"` helper with tests.
-  - [ ] 2.3 Tests: transfers ignored; income totals; uncategorized bucket; category present this month but not last (changePct null); deleted category ids fall into "Uncategorized"; first-ever month (`previous: null`); sort order stable on ties (by name).
+- [x] **Task 1 — Contract** (AC: 1, 2)
+  - [x] 1.1 `packages/schemas/src/finance.ts`: `monthlyReportSchema` `{ month: "YYYY-MM", currency, incomeMinor, spendingMinor, netMinor, categories: [{ categoryId: id | null, name, spentMinor, previousMinor, changeMinor, changePct: number | null }], previous: { incomeMinor, spendingMinor } | null }`. Tests.
+- [x] **Task 2 — Core** (AC: 1–3)
+  - [x] 2.1 `packages/core/src/monthly-report.ts`: `computeMonthlyReport(categories, transactions, month)`. Reuse the month-matching rule from `budget.ts` (`isInMonth` — extract to a shared helper rather than copy).
+  - [x] 2.2 `previousMonth("2026-01") === "2025-12"` helper with tests.
+  - [x] 2.3 Tests: transfers ignored; income totals; uncategorized bucket; category present this month but not last (changePct null); deleted category ids fall into "Uncategorized"; first-ever month (`previous: null`); sort order stable on ties (by name).
 
 **UI (after Claude Design approval of `docs/ux-spec.md` §7 screen 4)**
 
@@ -50,10 +50,21 @@ so that I can see where my money went and whether I'm improving.
 
 ### Agent Model Used
 
+Claude Opus 5.5 (claude-opus-5-5)
+
 ### Debug Log References
 
 ### Completion Notes List
 
 - Story drafted 2026-10-08.
+- Tasks 1–2 implemented 2026-10-08 (tests first, seen failing):
+  - `monthlyReportSchema` + `categoryReportLineSchema` (+ types).
+  - `packages/core/src/month.ts`: `isInMonth` extracted from `budget.ts` (budget now imports it — one rule for both) and `previousMonth`.
+  - `packages/core/src/monthly-report.ts`: `computeMonthlyReport` — income / spending (expenses only) / net; categories incl. Uncategorized (deleted categories fold into it); categories that only had spending last month still listed; `changePct` one decimal, null when last month was 0; `previous: null` when last month had no activity; ties sorted by name.
+  - A regex escaping slip in the schema (lost backslashes) was caught by the schema test and fixed.
+  - Gates: typecheck ✅, tests ✅ 363 (schemas 32, core 113, mobile 169, web 49), lint ✅.
 
 ### File List
+
+- packages/schemas/src/finance.ts, finance.test.ts; packages/types/src/index.ts
+- packages/core/src/month.ts (new), monthly-report.ts (new), monthly-report.test.ts (new), budget.ts, index.ts

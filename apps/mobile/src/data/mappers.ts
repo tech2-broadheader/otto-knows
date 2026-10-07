@@ -11,6 +11,7 @@
 // the way out. With identity transforms these mappers round-trip losslessly,
 // which is exactly what the unit tests assert.
 import type {
+  Account,
   Bill,
   BudgetCategory,
   CalendarEvent,
@@ -446,6 +447,7 @@ export interface TransactionRow {
   userId: string;
   amountMinor: string;
   amountCurrency: string;
+  accountId: string | null;
   categoryId: string | null;
   description: string | null;
   occurredAt: string;
@@ -459,6 +461,7 @@ export function transactionToRow(t: Transaction, sealed: SealedTransaction): Tra
     userId: t.userId,
     amountMinor: sealed.amountMinor,
     amountCurrency: t.amount.currency,
+    accountId: nullable(t.accountId),
     categoryId: nullable(t.categoryId),
     description: sealed.description,
     occurredAt: t.occurredAt,
@@ -479,9 +482,57 @@ export function transactionFromRow(
       amountMinor: Number.parseInt(openedAmountMinor, 10),
       currency: r.amountCurrency as Transaction["amount"]["currency"],
     },
+    accountId: optional(r.accountId),
     categoryId: optional(r.categoryId),
     description: openedDescription === null ? undefined : openedDescription,
     occurredAt: r.occurredAt,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
+export interface AccountRow {
+  id: string;
+  userId: string;
+  name: string;
+  type: string;
+  provider: string | null;
+  /** Sealed signed minor units; NULL means 0 (the migration-created Cash wallet). */
+  openingBalanceMinor: string | null;
+  openingBalanceCurrency: string;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** `sealedOpeningBalance` is the encrypted amount, or null to store "0 / never set". */
+export function accountToRow(a: Account, sealedOpeningBalance: string | null): AccountRow {
+  return {
+    id: a.id,
+    userId: a.userId,
+    name: a.name,
+    type: a.type,
+    provider: nullable(a.provider),
+    openingBalanceMinor: sealedOpeningBalance,
+    openingBalanceCurrency: a.openingBalance.currency,
+    archivedAt: nullable(a.archivedAt),
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  };
+}
+
+export function accountFromRow(r: AccountRow, openedOpeningBalance: string | null): Account {
+  return {
+    id: r.id,
+    userId: r.userId,
+    name: r.name,
+    type: r.type as Account["type"],
+    provider: optional(r.provider),
+    openingBalance: {
+      amountMinor: openedOpeningBalance === null ? 0 : Number.parseInt(openedOpeningBalance, 10),
+      currency: r.openingBalanceCurrency as Account["openingBalance"]["currency"],
+    },
+    archivedAt: optional(r.archivedAt),
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };

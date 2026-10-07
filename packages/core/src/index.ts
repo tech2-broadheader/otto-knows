@@ -15,6 +15,8 @@ export * from "./context-graph";
 export * from "./recurrence";
 // Story 3.2 — budget math (spent vs limit per category).
 export * from "./budget";
+// Story 11.2 — wallet balances (derived, ADR-004).
+export * from "./accounts";
 // Cross-domain insights (payday-vs-bill nudges, …).
 export * from "./insights";
 // Story 4.2 — template-based briefing composer (free tier).

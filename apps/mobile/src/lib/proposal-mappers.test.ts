@@ -8,7 +8,7 @@ import {
   transactionFromExpenseDraft,
   type ApplyContext,
 } from "./proposal-mappers";
-import { LOCAL_USER_ID } from "./constants";
+import { DEFAULT_CASH_ACCOUNT_ID, LOCAL_USER_ID } from "./constants";
 
 // A deterministic context: ids come from a counter so assertions are stable.
 function makeCtx(overrides: Partial<ApplyContext> = {}): ApplyContext {
@@ -58,6 +58,14 @@ describe("transactionFromExpenseDraft", () => {
     expect(tx.description).toBe("Groceries");
     expect(tx.occurredAt).toBe("2026-06-15T12:00:00+08:00");
     expect(tx.userId).toBe(LOCAL_USER_ID);
+  });
+
+  it("files the expense under the default Cash wallet until wallets are pickable (11.3)", () => {
+    const tx = transactionFromExpenseDraft(
+      { amount: PHP, occurredAt: "2026-06-15T12:00:00+08:00" },
+      makeCtx(),
+    );
+    expect(tx.accountId).toBe(DEFAULT_CASH_ACCOUNT_ID);
   });
 });
 

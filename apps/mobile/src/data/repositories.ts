@@ -11,6 +11,7 @@
 // consent + audit decisions) is pure and tested in isolation.
 import { and, eq } from "drizzle-orm";
 import {
+  accountSchema,
   auditEntrySchema,
   billSchema,
   budgetCategorySchema,
@@ -23,6 +24,7 @@ import {
   routineSchema,
   routineAnchorSchema,
   transactionSchema,
+  type Account,
   type Bill,
   type BudgetCategory,
   type CalendarEvent,
@@ -38,11 +40,14 @@ import {
 } from "@otto/schemas";
 import { getDatabase } from "../db/client";
 import { newUuid } from "../lib/id";
+import { DEFAULT_CASH_ACCOUNT_ID } from "../lib/constants";
 import { tables } from "../db/schema";
 import type { EncryptionProvider } from "../security/encryption";
 import { requireConsent } from "../security/consent";
 import { buildAuditEntry, shouldAudit, type AuditContext } from "../security/audit";
 import {
+  accountFromRow,
+  accountToRow,
   billFromRow,
   billToRow,
   budgetCategoryFromRow,
@@ -534,6 +539,128 @@ export function makeTransactionRepository(deps: RepositoryDeps) {
     async delete(userId: string, id: string): Promise<void> {
       getDatabase().delete(tables.transactions).where(eq(tables.transactions.id, id)).run();
       await audit(userId, id, "delete");
+    },
+  };
+}
+
+/** Why a wallet could not be deleted (story 11.2 AC6). */
+export type AccountDeleteResult = { ok: true } | { ok: false; reason: "has-transactions" };
+
+export function makeAccountRepository(deps: RepositoryDeps) {
+  const ENTITY = "account";
+  async function audit(
+    userId: string,
+    entityId: string | undefined,
+    action: AuditContext["action"],
+  ): Promise<void> {
+    if (!shouldAudit(ENTITY)) return;
+    await deps.writeAudit({
+      id: newId(),
+      userId,
+      entity: ENTITY,
+      entityId,
+      action,
+      actor: "user",
+      at: nowIso(),
+    });
+  }
+
+  async function seal(entity: Account): Promise<string> {
+    return deps.encryption.encrypt(String(entity.openingBalance.amountMinor));
+  }
+
+  async function open(row: typeof tables.accounts.$inferSelect): Promise<Account> {
+    const opened =
+      row.openingBalanceMinor === null
+        ? null
+        : await deps.encryption.decrypt(row.openingBalanceMinor);
+    return accountSchema.parse(accountFromRow(row, opened));
+  }
+
+  async function create(input: Account): Promise<Account> {
+    const entity = accountSchema.parse(input);
+    getDatabase()
+      .insert(tables.accounts)
+      .values(accountToRow(entity, await seal(entity)))
+      .run();
+    await audit(entity.userId, entity.id, "write");
+    return entity;
+  }
+
+  return {
+    create,
+    async get(userId: string, id: string): Promise<Account | undefined> {
+      const row = getDatabase()
+        .select()
+        .from(tables.accounts)
+        .where(and(eq(tables.accounts.id, id), eq(tables.accounts.userId, userId)))
+        .get();
+      if (!row) return undefined;
+      await audit(userId, id, "read");
+      return open(row);
+    },
+    async list(userId: string): Promise<Account[]> {
+      const rows = getDatabase()
+        .select()
+        .from(tables.accounts)
+        .where(eq(tables.accounts.userId, userId))
+        .all();
+      await audit(userId, undefined, "read");
+      const out: Account[] = [];
+      for (const row of rows) out.push(await open(row));
+      return out;
+    },
+    async update(input: Account): Promise<Account> {
+      const entity = accountSchema.parse(input);
+      getDatabase()
+        .update(tables.accounts)
+        .set(accountToRow(entity, await seal(entity)))
+        .where(eq(tables.accounts.id, entity.id))
+        .run();
+      await audit(entity.userId, entity.id, "write");
+      return entity;
+    },
+    /** Refuses while any transaction still points at the wallet — archive it instead. */
+    async delete(userId: string, id: string): Promise<AccountDeleteResult> {
+      const referencing = getDatabase()
+        .select({ id: tables.transactions.id })
+        .from(tables.transactions)
+        .where(eq(tables.transactions.accountId, id))
+        .get();
+      if (referencing) return { ok: false, reason: "has-transactions" };
+      getDatabase().delete(tables.accounts).where(eq(tables.accounts.id, id)).run();
+      await audit(userId, id, "delete");
+      return { ok: true };
+    },
+    /**
+     * Make sure the user has at least one wallet (a default Cash). Idempotent.
+     * Migration step 2 creates Cash only once; after a data wipe it must be
+     * recreated here. The fixed id is reused when free so it matches the one
+     * the migration assigns, otherwise a fresh id avoids a primary-key clash.
+     */
+    async ensureDefault(userId: string): Promise<void> {
+      const db = getDatabase();
+      const existing = db
+        .select({ id: tables.accounts.id })
+        .from(tables.accounts)
+        .where(eq(tables.accounts.userId, userId))
+        .get();
+      if (existing) return;
+      const defaultIdTaken = db
+        .select({ id: tables.accounts.id })
+        .from(tables.accounts)
+        .where(eq(tables.accounts.id, DEFAULT_CASH_ACCOUNT_ID))
+        .get();
+      const now = nowIso();
+      await create({
+        id: defaultIdTaken ? newId() : DEFAULT_CASH_ACCOUNT_ID,
+        userId,
+        name: "Cash",
+        type: "cash",
+        openingBalance: { amountMinor: 0, currency: "PHP" },
+        createdAt: now,
+        updatedAt: now,
+      });
     },
   };
 }

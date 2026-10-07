@@ -46,6 +46,7 @@ export type AuditEntry = z.infer<typeof auditEntrySchema>;
  * rest and audit-log access (CLAUDE.md §6 "Sensitive data", §11).
  */
 export const SENSITIVE_ENTITIES = [
+  "account",
   "income",
   "transaction",
   "bill",

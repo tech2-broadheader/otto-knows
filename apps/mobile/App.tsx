@@ -25,7 +25,12 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import { createRepositoryDeps, initDataLayer, routineRepository } from "./src/data";
+import {
+  createRepositoryDeps,
+  initDataLayer,
+  makeAccountRepository,
+  routineRepository,
+} from "./src/data";
 import { configureNotifications } from "./src/notifications";
 import { rescheduleDay } from "./src/lib/reschedule";
 import { LOCAL_USER_ID } from "./src/lib/constants";
@@ -133,6 +138,13 @@ export default function App(): React.JSX.Element {
         return;
       }
       configureNotifications();
+      try {
+        // Every install needs a default Cash wallet (story 11.2) before any
+        // transaction is added; idempotent.
+        await makeAccountRepository(createRepositoryDeps()).ensureDefault(LOCAL_USER_ID);
+      } catch {
+        // Non-fatal: the Finance screen retries ensureDefault on load.
+      }
       // First run = no routine set up yet → start with onboarding.
       let hasRoutine = false;
       try {

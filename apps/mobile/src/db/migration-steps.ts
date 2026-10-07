@@ -150,7 +150,42 @@ const BASELINE: Migration = {
   ],
 };
 
-export const MIGRATIONS: readonly Migration[] = [BASELINE];
+/** Timestamp in the ISO-with-offset shape isoDateTimeSchema expects. */
+const SQL_NOW = "strftime('%Y-%m-%dT%H:%M:%S+00:00', 'now')";
+
+/**
+ * Step 2 — wallets (story 11.2, ADR-004). Creates `accounts`, links transactions
+ * to a wallet, and moves every existing transaction into a default "Cash" wallet.
+ * Ids are inlined literals (DEFAULT_CASH_ACCOUNT_ID / LOCAL_USER_ID in
+ * lib/constants.ts) so this shipped step never changes if a constant does.
+ * opening_balance_minor is NULL (= 0) because SQL cannot encrypt; the repository
+ * encrypts any real opening balance.
+ */
+const ACCOUNTS: Migration = {
+  version: 2,
+  name: "accounts",
+  statements: [
+    `CREATE TABLE accounts (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      provider TEXT,
+      opening_balance_minor TEXT,
+      opening_balance_currency TEXT NOT NULL DEFAULT 'PHP',
+      archived_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    "ALTER TABLE transactions ADD COLUMN account_id TEXT;",
+    `INSERT INTO accounts (id, user_id, name, type, created_at, updated_at)
+      VALUES ('00000000-0000-4000-8000-0000000000ca', '00000000-0000-4000-8000-000000000001',
+              'Cash', 'cash', ${SQL_NOW}, ${SQL_NOW});`,
+    "UPDATE transactions SET account_id = '00000000-0000-4000-8000-0000000000ca' WHERE account_id IS NULL;",
+  ],
+};
+
+export const MIGRATIONS: readonly Migration[] = [BASELINE, ACCOUNTS];
 
 /** Derived from the list — never hand-maintained. */
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;
@@ -169,4 +204,5 @@ export const ALL_TABLE_NAMES: readonly string[] = [
   "context_items",
   "consents",
   "audit_entries",
+  "accounts",
 ];

@@ -1,6 +1,6 @@
 # Story 11.2: Wallets / accounts
 
-Status: drafted — logic tasks ready; UI tasks blocked on Claude Design approval
+Status: in-progress — Tasks 1–4 (logic) done; Task 5 (UI) blocked on Claude Design approval
 
 <!-- Definition of Ready (CLAUDE.md §9): design approval required for UI stories. Tasks 1–4 are design-independent and may start once 11.1 is done; Task 5 waits for the approved design. -->
 
@@ -25,31 +25,31 @@ so that I always know how much money I actually have and how much I owe on my ca
 
 **Design-independent (start after 11.1 is done)**
 
-- [ ] **Task 1 — Contract** (AC: 1, 2, 7)
-  - [ ] 1.1 `packages/schemas/src/finance.ts`: add `accountTypeSchema = z.enum(["cash","ewallet","bank","credit_card"])` and `accountSchema` `{ id, userId, name (1–80), type, provider? (max 40), openingBalance: moneySchema, archivedAt?: isoDateTimeSchema, ...timestampFields }`. Opening balance is signed: assets positive; for `credit_card` the UI stores owed as a **negative** amount.
-  - [ ] 1.2 Add `transactionSchema.accountId: idSchema` as **optional in this story** (11.3 makes it required alongside `type`). Export types via `z.infer`; re-export from `packages/types`.
-  - [ ] 1.3 `packages/schemas/src/consent.ts`: add `"account"` to `SENSITIVE_ENTITIES`.
-  - [ ] 1.4 Schema tests: valid/invalid for each type, name bounds, provider bounds.
-- [ ] **Task 2 — Migration step 2** (AC: 3, 8)
-  - [ ] 2.1 `apps/mobile/src/db/migration-steps.ts`: append step `{ version: 2, name: "accounts" }`:
+- [x] **Task 1 — Contract** (AC: 1, 2, 7)
+  - [x] 1.1 `packages/schemas/src/finance.ts`: add `accountTypeSchema = z.enum(["cash","ewallet","bank","credit_card"])` and `accountSchema` `{ id, userId, name (1–80), type, provider? (max 40), openingBalance: moneySchema, archivedAt?: isoDateTimeSchema, ...timestampFields }`. Opening balance is signed: assets positive; for `credit_card` the UI stores owed as a **negative** amount.
+  - [x] 1.2 Add `transactionSchema.accountId: idSchema` as **optional in this story** (11.3 makes it required alongside `type`). Export types via `z.infer`; re-export from `packages/types`.
+  - [x] 1.3 `packages/schemas/src/consent.ts`: add `"account"` to `SENSITIVE_ENTITIES`.
+  - [x] 1.4 Schema tests: valid/invalid for each type, name bounds, provider bounds.
+- [x] **Task 2 — Migration step 2** (AC: 3, 8)
+  - [x] 2.1 `apps/mobile/src/db/migration-steps.ts`: append step `{ version: 2, name: "accounts" }`:
         `CREATE TABLE accounts (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, name TEXT NOT NULL, type TEXT NOT NULL, provider TEXT, opening_balance_minor TEXT, opening_balance_currency TEXT NOT NULL DEFAULT 'PHP', archived_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`;
         `ALTER TABLE transactions ADD COLUMN account_id TEXT`;
         `INSERT INTO accounts (...) VALUES ('<DEFAULT_CASH_ACCOUNT_ID>', '<LOCAL_USER_ID>', 'Cash', 'cash', NULL, NULL, 'PHP', NULL, <now>, <now>)` — `opening_balance_minor` NULL means 0 (SQL cannot encrypt);
         `UPDATE transactions SET account_id = '<DEFAULT_CASH_ACCOUNT_ID>' WHERE account_id IS NULL`.
         Use `strftime('%Y-%m-%dT%H:%M:%S+00:00','now')` for timestamps (must satisfy `isoDateTimeSchema` with offset).
-  - [ ] 2.2 Add `DEFAULT_CASH_ACCOUNT_ID = "00000000-0000-4000-8000-0000000000ca"` to `apps/mobile/src/lib/constants.ts` (valid v4 UUID, same pattern as `LOCAL_USER_ID`). Inline its literal value into the SQL — a shipped step must not change if the constant ever does.
-  - [ ] 2.3 Add `"accounts"` to `ALL_TABLE_NAMES`; add `accounts` table + `accountId` column to `apps/mobile/src/db/schema.ts` (Drizzle parity test from 11.1 will enforce the match).
-  - [ ] 2.4 Migration tests (extend `migrations.test.ts`): v1 DB with transactions → v2: Cash exists, every transaction has `account_id = DEFAULT_CASH_ACCOUNT_ID`, other columns byte-identical; fresh install → v2 with exactly one Cash.
-- [ ] **Task 3 — Repository + default wallet** (AC: 6, 7, 8)
-  - [ ] 3.1 `apps/mobile/src/data/mappers.ts`: `accountToRow` / `accountFromRow` (NULL opening balance → `{ amountMinor: 0, currency: "PHP" }`), with tests in `mappers.test.ts`.
-  - [ ] 3.2 `apps/mobile/src/data/repositories.ts`: `makeAccountRepository(deps)` following the exact pattern of `makeTransactionRepository` (encrypt `opening_balance_minor`, `audit(..., "read" | "write" | "delete")`, Zod-validate at the boundary). `delete` refuses when any transaction references the account (typed error, not a throw-and-forget).
-  - [ ] 3.3 `ensureDefaultAccount(deps)`: idempotent; if the local user has no account, insert Cash with `DEFAULT_CASH_ACCOUNT_ID`. Call it in `App.tsx` boot right after a successful migration (covers wipe + fresh install).
-  - [ ] 3.4 `transactionToRow`/`transactionFromRow` carry `accountId`; existing callers (`useFinance.addTransaction`, `transactionFromExpenseDraft`) pass `DEFAULT_CASH_ACCOUNT_ID` until 11.3 adds the picker.
-- [ ] **Task 4 — Balances (pure core)** (AC: 2, 4)
-  - [ ] 4.1 `packages/core/src/accounts.ts`: `computeAccountBalances(accounts, transactions)` → per account `{ accountId, balanceMinor }` (signed) and `summarizeWallets(...)` → `{ onHandMinor, cardOwedMinor, perAccount[] }`. Until 11.3, every transaction is an expense: `balance = opening − Σ expenses`. Write it so 11.3 only adds the income/transfer branches.
-  - [ ] 4.2 Exclude archived accounts from totals; transactions pointing at an unknown account are reported (not silently dropped) via an `orphanTransactionIds` field.
-  - [ ] 4.3 Tests: cash/ewallet/bank math, card owed sign, archived exclusion, empty lists, large values (no float — integers only).
-  - [ ] 4.4 `apps/mobile/src/lib/caps.ts`: add `wallets: 3` to `FREE_CAPS` + label; tests in `caps.test.ts`.
+  - [x] 2.2 Add `DEFAULT_CASH_ACCOUNT_ID = "00000000-0000-4000-8000-0000000000ca"` to `apps/mobile/src/lib/constants.ts` (valid v4 UUID, same pattern as `LOCAL_USER_ID`). Inline its literal value into the SQL — a shipped step must not change if the constant ever does.
+  - [x] 2.3 Add `"accounts"` to `ALL_TABLE_NAMES`; add `accounts` table + `accountId` column to `apps/mobile/src/db/schema.ts` (Drizzle parity test from 11.1 will enforce the match).
+  - [x] 2.4 Migration tests (extend `migrations.test.ts`): v1 DB with transactions → v2: Cash exists, every transaction has `account_id = DEFAULT_CASH_ACCOUNT_ID`, other columns byte-identical; fresh install → v2 with exactly one Cash.
+- [x] **Task 3 — Repository + default wallet** (AC: 6, 7, 8)
+  - [x] 3.1 `apps/mobile/src/data/mappers.ts`: `accountToRow` / `accountFromRow` (NULL opening balance → `{ amountMinor: 0, currency: "PHP" }`), with tests in `mappers.test.ts`.
+  - [x] 3.2 `apps/mobile/src/data/repositories.ts`: `makeAccountRepository(deps)` following the exact pattern of `makeTransactionRepository` (encrypt `opening_balance_minor`, `audit(..., "read" | "write" | "delete")`, Zod-validate at the boundary). `delete` refuses when any transaction references the account (typed error, not a throw-and-forget).
+  - [x] 3.3 `ensureDefaultAccount(deps)`: idempotent; if the local user has no account, insert Cash with `DEFAULT_CASH_ACCOUNT_ID`. Call it in `App.tsx` boot right after a successful migration (covers wipe + fresh install).
+  - [x] 3.4 `transactionToRow`/`transactionFromRow` carry `accountId`; existing callers (`useFinance.addTransaction`, `transactionFromExpenseDraft`) pass `DEFAULT_CASH_ACCOUNT_ID` until 11.3 adds the picker.
+- [x] **Task 4 — Balances (pure core)** (AC: 2, 4)
+  - [x] 4.1 `packages/core/src/accounts.ts`: `computeAccountBalances(accounts, transactions)` → per account `{ accountId, balanceMinor }` (signed) and `summarizeWallets(...)` → `{ onHandMinor, cardOwedMinor, perAccount[] }`. Until 11.3, every transaction is an expense: `balance = opening − Σ expenses`. Write it so 11.3 only adds the income/transfer branches.
+  - [x] 4.2 Exclude archived accounts from totals; transactions pointing at an unknown account are reported (not silently dropped) via an `orphanTransactionIds` field.
+  - [x] 4.3 Tests: cash/ewallet/bank math, card owed sign, archived exclusion, empty lists, large values (no float — integers only).
+  - [x] 4.4 `apps/mobile/src/lib/caps.ts`: add `wallets: 3` to `FREE_CAPS` + label; tests in `caps.test.ts`.
 
 **UI (after Claude Design approval of `docs/ux-spec.md` §7 screens 1 & 3)**
 
@@ -79,10 +79,31 @@ so that I always know how much money I actually have and how much I owe on my ca
 
 ### Agent Model Used
 
+Claude Opus 5.5 (claude-opus-5-5)
+
 ### Debug Log References
 
 ### Completion Notes List
 
 - Story drafted 2026-10-08 with design-independent / UI task split.
+- Tasks 1–4 implemented TDD (each test seen failing first):
+  - `accountSchema` + `accountTypeSchema`; `transactionSchema.accountId` optional; `account` added to SENSITIVE_ENTITIES; types re-exported.
+  - Migration step 2 (accounts table, `transactions.account_id`, default Cash with fixed id, existing transactions assigned). The v0-upgrade test now compares only v0 columns, since later steps add columns.
+  - `accountToRow`/`accountFromRow` (NULL opening balance = 0); transaction mappers carry `accountId`.
+  - `makeAccountRepository` (encrypt + audit like transactions); `delete` returns `{ ok:false, reason:"has-transactions" }` instead of deleting; `ensureDefault` is idempotent and reuses the fixed Cash id only when free (no PK clash for another user id). Called at boot (App.tsx, non-fatal) and on Finance load (covers wipe → onboarding without reboot).
+  - `summarizeWallets` / `canArchiveAccount` in `packages/core/src/accounts.ts`: derived balances, card owed as positive debt, overpaid card ignored, archived excluded from totals, orphans reported.
+  - Free cap `wallets: 3`; `useFinance.addTransaction` and quick-add `log_expense` file under Cash until 11.3.
+  - Gates: typecheck ✅, tests ✅ 312 (schemas 23, core 76, mobile 164, web 49), lint ✅, prettier ✅ on touched files.
+- Not unit-tested (native db, project convention): repository SQL paths — covered by manual device check in Task 6.
+- Remaining: Task 5 (UI) after design approval; Task 6 manual Android check.
 
 ### File List
+
+- packages/schemas/src/finance.ts, finance.test.ts (new), consent.ts
+- packages/types/src/index.ts
+- packages/core/src/accounts.ts (new), accounts.test.ts (new), index.ts
+- apps/mobile/src/db/migration-steps.ts, schema.ts, migrations.test.ts
+- apps/mobile/src/data/mappers.ts, mappers.test.ts, repositories.ts
+- apps/mobile/src/lib/constants.ts, caps.ts, caps.test.ts, proposal-mappers.ts, proposal-mappers.test.ts
+- apps/mobile/src/hooks/useFinance.ts
+- apps/mobile/App.tsx

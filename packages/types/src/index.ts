@@ -14,6 +14,8 @@ export type {
   Bill,
   IncomeCadence,
   Income,
+  AccountType,
+  Account,
   BudgetCategory,
   Transaction,
   DataSource,

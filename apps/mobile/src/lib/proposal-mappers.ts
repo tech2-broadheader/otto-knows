@@ -18,7 +18,7 @@ import {
   type RoutineAnchor,
   type Transaction,
 } from "@otto/schemas";
-import { LOCAL_USER_ID } from "./constants";
+import { LOCAL_USER_ID, DEFAULT_CASH_ACCOUNT_ID } from "./constants";
 
 /** Injected context so the mappers stay pure (no `Date.now`/native id inside). */
 export type ApplyContext = {
@@ -69,6 +69,8 @@ export function transactionFromExpenseDraft(
   return transactionSchema.parse({
     ...stamp(ctx),
     amount: draft.amount,
+    // Story 11.3 resolves the wallet from the draft / last-used wallet instead.
+    accountId: DEFAULT_CASH_ACCOUNT_ID,
     categoryId: draft.categoryId,
     description: draft.description,
     occurredAt: draft.occurredAt,

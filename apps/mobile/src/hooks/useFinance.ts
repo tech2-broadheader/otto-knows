@@ -17,13 +17,14 @@ import {
 import { computeBudgetSummary, type BudgetSummary } from "@otto/core";
 import {
   budgetCategoryRepository,
+  makeAccountRepository,
   makeBillRepository,
   makeIncomeRepository,
   makeTransactionRepository,
   type RepositoryDeps,
 } from "../data";
 import { FREE_CAPS, isAtCap } from "../lib/caps";
-import { LOCAL_USER_ID } from "../lib/constants";
+import { DEFAULT_CASH_ACCOUNT_ID, LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { currentMonth, isoFromDateTime, localUtcOffset, nowIso, todayDate } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
@@ -66,6 +67,7 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
   const billRepo = useMemo(() => makeBillRepository(deps), [deps]);
   const incomeRepo = useMemo(() => makeIncomeRepository(deps), [deps]);
   const txRepo = useMemo(() => makeTransactionRepository(deps), [deps]);
+  const accountRepo = useMemo(() => makeAccountRepository(deps), [deps]);
 
   const [state, setState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | undefined>();
@@ -77,6 +79,9 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
   const reload = useCallback(async () => {
     setState("loading");
     try {
+      // After a data wipe the app returns to onboarding without rebooting, so the
+      // boot-time default wallet may be gone; recreate it before any transaction.
+      await accountRepo.ensureDefault(LOCAL_USER_ID);
       const [b, i, t, c] = await Promise.all([
         billRepo.list(LOCAL_USER_ID),
         incomeRepo.list(LOCAL_USER_ID),
@@ -92,7 +97,7 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
       setError(caught instanceof Error ? caught.message : "Could not load your finances.");
       setState("error");
     }
-  }, [billRepo, incomeRepo, txRepo]);
+  }, [accountRepo, billRepo, incomeRepo, txRepo]);
 
   useEffect(() => {
     void reload();
@@ -158,6 +163,8 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
         id: newUuid(),
         userId: LOCAL_USER_ID,
         amount: { amountMinor: input.amountMinor, currency: "PHP" },
+        // Story 11.3 replaces this with the wallet the user picks.
+        accountId: DEFAULT_CASH_ACCOUNT_ID,
         categoryId: input.categoryId,
         description:
           input.description && input.description.length > 0 ? input.description : undefined,

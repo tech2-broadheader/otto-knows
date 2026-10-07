@@ -158,10 +158,16 @@ describe("MIGRATIONS (the shipped steps)", () => {
     db.exec(
       `INSERT INTO reminders VALUES ('r1','u1','Call mom',NULL,'${ts}',NULL,NULL,'pending','${ts}','${ts}')`,
     );
+    // Later steps may ADD columns (e.g. transactions.account_id); compare only the
+    // columns that existed at v0 so we prove the original data is untouched.
+    const v0Columns = new Map(
+      ["transactions", "bills", "income", "reminders"].map((t) => [
+        t,
+        (db.prepare(`PRAGMA table_info(${t})`).all() as { name: string }[]).map((c) => c.name),
+      ]),
+    );
     const snapshot = (): unknown[] =>
-      ["transactions", "bills", "income", "reminders"].map((t) =>
-        db.prepare(`SELECT * FROM ${t}`).all(),
-      );
+      [...v0Columns].map(([t, cols]) => db.prepare(`SELECT ${cols.join(", ")} FROM ${t}`).all());
     const before = snapshot();
 
     const result = runMigrations(createNodeSqliteExecutor(db), MIGRATIONS);
@@ -215,5 +221,56 @@ describe("describeMigrationError (user-facing copy)", () => {
       message: "Your data was saved by a newer version of Otto. Please update the app to continue.",
       canRetry: false,
     });
+  });
+});
+
+describe("step 2 — accounts (story 11.2)", () => {
+  const DEFAULT_CASH = "00000000-0000-4000-8000-0000000000ca";
+  const LOCAL_USER = "00000000-0000-4000-8000-000000000001";
+  const ts = "2026-06-15T08:00:00+08:00";
+
+  function migrateTo(db: DatabaseSync, version: number): void {
+    const result = runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, version));
+    expect(result.ok).toBe(true);
+  }
+
+  it("moves every existing transaction into the default Cash wallet", () => {
+    const db = new DatabaseSync(":memory:");
+    migrateTo(db, 1);
+    db.exec(
+      `INSERT INTO transactions VALUES ('t1','${LOCAL_USER}','CIPHER:a','PHP',NULL,NULL,'${ts}','${ts}','${ts}')`,
+    );
+    db.exec(
+      `INSERT INTO transactions VALUES ('t2','${LOCAL_USER}','CIPHER:b','PHP','c1','CIPHER:d','${ts}','${ts}','${ts}')`,
+    );
+
+    migrateTo(db, 2);
+
+    const accounts = db.prepare("SELECT * FROM accounts").all() as Record<string, unknown>[];
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0]).toMatchObject({
+      id: DEFAULT_CASH,
+      user_id: LOCAL_USER,
+      name: "Cash",
+      type: "cash",
+      provider: null,
+      opening_balance_minor: null,
+      opening_balance_currency: "PHP",
+      archived_at: null,
+    });
+    expect(String(accounts[0]?.created_at)).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/);
+    const txAccounts = db.prepare("SELECT id, account_id FROM transactions ORDER BY id").all();
+    expect(txAccounts).toEqual([
+      { id: "t1", account_id: DEFAULT_CASH },
+      { id: "t2", account_id: DEFAULT_CASH },
+    ]);
+  });
+
+  it("gives a fresh install exactly one Cash wallet", () => {
+    const db = new DatabaseSync(":memory:");
+    migrateTo(db, 2);
+    expect(db.prepare("SELECT id, name FROM accounts").all()).toEqual([
+      { id: DEFAULT_CASH, name: "Cash" },
+    ]);
   });
 });

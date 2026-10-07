@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  accountSchema,
   billSchema,
   budgetCategorySchema,
   calendarEventSchema,
@@ -11,6 +12,7 @@ import {
   routineSchema,
   routineAnchorSchema,
   transactionSchema,
+  type Account,
   type Bill,
   type BudgetCategory,
   type CalendarEvent,
@@ -24,6 +26,8 @@ import {
   type Transaction,
 } from "@otto/schemas";
 import {
+  accountFromRow,
+  accountToRow,
   anchorFromRow,
   anchorToRow,
   billFromRow,
@@ -217,6 +221,7 @@ describe("sensitive mappers round-trip (identity seal/open)", () => {
       id: ID(4),
       userId: ID(3),
       amount: { amountMinor: 25050, currency: "PHP" },
+      accountId: ID(7),
       categoryId: ID(5),
       description: "Lunch",
       occurredAt: T,
@@ -244,6 +249,39 @@ describe("sensitive mappers round-trip (identity seal/open)", () => {
       description: null,
     });
     expect(transactionFromRow(row, row.amountMinor, row.description)).toEqual(tx);
+  });
+
+  it("wallet with provider, archived, negative (card owed) opening balance", () => {
+    const account: Account = accountSchema.parse({
+      id: ID(7),
+      userId: ID(3),
+      name: "BPI Visa",
+      type: "credit_card",
+      provider: "BPI",
+      openingBalance: { amountMinor: -1250000, currency: "PHP" },
+      archivedAt: T,
+      createdAt: T,
+      updatedAt: T,
+    });
+    const row = accountToRow(account, String(account.openingBalance.amountMinor));
+    expect(accountFromRow(row, row.openingBalanceMinor)).toEqual(account);
+  });
+
+  it("wallet whose opening balance was never set (migration default) reads as zero", () => {
+    const row = accountToRow(
+      accountSchema.parse({
+        id: ID(8),
+        userId: ID(3),
+        name: "Cash",
+        type: "cash",
+        openingBalance: { amountMinor: 0, currency: "PHP" },
+        createdAt: T,
+        updatedAt: T,
+      }),
+      null,
+    );
+    expect(row.openingBalanceMinor).toBeNull();
+    expect(accountFromRow(row, null).openingBalance).toEqual({ amountMinor: 0, currency: "PHP" });
   });
 
   it("medication with dosage", () => {

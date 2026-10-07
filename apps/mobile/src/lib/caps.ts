@@ -7,6 +7,8 @@ export const FREE_CAPS = {
   bills: 5,
   medications: 3,
   budgetCategories: 4,
+  // Active (non-archived) wallets, including the default Cash (story 11.2).
+  wallets: 3,
 } as const;
 
 export type CappedEntity = keyof typeof FREE_CAPS;
@@ -28,6 +30,7 @@ export function upgradePromptFor(entity: CappedEntity): string {
     bills: "bills",
     medications: "medications",
     budgetCategories: "budget categories",
+    wallets: "wallets",
   };
   return `Free plan includes up to ${cap} ${label[entity]}. Upgrade to Pro for unlimited.`;
 }

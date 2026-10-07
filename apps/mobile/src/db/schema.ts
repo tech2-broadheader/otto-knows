@@ -105,10 +105,27 @@ export const transactions = sqliteTable("transactions", {
   // ENCRYPTED ciphertext of the minor-units amount
   amountMinor: text("amount_minor").notNull(),
   amountCurrency: text("amount_currency").notNull(),
+  // Wallet the money moved in/out of (story 11.2; migration step 2).
+  accountId: text("account_id"),
   categoryId: text("category_id"),
   // ENCRYPTED ciphertext (nullable)
   description: text("description"),
   occurredAt: text("occurred_at").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+/** Wallets / accounts — SENSITIVE (finance). Opening balance encrypted at rest. */
+export const accounts = sqliteTable("accounts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  provider: text("provider"),
+  // ENCRYPTED ciphertext of the signed minor-units opening balance; NULL = 0
+  openingBalanceMinor: text("opening_balance_minor"),
+  openingBalanceCurrency: text("opening_balance_currency").notNull(),
+  archivedAt: text("archived_at"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -185,6 +202,7 @@ export const tables = {
   bills,
   income,
   transactions,
+  accounts,
   budgetCategories,
   calendarEvents,
   contextItems,

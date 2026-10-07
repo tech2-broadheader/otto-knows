@@ -1,6 +1,6 @@
 # Story 12.4: Appointments (calendar write, confirmed)
 
-Status: in-progress — Otto-only appointments (logic + quick-add) first; device/Google destinations need `expo-calendar` approval and story 3.4 live; UI needs Claude Design
+Status: in-progress — Otto appointments + UI done; device/Google destinations wait for expo-calendar approval and 3.4 live
 
 ## Story
 
@@ -30,7 +30,7 @@ so that my dentist, meetings and errands live next to my reminders and budget.
 
 - [ ] **Task 5 — Device calendar** (AC 2): `expo-calendar` (owner approval), write on confirm, store `externalId`.
 - [ ] **Task 6 — Google Calendar** (AC 2, 6): `calendar.events` incremental scope + server insert route; depends on 3.4 live.
-- [ ] **Task 7 — Screens**: appointment form + destination picker per approved design.
+- [x] **Task 7 — Screens**: appointment form + destination picker per approved design.
 - [ ] **Task 8 — Gates** + manual check.
 
 ## Dev Notes
@@ -48,6 +48,9 @@ so that my dentist, meetings and errands live next to my reminders and budget.
 Claude Opus 5.5 (claude-opus-5-5)
 
 ### Completion Notes List
+
+- UI built 2026-10-08 from the approved design (canvas "Otto — Budgeting+ & Daily Tasks screens"), on the user's currency/locale (story 13.1). Pure form validation in `apps/mobile/src/lib/forms.ts` (14 tests); screens are not unit-tested (project convention) — verified by typecheck, lint and a full Android Metro/Hermes bundle (`expo export`). **Manual on-device check still pending.**
+- `AppointmentFormScreen` (date chips, 24-hour time, length, where, remind-me, destination list with phone/Google shown disabled); Appointments view in the Reminders tab with delete; heads-up reminder triggers a notification reschedule.
 
 - Tasks 1–4 implemented 2026-10-08, tests first (schema, core, migration, mapper and LLM suites each seen failing):
   - `appointmentSchema` (end after start; destination default `otto`), `eventDraftSchema` (end time or duration required), `create_event` proposal action.

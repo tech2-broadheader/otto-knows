@@ -6,7 +6,7 @@
 // the only side effect — it builds the entity with those mappers and routes it
 // to the matching repository. This module imports the data layer (native), so
 // it is NOT covered by the Node unit tests; the mappers it composes are.
-import type { ProposalAction } from "@otto/schemas";
+import { DEFAULT_CURRENCY, type ProposalAction } from "@otto/schemas";
 import { pickDefaultAccountId } from "@otto/core";
 import {
   appointmentRepository,
@@ -73,7 +73,7 @@ export async function applyProposal(
       const txRepo = makeTransactionRepository(deps);
       const accountRepo = makeAccountRepository(deps);
       // Guarantees an active wallet exists, so the default below is never archived.
-      await accountRepo.ensureDefault(userId);
+      await accountRepo.ensureDefault(userId, ctx.currency ?? DEFAULT_CURRENCY);
       const [accounts, transactions] = await Promise.all([
         accountRepo.list(userId),
         txRepo.list(userId),

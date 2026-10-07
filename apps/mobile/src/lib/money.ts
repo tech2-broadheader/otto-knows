@@ -1,38 +1,10 @@
-// Money formatting / parsing at the UI edge.
+// Money parsing / input helpers at the UI edge (story 13.1, ADR-007).
 //
-// Money in the @otto contracts is INTEGER CENTAVOS (minor units) to avoid float
-// drift (see moneySchema). These helpers convert at the UI boundary ONLY:
-// centavos -> "₱1,234.50" for display, and a user-typed peso string -> centavos
-// for persistence. Pure; no native imports — unit-tested in Node.
-// parseMoneyInput handles any supported currency and locale (story 13.1); the
-// peso-only helpers remain until every screen reads the user's settings.
+// Money in the @otto contracts is INTEGER MINOR UNITS of the user's home
+// currency. These helpers convert at the UI boundary only — what the user types
+// in their locale <-> minor units. Display formatting is formatMoney in
+// @otto/core. Pure; no native imports — unit-tested in Node.
 import { currencyMinorUnits, type CurrencyCode } from "@otto/schemas";
-
-/** Format integer centavos as a Philippine-peso string, e.g. 123450 -> "₱1,234.50". */
-export function formatPeso(amountMinor: number): string {
-  const pesos = amountMinor / 100;
-  const formatted = pesos.toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  return `₱${formatted}`;
-}
-
-/**
- * Parse a user-typed peso string into integer centavos. Accepts an optional
- * leading "₱", thousands separators, and up to two decimal places. Returns
- * `null` when the input is not a valid, non-negative amount — the caller surfaces
- * a friendly validation message (no silent coercion).
- */
-export function parsePesoToCentavos(input: string): number | null {
-  const cleaned = input.trim().replace(/^₱/, "").replace(/,/g, "");
-  if (cleaned === "") return null;
-  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
-  const pesos = Number.parseFloat(cleaned);
-  if (!Number.isFinite(pesos) || pesos < 0) return null;
-  // Round to guard against binary-float artefacts (e.g. 0.1 * 100).
-  return Math.round(pesos * 100);
-}
 
 /** The locale's decimal and grouping characters, read from Intl (e.g. de-DE → "," and "."). */
 function separators(locale: string): { decimal: string; group: string } {
@@ -78,4 +50,27 @@ export function parseMoneyInput(
   const digits = currencyMinorUnits(currency);
   if (fraction.length > digits) return null;
   return Number(whole) * 10 ** digits + Number(fraction.padEnd(digits, "0") || "0");
+}
+
+/** The symbol the user's locale shows for a currency ("₱", "$", "€"), for input prefixes. */
+export function currencySymbol(currency: CurrencyCode, locale: string): string {
+  return (
+    new Intl.NumberFormat(locale, { style: "currency", currency })
+      .formatToParts(0)
+      .find((p) => p.type === "currency")?.value ?? currency
+  );
+}
+
+/** Minor units → the text a user would type in their locale ("1234,50"), for edit forms. */
+export function formatMoneyInput(
+  amountMinor: number,
+  currency: CurrencyCode,
+  locale: string,
+): string {
+  const digits = currencyMinorUnits(currency);
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    useGrouping: false,
+  }).format(amountMinor / 10 ** digits);
 }

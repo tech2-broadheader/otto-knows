@@ -1,6 +1,6 @@
 # Story 11.3: Income & transfer transactions
 
-Status: in-progress — Tasks 1–5 (logic) done; Tasks 6–7 (UI, manual check) blocked on Claude Design approval
+Status: review — logic + UI done; manual check (Task 7) pending
 
 ## Story
 
@@ -41,7 +41,7 @@ so that my wallet balances match reality and transfers are never counted as spen
 
 **UI (after Claude Design approval of `docs/ux-spec.md` §7 screen 2)**
 
-- [ ] **Task 6 — Screens** (AC: 2, 3, 5)
+- [x] **Task 6 — Screens** (AC: 2, 3, 5)
   - [ ] 6.1 Add/edit transaction screen per approved design: type segmented control, wallet picker(s), amount, category (expense only), note, date.
   - [ ] 6.2 Transaction list: tap to edit, delete with confirm; income/transfer visually distinct per design.
   - [ ] 6.3 `ProposalCard` for `log_expense`: show the wallet and allow changing it before Accept.
@@ -69,6 +69,10 @@ Claude Opus 5.5 (claude-opus-5-5)
 ### Debug Log References
 
 ### Completion Notes List
+
+- UI built 2026-10-08 from the approved design (canvas "Otto — Budgeting+ & Daily Tasks screens"), on the user's currency/locale (story 13.1). Pure form validation in `apps/mobile/src/lib/forms.ts` (14 tests); screens are not unit-tested (project convention) — verified by typecheck, lint and a full Android Metro/Hermes bundle (`expo export`). **Manual on-device check still pending.**
+- `AddTransactionScreen` (Expense/Income/Transfer, wallet pickers, expense-only categories, date chips, edit + delete). Edit pre-fill uses `formatMoneyInput` so amounts round-trip in every locale.
+- Not done here: changing the wallet on the quick-add proposal card (AC5 UI part) — the proposal still uses last-used/Cash; follow-up.
 
 - Story drafted 2026-10-08.
 - Tasks 1–5 implemented 2026-10-08:

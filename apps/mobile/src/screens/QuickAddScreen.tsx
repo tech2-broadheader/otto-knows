@@ -17,6 +17,7 @@ import type { Proposal, ProposalAction } from "@otto/schemas";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { useQuickAdd } from "../hooks/useQuickAdd";
 import { summarizeAction } from "../components/ProposalCard";
+import { useSettings } from "../lib/settings-context";
 import { Screen, AppHeader, OttoVoice, ProposalCard, EmptyState } from "../design/kit";
 import { Icon, type IconName } from "../design/Icon";
 import { OC, FONT, RADIUS } from "../design/theme";
@@ -41,7 +42,7 @@ const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: string
   add_medication: { icon: "pill", tone: "green" },
   block_time: { icon: "cal", tone: "sky" },
   add_routine_anchor: { icon: "dumbbell", tone: "green" },
-  add_note: { icon: "sparkle", tone: "sky" },
+  add_note: { icon: "note", tone: "sky" },
   create_event: { icon: "cal", tone: "sky" },
 };
 
@@ -50,14 +51,17 @@ const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: string
  * detail) — the same approach TodayScreen uses. Title is the plain-language
  * summary; detail is the model's rationale.
  */
-function proposalDisplay(proposal: Proposal): {
+function proposalDisplay(
+  proposal: Proposal,
+  locale: string,
+): {
   icon: IconName;
   tone: string;
   title: string;
   detail?: string;
 } {
   const { icon, tone } = ACTION_ICON[proposal.action.type];
-  return { icon, tone, title: summarizeAction(proposal.action), detail: proposal.rationale };
+  return { icon, tone, title: summarizeAction(proposal.action, locale), detail: proposal.rationale };
 }
 
 /** Map an error code to a banner tone + message for the quick-add surface. */
@@ -118,6 +122,7 @@ function Banner({ tone, message }: { tone: "info" | "warning"; message: string }
 export function QuickAddScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
   const { isPro } = useAuth();
+  const { locale } = useSettings();
   const goToUpgrade = useUpgradeNavigation();
   const goToSettings = useSettingsNavigation();
   const { status, proposals, error, errorCode, applyingId, submit, accept, dismiss } =
@@ -302,7 +307,7 @@ export function QuickAddScreen(): React.JSX.Element {
         {proposals.length > 0 ? (
           <View style={{ marginTop: 20, gap: 12 }}>
             {proposals.map((proposal) => {
-              const d = proposalDisplay(proposal);
+              const d = proposalDisplay(proposal, locale);
               const busy = applyingId === proposal.id;
               return (
                 <ProposalCard

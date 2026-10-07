@@ -13,6 +13,7 @@ import { quickAdd as quickAddRequest, type ApiErrorCode } from "../lib/api-clien
 import { applyProposal, type ApplyContext } from "../lib/apply-proposal";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
+import { useSettings } from "../lib/settings-context";
 import type { RepositoryDeps } from "../data";
 
 export type QuickAddStatus = "idle" | "submitting" | "ready" | "error";
@@ -34,6 +35,7 @@ export type QuickAddState = {
 };
 
 export function useQuickAdd(deps: RepositoryDeps): QuickAddState {
+  const { currency } = useSettings();
   const [status, setStatus] = useState<QuickAddStatus>("idle");
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [error, setError] = useState<string | undefined>();
@@ -62,7 +64,7 @@ export function useQuickAdd(deps: RepositoryDeps): QuickAddState {
     async (proposal: Proposal) => {
       setApplyingId(proposal.id);
       try {
-        const ctx: ApplyContext = { newId: newUuid, now: nowIso() };
+        const ctx: ApplyContext = { newId: newUuid, now: nowIso(), currency };
         await applyProposal(proposal.action, deps, ctx);
         setProposals((current) => current.filter((p) => p.id !== proposal.id));
       } catch (caught) {
@@ -73,7 +75,7 @@ export function useQuickAdd(deps: RepositoryDeps): QuickAddState {
         setApplyingId(undefined);
       }
     },
-    [deps],
+    [deps, currency],
   );
 
   const dismiss = useCallback((proposal: Proposal) => {

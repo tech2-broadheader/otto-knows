@@ -12,7 +12,7 @@ import {
 } from "@otto/schemas";
 import { isInMonth, previousMonth } from "./month";
 
-export { previousMonth } from "./month";
+export { nextMonth, previousMonth } from "./month";
 
 const UNCATEGORIZED = "Uncategorized";
 

@@ -6,7 +6,8 @@
 import { Pressable, Text, View } from "react-native";
 import type { Proposal, ProposalAction } from "@otto/schemas";
 import { Icon, OC, toneColor, type IconName, type OttoTone } from "./ui";
-import { formatPeso } from "../lib/money";
+import { formatMoney } from "@otto/core";
+import { useSettings } from "../lib/settings-context";
 import { timeLabel } from "../lib/datetime";
 
 /** A friendly action verb + label for each proposal type (for the card header). */
@@ -29,16 +30,15 @@ const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: OttoTo
   add_medication: { icon: "pill", tone: "green" },
   block_time: { icon: "cal", tone: "sky" },
   add_routine_anchor: { icon: "dumbbell", tone: "green" },
-  // No dedicated note glyph yet — the Notes design pass may add one.
   add_note: { icon: "sparkle", tone: "sky" },
   create_event: { icon: "cal", tone: "sky" },
 };
 
 /**
  * One-line plain-language summary of what accepting the proposal will do. Pure —
- * money is formatted at this UI edge via formatPeso (contracts hold centavos).
+ * money is formatted at this UI edge in the user's locale (contracts hold minor units).
  */
-export function summarizeAction(action: ProposalAction): string {
+export function summarizeAction(action: ProposalAction, locale: string): string {
   switch (action.type) {
     case "create_reminder": {
       const when = action.reminder.dueAt ? ` (${timeLabel(action.reminder.dueAt)})` : "";
@@ -46,10 +46,10 @@ export function summarizeAction(action: ProposalAction): string {
     }
     case "log_expense": {
       const note = action.expense.description ? ` · ${action.expense.description}` : "";
-      return `${formatPeso(action.expense.amount.amountMinor)}${note}`;
+      return `${formatMoney(action.expense.amount, locale)}${note}`;
     }
     case "add_bill":
-      return `${action.bill.name} — ${formatPeso(action.bill.amount.amountMinor)}, due ${action.bill.dueDate}`;
+      return `${action.bill.name} — ${formatMoney(action.bill.amount, locale)}, due ${action.bill.dueDate}`;
     case "add_medication": {
       const dose = action.medication.dosage ? ` ${action.medication.dosage}` : "";
       return `${action.medication.name}${dose} at ${action.medication.times.join(", ")}`;
@@ -83,7 +83,8 @@ export function ProposalCard({
   busy?: boolean;
 }): React.JSX.Element {
   const label = ACTION_LABEL[proposal.action.type];
-  const summary = summarizeAction(proposal.action);
+  const { locale } = useSettings();
+  const summary = summarizeAction(proposal.action, locale);
   const { icon, tone } = ACTION_ICON[proposal.action.type];
   const accent = toneColor(tone);
   return (

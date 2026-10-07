@@ -6,7 +6,8 @@
 import { useCallback, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import type { ContextItem, Nudge, Proposal, ProposalAction } from "@otto/schemas";
+import type { ContextItem, Money, Nudge, Proposal, ProposalAction } from "@otto/schemas";
+import { formatMoney } from "@otto/core";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { useToday } from "../hooks/useToday";
 import { AsyncBoundary } from "../components/AsyncBoundary";
@@ -26,6 +27,7 @@ import { OC, FONT, RADIUS } from "../design/theme";
 import { applyProposal, type ApplyContext } from "../lib/apply-proposal";
 import { useAuth } from "../auth/AuthProvider";
 import { newUuid } from "../lib/id";
+import { useSettings } from "../lib/settings-context";
 import { greetingForHour, longDateLabel, nowIso, timeLabel } from "../lib/datetime";
 
 /** Icon + accent tone for each context-item kind (matches the design timeline). */
@@ -38,13 +40,12 @@ const KIND_STYLE: Record<ContextItem["kind"], { icon: IconName; tone: string }> 
   insight: { icon: "sparkle", tone: "green" },
 };
 
-function money(m: { amountMinor: number; currency: string }): string {
-  const v = (m.amountMinor / 100).toLocaleString("en-PH");
-  return (m.currency === "PHP" ? "₱" : m.currency + " ") + v;
-}
-
 /** Map a write-back proposal to the design's ProposalCard props. */
-function proposalDisplay(a: ProposalAction): { icon: IconName; tone: string; title: string; detail?: string } {
+function proposalDisplay(
+  a: ProposalAction,
+  locale: string,
+): { icon: IconName; tone: string; title: string; detail?: string } {
+  const money = (m: Money): string => formatMoney(m, locale);
   switch (a.type) {
     case "add_bill":
       return { icon: "wallet", tone: "amber", title: `Add bill — ${a.bill.name} ${money(a.bill.amount)}`, detail: `Due ${a.bill.dueDate}` };
@@ -61,7 +62,7 @@ function proposalDisplay(a: ProposalAction): { icon: IconName; tone: string; tit
     case "create_event":
       return { icon: "cal", tone: "sky", title: a.event.title, detail: timeLabel(a.event.startAt) || undefined };
     case "add_note":
-      return { icon: "sparkle", tone: "sky", title: `Save note — ${a.note.title ?? a.note.body.split("\n")[0] ?? ""}` };
+      return { icon: "note", tone: "sky", title: `Save note — ${a.note.title ?? a.note.body.split("\n")[0] ?? ""}` };
   }
 }
 
@@ -71,6 +72,7 @@ export function TodayScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
   const navigation = useNavigation() as unknown as Nav;
   const { isPro } = useAuth();
+  const { currency, locale } = useSettings();
   const { state, error, briefing, items, nudges, proposals, briefingFromLlm, reload } = useToday(deps);
 
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
@@ -81,7 +83,7 @@ export function TodayScreen(): React.JSX.Element {
     async (proposal: Proposal) => {
       setApplyingId(proposal.id);
       try {
-        const ctx: ApplyContext = { newId: newUuid, now: nowIso() };
+        const ctx: ApplyContext = { newId: newUuid, now: nowIso(), currency };
         await applyProposal(proposal.action, deps, ctx);
         setDismissedIds((current) => [...current, proposal.id]);
         await reload();
@@ -91,7 +93,7 @@ export function TodayScreen(): React.JSX.Element {
         setApplyingId(undefined);
       }
     },
-    [deps, reload],
+    [deps, reload, currency],
   );
 
   const handleDismiss = useCallback((id: string) => setDismissedIds((c) => [...c, id]), []);
@@ -117,7 +119,7 @@ export function TodayScreen(): React.JSX.Element {
           {visibleProposals.length > 0 ? (
             <View style={{ marginTop: 13, gap: 12 }}>
               {visibleProposals.map((p) => {
-                const d = proposalDisplay(p.action);
+                const d = proposalDisplay(p.action, locale);
                 return (
                   <ProposalCard
                     key={p.id}

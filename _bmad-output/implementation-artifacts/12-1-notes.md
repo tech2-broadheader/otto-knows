@@ -1,6 +1,6 @@
 # Story 12.1: Notes
 
-Status: in-progress — Tasks 1–5 (logic + quick-add) done; Task 6 (Notes screen) blocked on Claude Design approval
+Status: review — logic + UI done; manual check (Task 7) pending
 
 ## Story
 
@@ -28,7 +28,7 @@ so that I can capture a thought fast and turn it into a reminder when it needs a
 
 **UI (after Claude Design approval — Notes screen)**
 
-- [ ] **Task 6 — Notes screen**: list/search/pin, editor, "Make a reminder" (shows the reminder proposal card), navigation entry per approved design.
+- [x] **Task 6 — Notes screen**: list/search/pin, editor, "Make a reminder" (shows the reminder proposal card), navigation entry per approved design.
 - [ ] **Task 7 — Gates** + manual check.
 
 ## Dev Notes
@@ -50,6 +50,9 @@ Claude Opus 5.5 (claude-opus-5-5)
 ### Debug Log References
 
 ### Completion Notes List
+
+- UI built 2026-10-08 from the approved design (canvas "Otto — Budgeting+ & Daily Tasks screens"), on the user's currency/locale (story 13.1). Pure form validation in `apps/mobile/src/lib/forms.ts` (14 tests); screens are not unit-tested (project convention) — verified by typecheck, lint and a full Android Metro/Hermes bundle (`expo export`). **Manual on-device check still pending.**
+- Reminders tab: Reminders / Notes / Appointments switch; `NoteEditorScreen` (pin, delete, Make a reminder → proposal card → untimed reminder on accept). New icons: note, pin, trash, search.
 
 - Implemented 2026-10-08, tests first for each task:
   - `noteSchema` (title ≤ 120 optional, body 1–10,000, pinned default false) in new `packages/schemas/src/notes.ts`; `noteDraftSchema` + `add_note` proposal variant.

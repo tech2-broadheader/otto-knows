@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BudgetCategory, Transaction } from "@otto/schemas";
-import { computeMonthlyReport, previousMonth } from "./monthly-report";
+import { computeMonthlyReport, nextMonth, previousMonth } from "./monthly-report";
 
 const ISO = "2026-09-01T08:00:00+08:00";
 const USER = "00000000-0000-4000-8000-000000000001";
@@ -146,5 +146,12 @@ describe("computeMonthlyReport", () => {
       "2026-10",
     );
     expect(report.categories[0]?.changePct).toBe(33.3);
+  });
+});
+
+describe("nextMonth", () => {
+  it("steps forward a month, across years", () => {
+    expect(nextMonth("2026-10")).toBe("2026-11");
+    expect(nextMonth("2026-12")).toBe("2027-01");
   });
 });

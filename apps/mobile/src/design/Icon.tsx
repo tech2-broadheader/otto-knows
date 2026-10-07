@@ -6,7 +6,8 @@ import { Svg, Path, Circle, Rect } from "react-native-svg";
 export type IconName =
   | "sun" | "bell" | "plus" | "wallet" | "heart" | "pill" | "gear" | "check"
   | "chevR" | "chevL" | "x" | "sparkle" | "cal" | "clock" | "moon" | "coffee"
-  | "peso" | "refresh" | "user" | "shield" | "lock" | "arrowR" | "dumbbell" | "trend";
+  | "peso" | "refresh" | "user" | "shield" | "lock" | "arrowR" | "dumbbell" | "trend"
+  | "note" | "pin" | "trash" | "search";
 
 function paths(name: IconName): ReactNode {
   switch (name) {
@@ -118,6 +119,24 @@ function paths(name: IconName): ReactNode {
       return <Path d="M5 12h14M13 6l6 6-6 6" />;
     case "dumbbell":
       return <Path d="M6.5 6.5l11 11M3 9l3-3 2 2-3 3zM16 18l3-3-2-2-3 3zM18 6l-1 1M6 18l1-1" />;
+    case "note":
+      return (
+        <>
+          <Path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+          <Path d="M14 3v6h6M8 13h8M8 17h5" />
+        </>
+      );
+    case "pin":
+      return <Path d="M12 17v5M9 3h6l-1 6 4 4H6l4-4z" />;
+    case "trash":
+      return <Path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15" />;
+    case "search":
+      return (
+        <>
+          <Circle cx="11" cy="11" r="7" />
+          <Path d="M20 20l-3.5-3.5" />
+        </>
+      );
     case "trend":
       return (
         <>

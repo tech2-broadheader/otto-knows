@@ -32,6 +32,7 @@ import {
   type Appointment,
   type Bill,
   type BudgetCategory,
+  type CurrencyCode,
   type CalendarEvent,
   type Consent,
   type ContextItem,
@@ -782,7 +783,7 @@ export function makeAccountRepository(deps: RepositoryDeps) {
      * lands in an archived wallet that totals ignore. The fixed id is reused when
      * free so it matches the migration's, otherwise a fresh id avoids a clash.
      */
-    async ensureDefault(userId: string): Promise<void> {
+    async ensureDefault(userId: string, currency: CurrencyCode): Promise<void> {
       const db = getDatabase();
       const existing = db
         .select({ id: tables.accounts.id })
@@ -801,7 +802,7 @@ export function makeAccountRepository(deps: RepositoryDeps) {
         userId,
         name: "Cash",
         type: "cash",
-        openingBalance: { amountMinor: 0, currency: "PHP" },
+        openingBalance: { amountMinor: 0, currency },
         createdAt: now,
         updatedAt: now,
       });

@@ -1,6 +1,6 @@
 # Story 11.5: Monthly report
 
-Status: in-progress — Tasks 1–2 (logic) done; Tasks 3–4 (report screen, manual check) blocked on Claude Design approval
+Status: review — logic + UI done; manual check (Task 4) pending
 
 ## Story
 
@@ -29,7 +29,7 @@ so that I can see where my money went and whether I'm improving.
 
 **UI (after Claude Design approval of `docs/ux-spec.md` §7 screen 4)**
 
-- [ ] **Task 3 — Report screen** (AC: 1, 2, 4)
+- [x] **Task 3 — Report screen** (AC: 1, 2, 4)
   - [ ] 3.1 New `MonthlyReportScreen` reachable from Finance per approved design: month switcher, summary (income / spending / net), category bars with change vs last month.
   - [ ] 3.2 Empty month state; loading/error states; accessible values (screen reader reads amounts and change in words).
   - [ ] 3.3 Register the route on the root stack in `apps/mobile/App.tsx` (like `Tips` / `Optimizer`).
@@ -55,6 +55,9 @@ Claude Opus 5.5 (claude-opus-5-5)
 ### Debug Log References
 
 ### Completion Notes List
+
+- UI built 2026-10-08 from the approved design (canvas "Otto — Budgeting+ & Daily Tasks screens"), on the user's currency/locale (story 13.1). Pure form validation in `apps/mobile/src/lib/forms.ts` (14 tests); screens are not unit-tested (project convention) — verified by typecheck, lint and a full Android Metro/Hermes bundle (`expo export`). **Manual on-device check still pending.**
+- `MonthlyReportScreen` (month switcher capped at the current month, locale month names, category bars, change text).
 
 - Story drafted 2026-10-08.
 - Tasks 1–2 implemented 2026-10-08 (tests first, seen failing):

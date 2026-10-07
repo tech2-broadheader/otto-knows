@@ -1,6 +1,6 @@
 # Story 11.4: Safe-to-spend until payday
 
-Status: in-progress — Tasks 1–4 (logic + Today line) done; Task 5 (Finance hero UI) blocked on Claude Design approval
+Status: review — logic + UI done; manual check (Task 6) pending
 
 ## Story
 
@@ -37,7 +37,7 @@ so that I don't run short before bills are due.
 
 **UI (after Claude Design approval of `docs/ux-spec.md` §7 screen 1)**
 
-- [ ] **Task 5 — Finance hero** (AC: 3, 4)
+- [x] **Task 5 — Finance hero** (AC: 3, 4)
   - [ ] 5.1 Safe-to-spend hero on Finance per approved design, with all four edge-case states and accessible label (screen reader reads the full sentence).
 - [ ] **Task 6 — Gates** + manual check around a real payday date.
 
@@ -63,6 +63,9 @@ Claude Opus 5.5 (claude-opus-5-5)
 ### Debug Log References
 
 ### Completion Notes List
+
+- UI built 2026-10-08 from the approved design (canvas "Otto — Budgeting+ & Daily Tasks screens"), on the user's currency/locale (story 13.1). Pure form validation in `apps/mobile/src/lib/forms.ts` (14 tests); screens are not unit-tested (project convention) — verified by typecheck, lint and a full Android Metro/Hermes bundle (`expo export`). **Manual on-device check still pending.**
+- `SafeToSpendCard` with ok / bills-exceed / no-income / needs-payday-update states, accessible label.
 
 - Story drafted 2026-10-08.
 - Tasks 1–4 implemented 2026-10-08 (tests written first and seen failing):

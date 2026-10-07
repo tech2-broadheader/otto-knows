@@ -62,18 +62,18 @@ development_status:
   # --- Budgeting+ (product-owner priority 2026-10-07; see sprint-change-proposal-2026-10-07.md) ---
   epic-11: in-progress
   11-1-versioned-local-migrations: in-progress
-  11-2-wallets-accounts: in-progress            # logic (tasks 1-4) done; UI blocked on Claude Design
-  11-3-income-transfer-transactions: in-progress # logic (tasks 1-5) done; UI blocked on Claude Design
-  11-4-safe-to-spend: in-progress               # logic + Today line done; Finance hero UI blocked on Claude Design
-  11-5-monthly-report: in-progress              # logic done; report screen blocked on Claude Design
+  11-2-wallets-accounts: review                       # logic + UI done; on-device check pending
+  11-3-income-transfer-transactions: review           # logic + UI done; on-device check pending
+  11-4-safe-to-spend: review                          # logic + UI done; on-device check pending
+  11-5-monthly-report: review                         # logic + UI done; on-device check pending
   epic-11-retrospective: optional
 
   # --- Daily tasks (planned 2026-10-08; see sprint-change-proposal-2026-10-08.md) ---
   epic-12: in-progress
-  12-1-notes: in-progress                      # logic + quick-add done; Notes screen blocked on Claude Design
+  12-1-notes: review                                  # logic + UI done; on-device check pending
   12-2-alarms-spike: review                    # research done; ADR-005 recommendation awaits owner approval
   12-3-alarms: backlog                         # after 12.2 + GATE-4 + dep approval
-  12-4-appointments: in-progress               # Otto-only appointments + quick-add done; device/Google need expo-calendar approval + 3.4 live; UI needs design
+  12-4-appointments: in-progress                      # Otto appointments + UI done; device/Google need approvals
   12-5-meetings-invites: backlog               # GATE-5
   epic-12-retrospective: optional
 
@@ -83,7 +83,7 @@ development_status:
   13-2-user-timezone: backlog
   13-3-translation-ready-copy: backlog
   13-4-country-currency-onboarding: backlog
-  13-5-semi-monthly-pay-days: review          # form step lands with the Money screens
+  13-5-semi-monthly-pay-days: review                  # income form asks for the two days
   13-6-regional-privacy: backlog               # GATE-6 per market
   epic-13-retrospective: optional
 

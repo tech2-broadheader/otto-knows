@@ -54,6 +54,12 @@ import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { UpgradeScreen } from "./src/screens/UpgradeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { HowItWorksScreen } from "./src/screens/HowItWorksScreen";
+import { AddTransactionScreen } from "./src/screens/AddTransactionScreen";
+import { WalletsScreen } from "./src/screens/WalletsScreen";
+import { WalletFormScreen } from "./src/screens/WalletFormScreen";
+import { MonthlyReportScreen } from "./src/screens/MonthlyReportScreen";
+import { NoteEditorScreen } from "./src/screens/NoteEditorScreen";
+import { AppointmentFormScreen } from "./src/screens/AppointmentFormScreen";
 
 type RootStackParamList = {
   Onboarding: undefined;
@@ -70,6 +76,13 @@ type RootStackParamList = {
   Tips: undefined;
   // Replayable "how Otto works" tour (Settings → How Otto works).
   HowItWorks: undefined;
+  // Budgeting+ and Daily tasks (approved design 2026-10-08).
+  AddTransaction: { txId?: string; type?: "expense" | "income" | "transfer" } | undefined;
+  Wallets: undefined;
+  WalletForm: { accountId?: string } | undefined;
+  MonthlyReport: { month?: string } | undefined;
+  NoteEditor: { noteId?: string } | undefined;
+  AppointmentForm: undefined;
   // Optional sign-in (ADR-002). Modal sibling of Main/Upgrade so any screen can
   // route an unauthenticated user here before a Pro action.
   Login: undefined;
@@ -142,17 +155,21 @@ export default function App(): React.JSX.Element {
         return;
       }
       configureNotifications();
+      let bootSettings = deviceSettings(LOCAL_USER_ID);
       try {
         // First run stores the device's suggestion; later runs load the user's choice.
-        const loaded = await settingsRepository.ensure(deviceSettings(LOCAL_USER_ID));
-        if (!cancelled) setSettings(loaded);
+        bootSettings = await settingsRepository.ensure(deviceSettings(LOCAL_USER_ID));
+        if (!cancelled) setSettings(bootSettings);
       } catch {
         // Non-fatal: screens keep formatting with the device suggestion.
       }
       try {
         // Every install needs a default Cash wallet (story 11.2) before any
         // transaction is added; idempotent.
-        await makeAccountRepository(createRepositoryDeps()).ensureDefault(LOCAL_USER_ID);
+        await makeAccountRepository(createRepositoryDeps()).ensureDefault(
+          LOCAL_USER_ID,
+          bootSettings.currency,
+        );
       } catch {
         // Non-fatal: the Finance screen retries ensureDefault on load.
       }
@@ -223,6 +240,12 @@ export default function App(): React.JSX.Element {
                       <RootStack.Screen name="Optimizer" component={OptimizerScreen} />
                       <RootStack.Screen name="Tips" component={TipsScreen} />
                       <RootStack.Screen name="HowItWorks" component={HowItWorksScreen} />
+                      <RootStack.Screen name="AddTransaction" component={AddTransactionScreen} />
+                      <RootStack.Screen name="Wallets" component={WalletsScreen} />
+                      <RootStack.Screen name="WalletForm" component={WalletFormScreen} />
+                      <RootStack.Screen name="MonthlyReport" component={MonthlyReportScreen} />
+                      <RootStack.Screen name="NoteEditor" component={NoteEditorScreen} />
+                      <RootStack.Screen name="AppointmentForm" component={AppointmentFormScreen} />
                     </>
                   )}
                 </RootStack.Navigator>

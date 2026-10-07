@@ -1,6 +1,6 @@
 # Story 11.2: Wallets / accounts
 
-Status: in-progress — Tasks 1–4 (logic) done; Task 5 (UI) blocked on Claude Design approval
+Status: review — logic + UI done; manual Android check (Task 6) pending
 
 <!-- Definition of Ready (CLAUDE.md §9): design approval required for UI stories. Tasks 1–4 are design-independent and may start once 11.1 is done; Task 5 waits for the approved design. -->
 
@@ -53,7 +53,7 @@ so that I always know how much money I actually have and how much I owe on my ca
 
 **UI (after Claude Design approval of `docs/ux-spec.md` §7 screens 1 & 3)**
 
-- [ ] **Task 5 — Screens** (AC: 1, 4, 5, 6)
+- [x] **Task 5 — Screens** (AC: 1, 4, 5, 6)
   - [ ] 5.1 `useAccounts` hook (load/add/rename/archive, cap check), modeled on `useFinance`.
   - [ ] 5.2 Finance home: wallets strip + "Money on hand" + "Owed on cards", per the approved design.
   - [ ] 5.3 Wallets screen (list/add/edit/archive) per the approved design; credit card form label reads "Amount owed".
@@ -84,6 +84,9 @@ Claude Opus 5.5 (claude-opus-5-5)
 ### Debug Log References
 
 ### Completion Notes List
+
+- UI built 2026-10-08 from the approved design (canvas "Otto — Budgeting+ & Daily Tasks screens"), on the user's currency/locale (story 13.1). Pure form validation in `apps/mobile/src/lib/forms.ts` (14 tests); screens are not unit-tested (project convention) — verified by typecheck, lint and a full Android Metro/Hermes bundle (`expo export`). **Manual on-device check still pending.**
+- Screens: Money home wallet strip, `WalletsScreen`, `WalletFormScreen` (type grid, card = amount owed, archive at zero balance, free-cap ProGate). Hooks: `useFinance` add/update/archive/restore wallets; free caps now apply to free users only.
 
 - Story drafted 2026-10-08 with design-independent / UI task split.
 - Tasks 1–4 implemented TDD (each test seen failing first):

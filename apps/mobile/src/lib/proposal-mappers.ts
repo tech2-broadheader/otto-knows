@@ -15,6 +15,7 @@ import {
   transactionSchema,
   type Appointment,
   type Bill,
+  type CurrencyCode,
   type Medication,
   type Note,
   type ProposalAction,
@@ -36,6 +37,11 @@ export type ApplyContext = {
   userId?: string;
   /** Wallet for an expense whose draft names none (last-used, else Cash). */
   defaultAccountId?: string;
+  /**
+   * The user's home currency (ADR-007). Money from the LLM is recorded in it —
+   * one currency per user, never converted.
+   */
+  currency?: CurrencyCode;
 };
 
 /** Stamp fields every persisted entity carries. */
@@ -77,7 +83,7 @@ export function transactionFromExpenseDraft(
   return transactionSchema.parse({
     ...stamp(ctx),
     type: "expense",
-    amount: draft.amount,
+    amount: { ...draft.amount, currency: ctx.currency ?? draft.amount.currency },
     accountId: draft.accountId ?? ctx.defaultAccountId ?? DEFAULT_CASH_ACCOUNT_ID,
     categoryId: draft.categoryId,
     description: draft.description,
@@ -142,7 +148,7 @@ export function billFromDraft(
   return billSchema.parse({
     ...stamp(ctx),
     name: draft.name,
-    amount: draft.amount,
+    amount: { ...draft.amount, currency: ctx.currency ?? draft.amount.currency },
     dueDate: draft.dueDate,
     recurrence: draft.recurrence,
     isAutopay: false,

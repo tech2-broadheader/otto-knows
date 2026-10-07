@@ -53,7 +53,7 @@ development_status:
   # --- Monetization (spans) ---
   epic-9: in-progress                       # real Supabase auth + DB-backed entitlement (free/pro/lifetime) + mobile optional login done; remaining: billing that WRITES entitlement (store IAP / RevenueCat) + OD-5 pricing
   9-4-store-billing-revenuecat: backlog        # needs OD-5 + Play Console/RevenueCat accounts + dep approval
-  9-5-server-entitlement-webhook: backlog
+  9-5-server-entitlement-webhook: in-progress   # webhook built; live test needs RevenueCat + Supabase
   9-6-pricing-paywall: backlog                 # OD-5
 
   # --- Phase 5: continuity & polish ---

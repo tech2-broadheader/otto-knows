@@ -54,6 +54,12 @@ const serverEnvSchema = z.object({
     .string()
     .refine((v) => Buffer.from(v, "base64").length === 32, "must decode to 32 bytes (base64)")
     .optional(),
+
+  // RevenueCat webhook (story 9.5). The exact Authorization header value set in
+  // the RevenueCat dashboard; entitlement id; whether SANDBOX events apply.
+  REVENUECAT_WEBHOOK_AUTH: z.string().min(1).optional(),
+  REVENUECAT_ENTITLEMENT_ID: z.string().min(1).default("pro"),
+  REVENUECAT_ALLOW_SANDBOX: z.enum(["true", "false"]).default("false"),
 });
 
 /**

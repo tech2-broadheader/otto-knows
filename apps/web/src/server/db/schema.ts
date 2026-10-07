@@ -1,4 +1,13 @@
-import { integer, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 /**
  * Cloud database schema (Drizzle / Supabase Postgres) — SERVER-ONLY.
@@ -53,6 +62,20 @@ export const auditEvents = pgTable("audit_events", {
   entity: text("entity").notNull(),
   action: text("action").notNull(),
   at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * RevenueCat webhook events (story 9.5). The event id makes delivery idempotent
+ * (RevenueCat is at-least-once); `applied` + `event_at` keep out-of-order
+ * events from undoing newer ones. user_id is null for anonymous app users.
+ */
+export const billingEvents = pgTable("billing_events", {
+  eventId: text("event_id").primaryKey(),
+  userId: uuid("user_id"),
+  type: text("type").notNull(),
+  eventAt: timestamp("event_at", { withTimezone: true }).notNull(),
+  applied: boolean("applied").notNull().default(false),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export type ConnectorTokenRow = typeof connectorTokens.$inferSelect;

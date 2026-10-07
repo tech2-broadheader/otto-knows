@@ -63,6 +63,13 @@ ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY;
 ```
 Set `TOKEN_ENCRYPTION_KEY` (32 random bytes, base64 — `openssl rand -base64 32`) in the server environment. Tokens are stored AES-256-GCM encrypted; without the key (or `DATABASE_URL`) production refuses to store tokens, and local dev falls back to in-memory storage. Keep the key out of the repo and back it up: losing it means every user must reconnect Google.
 
+## 3c. Billing webhook (story 9.5)
+Apply `apps/web/drizzle/0002_billing_events.sql` and lock it down:
+```sql
+ALTER TABLE billing_events ENABLE ROW LEVEL SECURITY;
+```
+In RevenueCat → Integrations → Webhooks, point to `https://<server>/api/billing/revenuecat` and set an Authorization header value; put the same value in `REVENUECAT_WEBHOOK_AUTH`. The mobile app must call RevenueCat `logIn(<supabase user id>)` (story 9.4) so events carry the user's id. Use "Send test event" to check the endpoint answers 200.
+
 ## 4. How it works
 - Mobile sends the Supabase access token as `Authorization: Bearer <token>`.
 - `getAuthContext` (`apps/web/src/server/auth.ts`) verifies it via `supabase.auth.getUser()` and loads `profiles.entitlement` (default `free`).
@@ -72,5 +79,5 @@ Set `TOKEN_ENCRYPTION_KEY` (32 random bytes, base64 — `openssl rand -base64 32
 Set `OTTO_DEV_AUTH=pro` (never in production) to bypass auth as a Pro user and exercise the brain with just an `ANTHROPIC_API_KEY`.
 
 ## Still TODO (separate tracks)
-- **Billing (E9)** writes `entitlement` after purchase (store IAP / RevenueCat).
+- **Billing (E9)** — the server webhook that writes `entitlement` exists (9.5); the in-app purchase flow (9.4) still needs pricing + store accounts.
 - **Cloud sync (E10)** — the `profiles` schema is the start; entity sync tables come with the backup/sync feature.

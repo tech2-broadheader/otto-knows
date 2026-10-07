@@ -13,11 +13,13 @@ import {
   type BudgetCategory,
   type Income,
   type IncomeCadence,
+  type SafeToSpend,
   type Transaction,
   type TransactionType,
 } from "@otto/schemas";
 import {
   computeBudgetSummary,
+  computeSafeToSpend,
   pickDefaultAccountId,
   summarizeWallets,
   type BudgetSummary,
@@ -48,6 +50,8 @@ export type FinanceState = {
   summary: BudgetSummary;
   /** Derived wallet balances, money on hand and card debt (stories 11.2/11.3). */
   wallets: WalletSummary;
+  /** Safe-to-spend until the next payday (story 11.4). */
+  safeToSpend: SafeToSpend;
   /** True when the user has reached the free cap for the entity. */
   billsAtCap: boolean;
   categoriesAtCap: boolean;
@@ -130,6 +134,11 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
     [categories, transactions],
   );
   const wallets = useMemo(() => summarizeWallets(accounts, transactions), [accounts, transactions]);
+  const safeToSpend = useMemo(
+    () =>
+      computeSafeToSpend({ accounts, transactions, bills, incomes: income, asOfDate: todayDate() }),
+    [accounts, transactions, bills, income],
+  );
 
   const addBill = useCallback(
     async (input: { name: string; amountMinor: number; dueDate: string }) => {
@@ -256,6 +265,7 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
     accounts,
     summary,
     wallets,
+    safeToSpend,
     billsAtCap: bills.length >= FREE_CAPS.bills,
     categoriesAtCap: categories.length >= FREE_CAPS.budgetCategories,
     addBill,

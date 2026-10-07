@@ -2,6 +2,8 @@
 // Pure: ids are supplied by an injected factory so the logic stays deterministic
 // and testable (the app passes expo-crypto's randomUUID; tests pass a counter).
 import type { Bill, Income, Nudge } from "@otto/schemas";
+import { formatPeso } from "./format";
+import { nextPayday as deriveNextPayday } from "./payday";
 
 export type IdFactory = () => string;
 
@@ -12,10 +14,6 @@ function daysBetween(a: string, b: string): number {
     return Date.UTC(y ?? 0, (m ?? 1) - 1, day ?? 1);
   };
   return Math.round((toUtc(b) - toUtc(a)) / 86_400_000);
-}
-
-function formatPeso(amountMinor: number): string {
-  return `₱${(amountMinor / 100).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 /**
@@ -32,11 +30,9 @@ export function detectPaydayVsBillNudges(
   makeId: IdFactory,
   withinDays = 7,
 ): Nudge[] {
-  const upcomingPaydays = incomes
-    .map((i) => i.nextPayDate)
-    .filter((d) => daysBetween(asOfDate, d) >= 0)
-    .sort();
-  const nextPayday = upcomingPaydays[0];
+  // Derived from each income's cadence so a stored date that has passed rolls
+  // forward instead of silently disabling this nudge (story 11.4).
+  const nextPayday = deriveNextPayday(incomes, asOfDate);
   if (!nextPayday) return [];
 
   const nudges: Nudge[] = [];

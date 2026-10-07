@@ -1,6 +1,7 @@
 // Today state (story 4.2): compose the daily briefing and the unified day list.
 // Uses @otto/core: whatsOnToday (context-graph unification), composeBriefing
-// (template briefing) and detectPaydayVsBillNudges (gentle finance heads-up).
+// (template briefing), detectPaydayVsBillNudges (gentle finance heads-up) and
+// safe-to-spend until payday (story 11.4).
 //
 // CONSENT GATING (CLAUDE.md §1.11 / story 1.4): a source is only read when its
 // consent is granted. Finance (bills/income), health (meds) and calendar each
@@ -8,7 +9,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   composeBriefing,
+  computeSafeToSpend,
   detectPaydayVsBillNudges,
+  safeToSpendNudge,
   whatsOnToday,
   type DaySources,
 } from "@otto/core";
@@ -19,10 +22,12 @@ import { fetchBrief, getApiBaseUrl } from "../lib/api-client";
 import { useAuth } from "../auth/AuthProvider";
 import {
   consentRepository,
+  makeAccountRepository,
   makeBillRepository,
   makeCalendarEventRepository,
   makeIncomeRepository,
   makeMedicationRepository,
+  makeTransactionRepository,
   reminderRepository,
   routineRepository,
   type RepositoryDeps,
@@ -73,6 +78,10 @@ export function useToday(deps: RepositoryDeps): TodayState {
       // Consent-gated sources.
       const bills = canFinance ? await makeBillRepository(deps).list(LOCAL_USER_ID) : [];
       const income = canFinance ? await makeIncomeRepository(deps).list(LOCAL_USER_ID) : [];
+      const accounts = canFinance ? await makeAccountRepository(deps).list(LOCAL_USER_ID) : [];
+      const transactions = canFinance
+        ? await makeTransactionRepository(deps).list(LOCAL_USER_ID)
+        : [];
       const medications = canHealth ? await makeMedicationRepository(deps).list(LOCAL_USER_ID) : [];
       const events = canCalendar ? await makeCalendarEventRepository(deps).list(LOCAL_USER_ID) : [];
 
@@ -92,6 +101,11 @@ export function useToday(deps: RepositoryDeps): TodayState {
       );
 
       const dayNudges = detectPaydayVsBillNudges(income, bills, date, () => newUuid());
+      const safeNudge = safeToSpendNudge(
+        computeSafeToSpend({ accounts, transactions, bills, incomes: income, asOfDate: date }),
+        () => newUuid(),
+      );
+      if (safeNudge) dayNudges.push(safeNudge);
 
       const slot = briefingSlotForHour(new Date().getHours());
       const composed = composeBriefing({

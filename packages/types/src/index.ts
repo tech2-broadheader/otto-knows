@@ -18,6 +18,7 @@ export type {
   Account,
   BudgetCategory,
   TransactionType,
+  SafeToSpend,
   Transaction,
   DataSource,
   CalendarEvent,

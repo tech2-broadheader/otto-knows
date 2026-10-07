@@ -8,6 +8,7 @@ export type BriefingSlot = z.infer<typeof briefingSlotSchema>;
 
 export const nudgeKindSchema = z.enum([
   "payday-vs-bill",
+  "safe-to-spend",
   "med-refill",
   "overspend",
   "deviation",

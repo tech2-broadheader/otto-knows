@@ -17,6 +17,10 @@ export * from "./recurrence";
 export * from "./budget";
 // Story 11.2 — wallet balances (derived, ADR-004).
 export * from "./accounts";
+// Story 11.4 — payday rollover + safe-to-spend until payday.
+export * from "./payday";
+export * from "./safe-to-spend";
+export * from "./format";
 // Cross-domain insights (payday-vs-bill nudges, …).
 export * from "./insights";
 // Story 4.2 — template-based briefing composer (free tier).

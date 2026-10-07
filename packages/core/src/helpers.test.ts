@@ -137,6 +137,19 @@ describe("payday-vs-bill nudges", () => {
     const paid = bills.map((b) => ({ ...b, isPaid: true }));
     expect(detectPaydayVsBillNudges(incomes, paid, "2026-06-14", () => UUID(200))).toHaveLength(0);
   });
+
+  it("still works after the stored payday has passed (rolls it forward, story 11.4)", () => {
+    // Stored payday 2026-05-30 is stale on 2026-06-14; semi-monthly → next is 06-15,
+    // so a bill due 06-15 is still before/at payday, but one due 06-18 is not.
+    const stale = incomes.map((i) => ({
+      ...i,
+      cadence: "semi-monthly" as const,
+      nextPayDate: "2026-05-30",
+    }));
+    const dueOnPayday = [{ ...bills[0]!, dueDate: "2026-06-15" }, bills[1]!];
+    const nudges = detectPaydayVsBillNudges(stale, dueOnPayday, "2026-06-14", () => UUID(300));
+    expect(nudges.map((x) => x.relatedIds[0])).toEqual([UUID(30)]);
+  });
 });
 
 describe("briefing composer", () => {

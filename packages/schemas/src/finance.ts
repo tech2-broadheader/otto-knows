@@ -114,3 +114,24 @@ export const transactionSchema = z
     }
   });
 export type Transaction = z.infer<typeof transactionSchema>;
+
+/**
+ * Safe-to-spend until the next payday (story 11.4) — a derived, on-device value.
+ * `ok`: computed against a payday. `no-income`: no income set up yet.
+ * `needs-payday-update`: only a custom-cadence payday exists and it has passed.
+ */
+export const safeToSpendSchema = z.object({
+  status: z.enum(["ok", "no-income", "needs-payday-update"]),
+  asOf: dateSchema,
+  nextPayday: dateSchema.optional(),
+  daysUntilPayday: z.number().int().min(0).optional(),
+  onHandMinor: z.number().int(),
+  billsBeforePaydayMinor: z.number().int().min(0),
+  cardOwedMinor: z.number().int().min(0),
+  /** May be negative: bills before payday can exceed money on hand. */
+  safeMinor: z.number().int(),
+  /** Floor of safeMinor / days left (min 1 day); 0 when safeMinor ≤ 0. */
+  perDayMinor: z.number().int().min(0).optional(),
+  currency: z.string().min(1),
+});
+export type SafeToSpend = z.infer<typeof safeToSpendSchema>;

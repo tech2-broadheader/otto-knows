@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { accountSchema, expenseDraftSchema, isSensitiveEntity, transactionSchema } from "./index";
+import {
+  accountSchema,
+  expenseDraftSchema,
+  isSensitiveEntity,
+  nudgeKindSchema,
+  safeToSpendSchema,
+  transactionSchema,
+} from "./index";
 
 const ISO = "2026-10-08T08:00:00+08:00";
 const UUID = "11111111-1111-4111-8111-111111111111";
@@ -112,5 +119,27 @@ describe("expenseDraftSchema.accountId", () => {
 describe("account sensitivity", () => {
   it("treats wallets as sensitive (encrypted + audit-logged)", () => {
     expect(isSensitiveEntity("account")).toBe(true);
+  });
+});
+
+describe("safeToSpendSchema", () => {
+  const common = {
+    asOf: "2026-10-08",
+    onHandMinor: 1,
+    billsBeforePaydayMinor: 0,
+    cardOwedMinor: 0,
+    safeMinor: 1,
+    currency: "PHP",
+  };
+
+  it("accepts an ok result and a no-income result", () => {
+    const ok = { ...common, status: "ok", nextPayday: "2026-10-15", daysUntilPayday: 7, perDayMinor: 0 };
+    expect(safeToSpendSchema.safeParse(ok).success).toBe(true);
+    expect(safeToSpendSchema.safeParse({ ...common, status: "no-income" }).success).toBe(true);
+    expect(safeToSpendSchema.safeParse({ ...common, status: "maybe" }).success).toBe(false);
+  });
+
+  it("adds a safe-to-spend nudge kind", () => {
+    expect(nudgeKindSchema.safeParse("safe-to-spend").success).toBe(true);
   });
 });

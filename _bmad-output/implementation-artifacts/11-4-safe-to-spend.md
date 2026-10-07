@@ -1,6 +1,6 @@
 # Story 11.4: Safe-to-spend until payday
 
-Status: drafted — logic tasks ready after 11.3; UI tasks blocked on Claude Design approval
+Status: in-progress — Tasks 1–4 (logic + Today line) done; Task 5 (Finance hero UI) blocked on Claude Design approval
 
 ## Story
 
@@ -21,19 +21,19 @@ so that I don't run short before bills are due.
 
 **Design-independent**
 
-- [ ] **Task 1 — Contract** (AC: 1)
-  - [ ] 1.1 `packages/schemas/src/finance.ts`: `safeToSpendSchema` `{ status: "ok" | "no-income" | "needs-payday-update", asOf: dateSchema, nextPayday?: dateSchema, daysUntilPayday?: number, onHandMinor, billsBeforePaydayMinor, cardOwedMinor, safeMinor, perDayMinor?, currency }`. Tests.
-- [ ] **Task 2 — Payday rollover** (AC: 2, 5)
-  - [ ] 2.1 `packages/core/src/payday.ts`: `effectiveNextPayDate(income, asOfDate): string | null`. Rules: weekly +7 days; biweekly +14; monthly → same day next month, clamped to month end; **semi-monthly → the 15th and the 30th (last day of month when shorter)**, the PH standard; custom → never auto-advance (return null when passed → `needs-payday-update`). Returns the earliest date ≥ `asOfDate`. Pure, UTC-safe date math (follow `daysBetween` in `insights.ts`).
-  - [ ] 2.2 `nextPayday(incomes, asOfDate)` = min over incomes.
-  - [ ] 2.3 Switch `detectPaydayVsBillNudges` (`packages/core/src/insights.ts`) to use `nextPayday` instead of raw `nextPayDate`; keep its existing tests green and add one for a passed `nextPayDate`.
-  - [ ] 2.4 Decision: rollover is **computed, not written back** to the DB (no silent write to the user's data — CLAUDE.md §1.11). The stored value only seeds the cadence.
-- [ ] **Task 3 — Safe-to-spend** (AC: 1, 4, 5)
-  - [ ] 3.1 `packages/core/src/safe-to-spend.ts`: `computeSafeToSpend({ accounts, transactions, bills, incomes, asOfDate })` → `SafeToSpend`, reusing `summarizeWallets` from 11.2/11.3.
-  - [ ] 3.2 Bills counted: `!isPaid && dueDate <= nextPayday` (overdue included), using each bill's stored `dueDate`. (`packages/core/src/recurrence.ts` only has `occursOnDate`/`dayOfWeekFor` — rolling recurring bills forward after payment is **out of scope** here; flag it as a follow-up if found missing.)
-  - [ ] 3.3 Boundary tests listed in AC5; negative results allowed (no clamping to zero — the UI decides the copy).
-- [ ] **Task 4 — Today briefing line** (AC: 3)
-  - [ ] 4.1 `apps/mobile/src/hooks/useToday.ts`: compute safe-to-spend and pass a single gentle line into the briefing (as a nudge or briefing field — follow how `detectPaydayVsBillNudges` output feeds `composeBriefing`). Template text only; no LLM.
+- [x] **Task 1 — Contract** (AC: 1)
+  - [x] 1.1 `packages/schemas/src/finance.ts`: `safeToSpendSchema` `{ status: "ok" | "no-income" | "needs-payday-update", asOf: dateSchema, nextPayday?: dateSchema, daysUntilPayday?: number, onHandMinor, billsBeforePaydayMinor, cardOwedMinor, safeMinor, perDayMinor?, currency }`. Tests.
+- [x] **Task 2 — Payday rollover** (AC: 2, 5)
+  - [x] 2.1 `packages/core/src/payday.ts`: `effectiveNextPayDate(income, asOfDate): string | null`. Rules: weekly +7 days; biweekly +14; monthly → same day next month, clamped to month end; **semi-monthly → the 15th and the 30th (last day of month when shorter)**, the PH standard; custom → never auto-advance (return null when passed → `needs-payday-update`). Returns the earliest date ≥ `asOfDate`. Pure, UTC-safe date math (follow `daysBetween` in `insights.ts`).
+  - [x] 2.2 `nextPayday(incomes, asOfDate)` = min over incomes.
+  - [x] 2.3 Switch `detectPaydayVsBillNudges` (`packages/core/src/insights.ts`) to use `nextPayday` instead of raw `nextPayDate`; keep its existing tests green and add one for a passed `nextPayDate`.
+  - [x] 2.4 Decision: rollover is **computed, not written back** to the DB (no silent write to the user's data — CLAUDE.md §1.11). The stored value only seeds the cadence.
+- [x] **Task 3 — Safe-to-spend** (AC: 1, 4, 5)
+  - [x] 3.1 `packages/core/src/safe-to-spend.ts`: `computeSafeToSpend({ accounts, transactions, bills, incomes, asOfDate })` → `SafeToSpend`, reusing `summarizeWallets` from 11.2/11.3.
+  - [x] 3.2 Bills counted: `!isPaid && dueDate <= nextPayday` (overdue included), using each bill's stored `dueDate`. (`packages/core/src/recurrence.ts` only has `occursOnDate`/`dayOfWeekFor` — rolling recurring bills forward after payment is **out of scope** here; flag it as a follow-up if found missing.)
+  - [x] 3.3 Boundary tests listed in AC5; negative results allowed (no clamping to zero — the UI decides the copy).
+- [x] **Task 4 — Today briefing line** (AC: 3)
+  - [x] 4.1 `apps/mobile/src/hooks/useToday.ts`: compute safe-to-spend and pass a single gentle line into the briefing (as a nudge or briefing field — follow how `detectPaydayVsBillNudges` output feeds `composeBriefing`). Template text only; no LLM.
 
 **UI (after Claude Design approval of `docs/ux-spec.md` §7 screen 1)**
 
@@ -58,10 +58,24 @@ so that I don't run short before bills are due.
 
 ### Agent Model Used
 
+Claude Opus 5.5 (claude-opus-5-5)
+
 ### Debug Log References
 
 ### Completion Notes List
 
 - Story drafted 2026-10-08.
+- Tasks 1–4 implemented 2026-10-08 (tests written first and seen failing):
+  - `safeToSpendSchema` (+ `SafeToSpend` type); nudge kind `safe-to-spend`.
+  - `packages/core/src/payday.ts`: `effectiveNextPayDate` / `nextPayday` — weekly/biweekly step, monthly clamped to month end, semi-monthly 15th & 30th (Feb 28/29), custom never guessed. Computed, never written back.
+  - `detectPaydayVsBillNudges` now uses the derived payday (fixes the stale-date bug; new regression test).
+  - `packages/core/src/safe-to-spend.ts`: `computeSafeToSpend` (+ statuses no-income / needs-payday-update; negative allowed; per-day = floor, 0 when ≤ 0; payday today divides by 1) and `safeToSpendNudge` (info vs gentle heads-up copy; null without a payday).
+  - Shared `format.ts` (`formatPeso`, locale-independent `formatShortDate`); `insights.ts` now uses it.
+  - Today briefing gets the safe-to-spend line (finance-consent gated); `useFinance` exposes `safeToSpend` for the upcoming hero.
+  - Gates: typecheck ✅, tests ✅ 354 (schemas 31, core 105, mobile 169, web 49), lint ✅.
 
 ### File List
+
+- packages/schemas/src/finance.ts, finance.test.ts, briefing.ts; packages/types/src/index.ts
+- packages/core/src/payday.ts (new), payday.test.ts (new), safe-to-spend.ts (new), safe-to-spend.test.ts (new), format.ts (new), insights.ts, helpers.test.ts, index.ts
+- apps/mobile/src/hooks/useToday.ts, useFinance.ts

@@ -38,12 +38,56 @@ export const recurrenceSchema = z
   });
 export type Recurrence = z.infer<typeof recurrenceSchema>;
 
-/** Currencies we support. PH-first. */
-export const currencySchema = z.enum(["PHP"]).default("PHP");
+/**
+ * ISO 4217 currencies we support (ADR-007), with their minor-unit exponent —
+ * how many decimal places one unit has (VND has none). Covers the launch
+ * markets: PH, Southeast Asia, US/Canada, UK/Europe.
+ */
+const CURRENCY_MINOR_UNITS = {
+  PHP: 2,
+  SGD: 2,
+  MYR: 2,
+  IDR: 2,
+  THB: 2,
+  VND: 0,
+  USD: 2,
+  CAD: 2,
+  GBP: 2,
+  EUR: 2,
+  CHF: 2,
+  SEK: 2,
+  NOK: 2,
+  DKK: 2,
+  PLN: 2,
+  CZK: 2,
+} as const;
+export type CurrencyCode = keyof typeof CURRENCY_MINOR_UNITS;
+export const SUPPORTED_CURRENCIES = Object.keys(CURRENCY_MINOR_UNITS) as [
+  CurrencyCode,
+  ...CurrencyCode[],
+];
+
+/** Decimal places of a currency's minor unit (2 for USD cents, 0 for VND). */
+export function currencyMinorUnits(code: CurrencyCode): number {
+  return CURRENCY_MINOR_UNITS[code];
+}
 
 /**
- * Money is stored in MINOR units (centavos) as an integer to avoid float drift.
- * ₱100.50 → { amountMinor: 10050, currency: "PHP" }.
+ * A supported currency. Defaults to PHP so money saved before multi-currency
+ * (all PHP) parses unchanged; new writes pass the user's home currency.
+ */
+export const currencySchema = z.enum(SUPPORTED_CURRENCIES).default("PHP");
+
+/**
+ * The currency assumed when none is known — the pre-multi-currency default
+ * (all early data is PHP). Display code should prefer the user's settings.
+ */
+export const DEFAULT_CURRENCY: CurrencyCode = "PHP";
+
+/**
+ * Money is stored in MINOR units of its currency as an integer to avoid float
+ * drift: ₱100.50 → { amountMinor: 10050, currency: "PHP" }; ₫25,000 →
+ * { amountMinor: 25000, currency: "VND" }.
  */
 export const moneySchema = z.object({
   amountMinor: z.number().int(),

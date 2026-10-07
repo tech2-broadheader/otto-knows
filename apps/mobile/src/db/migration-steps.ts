@@ -240,12 +240,39 @@ const APPOINTMENTS: Migration = {
   ],
 };
 
+/**
+ * Step 6 — home currency, locale and timezone (story 13.1, ADR-007). Installs
+ * that already hold money data were all Philippine (PHP-only before this step),
+ * so they keep PHP / en-PH / Asia/Manila. Fresh installs get no row; the app
+ * fills it from the device locale on first run.
+ */
+const USER_SETTINGS: Migration = {
+  version: 6,
+  name: "user-settings",
+  statements: [
+    `CREATE TABLE user_settings (
+      user_id TEXT PRIMARY KEY NOT NULL,
+      currency TEXT NOT NULL,
+      locale TEXT NOT NULL,
+      timezone TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `INSERT INTO user_settings (user_id, currency, locale, timezone, updated_at)
+      SELECT '00000000-0000-4000-8000-000000000001', 'PHP', 'en-PH', 'Asia/Manila', ${SQL_NOW}
+      WHERE EXISTS (SELECT 1 FROM transactions)
+         OR EXISTS (SELECT 1 FROM income)
+         OR EXISTS (SELECT 1 FROM bills)
+         OR EXISTS (SELECT 1 FROM accounts WHERE opening_balance_minor IS NOT NULL);`,
+  ],
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   BASELINE,
   ACCOUNTS,
   TRANSACTION_TYPES,
   NOTES,
   APPOINTMENTS,
+  USER_SETTINGS,
 ];
 
 /** Derived from the list — never hand-maintained. */
@@ -268,4 +295,5 @@ export const ALL_TABLE_NAMES: readonly string[] = [
   "accounts",
   "notes",
   "appointments",
+  "user_settings",
 ];

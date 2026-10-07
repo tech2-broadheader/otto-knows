@@ -34,6 +34,7 @@ import {
   type RepositoryDeps,
 } from "../data";
 import { LOCAL_USER_ID } from "../lib/constants";
+import { useSettings } from "../lib/settings-context";
 import { newUuid } from "../lib/id";
 import { briefingSlotForHour, localUtcOffset, nowIso, todayDate } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
@@ -53,6 +54,7 @@ export type TodayState = {
 
 export function useToday(deps: RepositoryDeps): TodayState {
   const { isPro } = useAuth();
+  const { locale } = useSettings();
   const [state, setState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | undefined>();
   const [briefing, setBriefing] = useState<Briefing | undefined>();
@@ -104,10 +106,13 @@ export function useToday(deps: RepositoryDeps): TodayState {
         () => newUuid(),
       );
 
-      const dayNudges = detectPaydayVsBillNudges(income, bills, date, () => newUuid());
+      const dayNudges = detectPaydayVsBillNudges(income, bills, date, () => newUuid(), {
+        locale,
+      });
       const safeNudge = safeToSpendNudge(
         computeSafeToSpend({ accounts, transactions, bills, incomes: income, asOfDate: date }),
         () => newUuid(),
+        locale,
       );
       if (safeNudge) dayNudges.push(safeNudge);
 
@@ -157,7 +162,7 @@ export function useToday(deps: RepositoryDeps): TodayState {
       setError(caught instanceof Error ? caught.message : "Could not build your day.");
       setState("error");
     }
-  }, [deps, isPro]);
+  }, [deps, isPro, locale]);
 
   useEffect(() => {
     void reload();

@@ -1,6 +1,13 @@
 // Finance — manual entry baseline (ADR-003). All entities here are SENSITIVE.
 import { z } from "zod";
-import { idSchema, dateSchema, isoDateTimeSchema, moneySchema, timestampFields } from "./common";
+import {
+  currencySchema,
+  dateSchema,
+  idSchema,
+  isoDateTimeSchema,
+  moneySchema,
+  timestampFields,
+} from "./common";
 
 export const incomeCadenceSchema = z.enum([
   "weekly",
@@ -147,7 +154,7 @@ export const safeToSpendSchema = z.object({
   safeMinor: z.number().int(),
   /** Floor of safeMinor / days left (min 1 day); 0 when safeMinor ≤ 0. */
   perDayMinor: z.number().int().min(0).optional(),
-  currency: z.string().min(1),
+  currency: currencySchema,
 });
 export type SafeToSpend = z.infer<typeof safeToSpendSchema>;
 
@@ -167,7 +174,7 @@ export type CategoryReportLine = z.infer<typeof categoryReportLineSchema>;
 /** Monthly report: income, spending (expenses only), net, by category. */
 export const monthlyReportSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/, "Expected YYYY-MM"),
-  currency: z.string().min(1),
+  currency: currencySchema,
   incomeMinor: z.number().int().min(0),
   spendingMinor: z.number().int().min(0),
   netMinor: z.number().int(),

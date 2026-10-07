@@ -12,3 +12,4 @@ export * from "./optimizer";
 export * from "./tips";
 export * from "./notes";
 export * from "./appointments";
+export * from "./locale";

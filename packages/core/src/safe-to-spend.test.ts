@@ -141,7 +141,7 @@ describe("safeToSpendNudge", () => {
     onHandMinor: 0,
     billsBeforePaydayMinor: 0,
     cardOwedMinor: 0,
-    currency: "PHP",
+    currency: "PHP" as const,
   };
 
   it("states the amount, payday and per-day figure", () => {
@@ -155,6 +155,7 @@ describe("safeToSpendNudge", () => {
         perDayMinor: 45714,
       },
       () => id(),
+      "en-PH",
     );
     expect(nudge?.kind).toBe("safe-to-spend");
     expect(nudge?.severity).toBe("info");
@@ -174,6 +175,7 @@ describe("safeToSpendNudge", () => {
         perDayMinor: 0,
       },
       () => id(),
+      "en-PH",
     );
     expect(nudge?.severity).toBe("gentle");
     expect(nudge?.message).toBe(
@@ -182,6 +184,8 @@ describe("safeToSpendNudge", () => {
   });
 
   it("stays quiet when there is no payday to plan against", () => {
-    expect(safeToSpendNudge({ ...base, status: "no-income", safeMinor: 0 }, () => id())).toBeNull();
+    expect(
+      safeToSpendNudge({ ...base, status: "no-income", safeMinor: 0 }, () => id(), "en-PH"),
+    ).toBeNull();
   });
 });

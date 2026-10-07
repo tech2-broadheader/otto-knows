@@ -3,7 +3,13 @@
 //
 // Spending = expenses only. Transfers (incl. credit-card payments) never count;
 // a card purchase counts in the month it was made.
-import type { BudgetCategory, CategoryReportLine, MonthlyReport, Transaction } from "@otto/schemas";
+import {
+  DEFAULT_CURRENCY,
+  type BudgetCategory,
+  type CategoryReportLine,
+  type MonthlyReport,
+  type Transaction,
+} from "@otto/schemas";
 import { isInMonth, previousMonth } from "./month";
 
 export { previousMonth } from "./month";
@@ -78,7 +84,7 @@ export function computeMonthlyReport(
 
   return {
     month,
-    currency: transactions[0]?.amount.currency ?? "PHP",
+    currency: transactions[0]?.amount.currency ?? DEFAULT_CURRENCY,
     incomeMinor: current.incomeMinor,
     spendingMinor: current.spendingMinor,
     netMinor: current.incomeMinor - current.spendingMinor,

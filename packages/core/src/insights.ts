@@ -2,10 +2,13 @@
 // Pure: ids are supplied by an injected factory so the logic stays deterministic
 // and testable (the app passes expo-crypto's randomUUID; tests pass a counter).
 import type { Bill, Income, Nudge } from "@otto/schemas";
-import { formatPeso } from "./format";
+import { formatMoney, formatShortDate } from "./format";
 import { nextPayday as deriveNextPayday } from "./payday";
 
 export type IdFactory = () => string;
+
+/** How far ahead to look for a bill that lands before payday. */
+const DEFAULT_WINDOW_DAYS = 7;
 
 /** Inclusive day difference b - a for two YYYY-MM-DD dates. */
 function daysBetween(a: string, b: string): number {
@@ -28,8 +31,9 @@ export function detectPaydayVsBillNudges(
   bills: readonly Bill[],
   asOfDate: string,
   makeId: IdFactory,
-  withinDays = 7,
+  options: { locale: string; withinDays?: number },
 ): Nudge[] {
+  const withinDays = options.withinDays ?? DEFAULT_WINDOW_DAYS;
   // Derived from each income's cadence so a stored date that has passed rolls
   // forward instead of silently disabling this nudge (story 11.4).
   const nextPayday = deriveNextPayday(incomes, asOfDate);
@@ -45,7 +49,7 @@ export function detectPaydayVsBillNudges(
     nudges.push({
       id: makeId(),
       kind: "payday-vs-bill",
-      message: `Heads up — ${bill.name} (${formatPeso(bill.amount.amountMinor)}) is due ${bill.dueDate}, but your next pay lands ${nextPayday}. Want a nudge the day before?`,
+      message: `Heads up — ${bill.name} (${formatMoney(bill.amount, options.locale)}) is due ${formatShortDate(bill.dueDate, options.locale)}, but your next pay lands ${formatShortDate(nextPayday, options.locale)}. Want a nudge the day before?`,
       severity: "gentle",
       relatedIds: [bill.id],
     });

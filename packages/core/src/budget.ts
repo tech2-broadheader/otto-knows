@@ -1,5 +1,10 @@
 // Budget math — spent vs limit per category for a month. Pure.
-import type { BudgetCategory, Transaction } from "@otto/schemas";
+import {
+  DEFAULT_CURRENCY,
+  type BudgetCategory,
+  type CurrencyCode,
+  type Transaction,
+} from "@otto/schemas";
 import { isInMonth } from "./month";
 
 export type CategorySpend = {
@@ -14,7 +19,7 @@ export type CategorySpend = {
 export type BudgetSummary = {
   /** YYYY-MM */
   month: string;
-  currency: string;
+  currency: CurrencyCode;
   totalSpentMinor: number;
   totalLimitMinor: number;
   uncategorizedMinor: number;
@@ -34,7 +39,8 @@ export function computeBudgetSummary(
   const monthTx = transactions.filter(
     (t) => t.type === "expense" && isInMonth(t.occurredAt, month),
   );
-  const currency = categories[0]?.monthlyLimit?.currency ?? monthTx[0]?.amount.currency ?? "PHP";
+  const currency =
+    categories[0]?.monthlyLimit?.currency ?? monthTx[0]?.amount.currency ?? DEFAULT_CURRENCY;
 
   const spentByCategory = new Map<string, number>();
   let uncategorizedMinor = 0;

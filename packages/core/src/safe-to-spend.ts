@@ -6,7 +6,7 @@
 // Money is integer centavos throughout; the per-day figure uses floor division.
 import type { Account, Bill, Income, Nudge, SafeToSpend, Transaction } from "@otto/schemas";
 import { summarizeWallets } from "./accounts";
-import { formatPeso, formatShortDate } from "./format";
+import { formatMoney, formatShortDate } from "./format";
 import type { IdFactory } from "./insights";
 import { nextPayday } from "./payday";
 
@@ -77,15 +77,21 @@ export function computeSafeToSpend(input: SafeToSpendInput): SafeToSpend {
  * gentle heads-up (never a scold — spec §6.2) when bills exceed money on hand.
  * Returns null when there is no payday to plan against (Finance shows a prompt).
  */
-export function safeToSpendNudge(result: SafeToSpend, makeId: IdFactory): Nudge | null {
+export function safeToSpendNudge(
+  result: SafeToSpend,
+  makeId: IdFactory,
+  locale: string,
+): Nudge | null {
   if (result.status !== "ok" || result.nextPayday === undefined) return null;
-  const payday = formatShortDate(result.nextPayday);
+  const payday = formatShortDate(result.nextPayday, locale);
+  const money = (amountMinor: number): string =>
+    formatMoney({ amountMinor, currency: result.currency }, locale);
 
   if (result.safeMinor < 0) {
     return {
       id: makeId(),
       kind: "safe-to-spend",
-      message: `Heads up — bills before payday on ${payday} are ${formatPeso(-result.safeMinor)} more than what's on hand.`,
+      message: `Heads up — bills before payday on ${payday} are ${money(-result.safeMinor)} more than what's on hand.`,
       severity: "gentle",
       relatedIds: [],
     };
@@ -93,7 +99,7 @@ export function safeToSpendNudge(result: SafeToSpend, makeId: IdFactory): Nudge 
   return {
     id: makeId(),
     kind: "safe-to-spend",
-    message: `${formatPeso(result.safeMinor)} is safe to spend until payday on ${payday} — about ${formatPeso(result.perDayMinor ?? 0)} a day.`,
+    message: `${money(result.safeMinor)} is safe to spend until payday on ${payday} — about ${money(result.perDayMinor ?? 0)} a day.`,
     severity: "info",
     relatedIds: [],
   };

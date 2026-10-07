@@ -322,3 +322,28 @@ describe("step 5 — appointments (story 12.4)", () => {
     expect(db.prepare("SELECT COUNT(*) AS n FROM appointments").get()).toEqual({ n: 0 });
   });
 });
+
+describe("step 6 — user settings (story 13.1)", () => {
+  const LOCAL_USER = "00000000-0000-4000-8000-000000000001";
+  const ts = "2026-06-15T08:00:00+08:00";
+
+  it("keeps an existing PH install on PHP / en-PH / Asia/Manila", () => {
+    const db = new DatabaseSync(":memory:");
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 5)).ok).toBe(true);
+    db.exec(
+      `INSERT INTO income VALUES ('i1','${LOCAL_USER}','Salary','CIPHER:x','PHP','monthly','2026-06-30','${ts}','${ts}')`,
+    );
+
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 6)).ok).toBe(true);
+
+    expect(
+      db.prepare("SELECT user_id, currency, locale, timezone FROM user_settings").all(),
+    ).toEqual([{ user_id: LOCAL_USER, currency: "PHP", locale: "en-PH", timezone: "Asia/Manila" }]);
+  });
+
+  it("leaves a fresh install without settings so the device defaults apply", () => {
+    const db = new DatabaseSync(":memory:");
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 6)).ok).toBe(true);
+    expect(db.prepare("SELECT COUNT(*) AS n FROM user_settings").get()).toEqual({ n: 0 });
+  });
+});

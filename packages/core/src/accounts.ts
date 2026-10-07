@@ -1,7 +1,7 @@
 // Wallet balances (story 11.2, ADR-004). Pure. Balances are DERIVED from each
 // wallet's opening balance plus its transactions — never stored — so editing or
 // deleting a transaction can't leave a total out of sync.
-import type { Account, Transaction } from "@otto/schemas";
+import { DEFAULT_CURRENCY, type Account, type CurrencyCode, type Transaction } from "@otto/schemas";
 
 export type AccountBalance = {
   accountId: string;
@@ -13,7 +13,7 @@ export type AccountBalance = {
 };
 
 export type WalletSummary = {
-  currency: string;
+  currency: CurrencyCode;
   /** Cash + e-wallets + bank across active wallets. Card balances never count. */
   onHandMinor: number;
   /** Total owed across active credit cards, as a positive number. */
@@ -77,7 +77,7 @@ export function summarizeWallets(
   }
 
   return {
-    currency: accounts[0]?.openingBalance.currency ?? "PHP",
+    currency: accounts[0]?.openingBalance.currency ?? DEFAULT_CURRENCY,
     onHandMinor,
     cardOwedMinor,
     perAccount,

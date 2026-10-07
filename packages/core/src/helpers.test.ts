@@ -7,6 +7,7 @@ import { composeBriefing } from "./briefing-composer";
 
 const UUID = (n: number) => `${n.toString().padStart(8, "0")}-1111-4111-8111-111111111111`;
 const ISO = "2026-06-14T08:00:00+08:00";
+const PH = { locale: "en-PH" };
 
 describe("recurrence", () => {
   it("knows the weekday of a date", () => {
@@ -126,7 +127,13 @@ describe("payday-vs-bill nudges", () => {
 
   it("flags a bill due before payday, within the window", () => {
     let n = 0;
-    const nudges = detectPaydayVsBillNudges(incomes, bills, "2026-06-14", () => UUID(100 + n++));
+    const nudges = detectPaydayVsBillNudges(
+      incomes,
+      bills,
+      "2026-06-14",
+      () => UUID(100 + n++),
+      PH,
+    );
     expect(nudges).toHaveLength(1);
     expect(nudges[0]?.kind).toBe("payday-vs-bill");
     expect(nudges[0]?.severity).toBe("gentle");
@@ -135,7 +142,9 @@ describe("payday-vs-bill nudges", () => {
 
   it("ignores paid bills and bills outside the window", () => {
     const paid = bills.map((b) => ({ ...b, isPaid: true }));
-    expect(detectPaydayVsBillNudges(incomes, paid, "2026-06-14", () => UUID(200))).toHaveLength(0);
+    expect(detectPaydayVsBillNudges(incomes, paid, "2026-06-14", () => UUID(200), PH)).toHaveLength(
+      0,
+    );
   });
 
   it("still works after the stored payday has passed (rolls it forward, story 11.4)", () => {
@@ -147,7 +156,7 @@ describe("payday-vs-bill nudges", () => {
       nextPayDate: "2026-05-30",
     }));
     const dueOnPayday = [{ ...bills[0]!, dueDate: "2026-06-15" }, bills[1]!];
-    const nudges = detectPaydayVsBillNudges(stale, dueOnPayday, "2026-06-14", () => UUID(300));
+    const nudges = detectPaydayVsBillNudges(stale, dueOnPayday, "2026-06-14", () => UUID(300), PH);
     expect(nudges.map((x) => x.relatedIds[0])).toEqual([UUID(30)]);
   });
 });
@@ -210,5 +219,38 @@ describe("briefing composer", () => {
       generatedAt: ISO,
     });
     expect(briefing.summary).toContain("open day");
+  });
+});
+
+describe("payday-vs-bill nudge copy follows the user's locale (story 13.1)", () => {
+  it("formats money and dates for a US user", () => {
+    const usIncome: Income = {
+      id: UUID(60),
+      userId: UUID(99),
+      source: "Salary",
+      amount: { amountMinor: 300000, currency: "USD" },
+      cadence: "monthly",
+      nextPayDate: "2026-06-19",
+      createdAt: ISO,
+      updatedAt: ISO,
+    };
+    const usBill: Bill = {
+      id: UUID(61),
+      userId: UUID(99),
+      name: "Electric",
+      amount: { amountMinor: 12050, currency: "USD" },
+      dueDate: "2026-06-18",
+      recurrence: { freq: "monthly", dayOfMonth: 18 },
+      isAutopay: false,
+      isPaid: false,
+      createdAt: ISO,
+      updatedAt: ISO,
+    };
+    const [nudge] = detectPaydayVsBillNudges([usIncome], [usBill], "2026-06-14", () => UUID(62), {
+      locale: "en-US",
+    });
+    expect(nudge?.message).toBe(
+      "Heads up — Electric ($120.50) is due Jun 18, but your next pay lands Jun 19. Want a nudge the day before?",
+    );
   });
 });

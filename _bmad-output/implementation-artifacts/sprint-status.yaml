@@ -79,7 +79,7 @@ development_status:
 
   # --- Internationalization (2026-10-08; see sprint-change-proposal-2026-10-08-international.md) ---
   epic-13: in-progress
-  13-1-home-currency-locale: in-progress
+  13-1-home-currency-locale: review
   13-2-user-timezone: backlog
   13-3-translation-ready-copy: backlog
   13-4-country-currency-onboarding: backlog

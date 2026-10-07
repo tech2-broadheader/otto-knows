@@ -161,6 +161,15 @@ export const appointments = sqliteTable("appointments", {
   updatedAt: text("updated_at").notNull(),
 });
 
+/** Home currency, locale and timezone (story 13.1) — one row per user. */
+export const userSettings = sqliteTable("user_settings", {
+  userId: text("user_id").primaryKey(),
+  currency: text("currency").notNull(),
+  locale: text("locale").notNull(),
+  timezone: text("timezone").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 /** Budget categories — not sensitive (limit is a user-set target, not real money flow). */
 export const budgetCategories = sqliteTable("budget_categories", {
   id: text("id").primaryKey(),
@@ -236,6 +245,7 @@ export const tables = {
   accounts,
   notes,
   appointments,
+  userSettings,
   budgetCategories,
   calendarEvents,
   contextItems,

@@ -30,6 +30,7 @@ import {
   initDataLayer,
   makeAccountRepository,
   routineRepository,
+  settingsRepository,
 } from "./src/data";
 import { configureNotifications } from "./src/notifications";
 import { rescheduleDay } from "./src/lib/reschedule";
@@ -39,6 +40,7 @@ import { describeMigrationError, type MigrationError } from "./src/db/migrations
 import { OttoTabBar } from "./src/design/kit";
 import { AuthProvider } from "./src/auth/AuthProvider";
 import { AppResetProvider } from "./src/lib/app-reset";
+import { SettingsProvider, deviceSettings } from "./src/lib/settings-context";
 import { useProOffer } from "./src/hooks/useProOffer";
 import { TodayScreen } from "./src/screens/TodayScreen";
 import { QuickAddScreen } from "./src/screens/QuickAddScreen";
@@ -106,6 +108,8 @@ export default function App(): React.JSX.Element {
   );
   // Set when the on-device schema upgrade fails (Story 11.1); drives the error screen.
   const [dbError, setDbError] = useState<MigrationError | null>(null);
+  // Home currency / locale / timezone (story 13.1); the device suggestion until loaded.
+  const [settings, setSettings] = useState(() => deviceSettings());
   // Bumped by "Try again" on the error screen to re-run boot.
   const [bootAttempt, setBootAttempt] = useState(0);
 
@@ -138,6 +142,13 @@ export default function App(): React.JSX.Element {
         return;
       }
       configureNotifications();
+      try {
+        // First run stores the device's suggestion; later runs load the user's choice.
+        const loaded = await settingsRepository.ensure(deviceSettings(LOCAL_USER_ID));
+        if (!cancelled) setSettings(loaded);
+      } catch {
+        // Non-fatal: screens keep formatting with the device suggestion.
+      }
       try {
         // Every install needs a default Cash wallet (story 11.2) before any
         // transaction is added; idempotent.
@@ -175,48 +186,50 @@ export default function App(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <AppResetProvider reset={() => setPhase("onboarding")}>
-          <NavigationContainer>
-          {phase === "booting" || !fontsLoaded ? (
-            <LoadingState label="Starting Otto" />
-          ) : phase === "db-error" && dbErrorCopy ? (
-            <ErrorState
-              message={dbErrorCopy.message}
-              onRetry={dbErrorCopy.canRetry ? retryBoot : undefined}
-            />
-          ) : (
-            <RootStack.Navigator screenOptions={{ headerShown: false }}>
-              {phase === "onboarding" ? (
-                <RootStack.Screen name="Onboarding">
-                  {() => <OnboardingScreen onComplete={() => setPhase("auth")} />}
-                </RootStack.Screen>
-              ) : phase === "auth" ? (
-                // Right after onboarding: offer to create an account (skippable —
-                // free tier stays anonymous per ADR-002). Either path → main.
-                <RootStack.Screen name="AuthGate">
-                  {() => <LoginScreen initialMode="sign-up" onDone={() => setPhase("main")} />}
-                </RootStack.Screen>
+        <SettingsProvider value={settings}>
+          <AppResetProvider reset={() => setPhase("onboarding")}>
+            <NavigationContainer>
+              {phase === "booting" || !fontsLoaded ? (
+                <LoadingState label="Starting Otto" />
+              ) : phase === "db-error" && dbErrorCopy ? (
+                <ErrorState
+                  message={dbErrorCopy.message}
+                  onRetry={dbErrorCopy.canRetry ? retryBoot : undefined}
+                />
               ) : (
-                <>
-                  <RootStack.Screen name="Main" component={MainTabs} />
-                  <RootStack.Screen
-                    name="Upgrade"
-                    component={UpgradeScreen}
-                    options={{ presentation: "modal" }}
-                  />
-                  <RootStack.Screen name="Login" options={{ presentation: "modal" }}>
-                    {({ navigation }) => <LoginScreen onDone={() => navigation.goBack()} />}
-                  </RootStack.Screen>
-                  <RootStack.Screen name="Settings" component={SettingsScreen} />
-                  <RootStack.Screen name="Optimizer" component={OptimizerScreen} />
-                  <RootStack.Screen name="Tips" component={TipsScreen} />
-                  <RootStack.Screen name="HowItWorks" component={HowItWorksScreen} />
-                </>
+                <RootStack.Navigator screenOptions={{ headerShown: false }}>
+                  {phase === "onboarding" ? (
+                    <RootStack.Screen name="Onboarding">
+                      {() => <OnboardingScreen onComplete={() => setPhase("auth")} />}
+                    </RootStack.Screen>
+                  ) : phase === "auth" ? (
+                    // Right after onboarding: offer to create an account (skippable —
+                    // free tier stays anonymous per ADR-002). Either path → main.
+                    <RootStack.Screen name="AuthGate">
+                      {() => <LoginScreen initialMode="sign-up" onDone={() => setPhase("main")} />}
+                    </RootStack.Screen>
+                  ) : (
+                    <>
+                      <RootStack.Screen name="Main" component={MainTabs} />
+                      <RootStack.Screen
+                        name="Upgrade"
+                        component={UpgradeScreen}
+                        options={{ presentation: "modal" }}
+                      />
+                      <RootStack.Screen name="Login" options={{ presentation: "modal" }}>
+                        {({ navigation }) => <LoginScreen onDone={() => navigation.goBack()} />}
+                      </RootStack.Screen>
+                      <RootStack.Screen name="Settings" component={SettingsScreen} />
+                      <RootStack.Screen name="Optimizer" component={OptimizerScreen} />
+                      <RootStack.Screen name="Tips" component={TipsScreen} />
+                      <RootStack.Screen name="HowItWorks" component={HowItWorksScreen} />
+                    </>
+                  )}
+                </RootStack.Navigator>
               )}
-            </RootStack.Navigator>
-          )}
-          </NavigationContainer>
-        </AppResetProvider>
+            </NavigationContainer>
+          </AppResetProvider>
+        </SettingsProvider>
       </AuthProvider>
       <StatusBar style="auto" />
     </SafeAreaProvider>

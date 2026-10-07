@@ -26,6 +26,7 @@ import {
   routineSchema,
   routineAnchorSchema,
   storedTransactionSchema,
+  userSettingsSchema,
   transactionSchema,
   type Account,
   type Appointment,
@@ -42,6 +43,7 @@ import {
   type Routine,
   type RoutineAnchor,
   type Transaction,
+  type UserSettings,
 } from "@otto/schemas";
 import { getDatabase } from "../db/client";
 import { newUuid } from "../lib/id";
@@ -125,6 +127,44 @@ export const reminderRepository = {
   },
   async delete(id: string): Promise<void> {
     getDatabase().delete(tables.reminders).where(eq(tables.reminders.id, id)).run();
+  },
+};
+
+/**
+ * Home currency / locale / timezone (story 13.1). One row per user; not
+ * sensitive. `ensure` stores the given defaults the first time and otherwise
+ * returns what the user already has (never overwrites a choice).
+ */
+export const settingsRepository = {
+  async get(userId: string): Promise<UserSettings | undefined> {
+    const row = getDatabase()
+      .select()
+      .from(tables.userSettings)
+      .where(eq(tables.userSettings.userId, userId))
+      .get();
+    return row
+      ? userSettingsSchema.parse({
+          userId: row.userId,
+          currency: row.currency,
+          locale: row.locale,
+          timezone: row.timezone,
+        })
+      : undefined;
+  },
+  async save(input: UserSettings): Promise<UserSettings> {
+    const entity = userSettingsSchema.parse(input);
+    const row = { ...entity, updatedAt: new Date().toISOString() };
+    getDatabase()
+      .insert(tables.userSettings)
+      .values(row)
+      .onConflictDoUpdate({ target: tables.userSettings.userId, set: row })
+      .run();
+    return entity;
+  },
+  async ensure(defaults: UserSettings): Promise<UserSettings> {
+    return (
+      (await settingsRepository.get(defaults.userId)) ?? (await settingsRepository.save(defaults))
+    );
   },
 };
 

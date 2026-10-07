@@ -4,6 +4,8 @@ export type {
   DayOfWeek,
   Recurrence,
   Money,
+  CurrencyCode,
+  UserSettings,
   RoutineAnchorKind,
   RoutineAnchor,
   RoutineMode,

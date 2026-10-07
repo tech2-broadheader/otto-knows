@@ -15,7 +15,8 @@ import { OverlayScreen, MASCOT } from "../design/kit";
 import { Icon } from "../design/Icon";
 import { OC, FONT, RADIUS, shadow } from "../design/theme";
 import { useAuth } from "../auth/AuthProvider";
-import { FREE_VS_PAID_TAGLINE, TRUST_LINE, paidPlans, type Plan } from "../lib/pricing";
+import { FREE_VS_PAID_TAGLINE, TRUST_LINE, paidPlans, plansForCurrency, type Plan } from "../lib/pricing";
+import { useSettings } from "../lib/settings-context";
 
 type UpgradeNavigation = { goBack: () => void; navigate: (screen: "Login") => void };
 
@@ -29,7 +30,8 @@ export function UpgradeScreen({
   navigation: UpgradeNavigation;
 }): React.JSX.Element {
   const { status, isConfigured } = useAuth();
-  const plans = paidPlans();
+  const { currency } = useSettings();
+  const plans = plansForCurrency(paidPlans(), currency);
   // Default-select the badged "best value" plan when present, else the first.
   const [selected, setSelected] = useState<Plan["id"]>(
     plans.find((p) => p.badge)?.id ?? plans[0]!.id,
@@ -75,7 +77,7 @@ export function UpgradeScreen({
               key={plan.id}
               onPress={() => setSelected(plan.id)}
               accessibilityRole="radio"
-              accessibilityLabel={`${plan.name}, ${plan.price}${suffix}`}
+              accessibilityLabel={`${plan.name}, ${plan.price ? `${plan.price}${suffix}` : "price at checkout"}`}
               accessibilityState={{ selected: on }}
               style={{
                 flexDirection: "row",
@@ -107,10 +109,15 @@ export function UpgradeScreen({
                 <Text style={{ fontFamily: FONT.bodyX, fontSize: 15.5, color: "#fff" }}>{plan.name}</Text>
                 <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12.5, color: OC.sage }}>{plan.tagline}</Text>
               </View>
-              <Text style={{ fontFamily: FONT.display, fontSize: 22, color: "#fff" }}>
-                {plan.price}
-                {suffix ? <Text style={{ fontFamily: FONT.body, fontSize: 13, color: OC.sage }}>{suffix}</Text> : null}
-              </Text>
+              {plan.price ? (
+                <Text style={{ fontFamily: FONT.display, fontSize: 22, color: "#fff" }}>
+                  {plan.price}
+                  {suffix ? <Text style={{ fontFamily: FONT.body, fontSize: 13, color: OC.sage }}>{suffix}</Text> : null}
+                </Text>
+              ) : (
+                // Local prices come from the app store per country (story 9.6).
+                <Text style={{ fontFamily: FONT.bodySemi, fontSize: 12.5, color: OC.sage }}>Price at checkout</Text>
+              )}
             </Pressable>
           );
         })}

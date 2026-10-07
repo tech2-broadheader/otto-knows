@@ -14,9 +14,11 @@
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import type { Proposal, ProposalAction } from "@otto/schemas";
+import { currencyMinorUnits } from "@otto/schemas";
+import { formatMoney } from "@otto/core";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { useQuickAdd } from "../hooks/useQuickAdd";
-import { summarizeAction } from "../components/ProposalCard";
+import { summarizeAction } from "../lib/proposal-summary";
 import { useSettings } from "../lib/settings-context";
 import { Screen, AppHeader, OttoVoice, ProposalCard, EmptyState } from "../design/kit";
 import { Icon, type IconName } from "../design/Icon";
@@ -28,11 +30,14 @@ import { useUpgradeNavigation } from "../hooks/useUpgradeNavigation";
 import { useSettingsNavigation } from "../hooks/useSettingsNavigation";
 
 /** Example prompts offered as one-tap chips (match the design's examples). */
-const EXAMPLE_CHIPS: readonly string[] = [
-  "Pay Meralco ₱2,480 on Saturday",
-  "Gym Mon/Wed/Fri at 6am",
-  "Dinner with Mom Friday 7pm",
-];
+/** Example prompts; the bill amount is shown in the user's own currency (story 13.1). */
+function exampleChips(billAmount: string): readonly string[] {
+  return [
+    `Pay the electric bill ${billAmount} on Saturday`,
+    "Gym Mon/Wed/Fri at 6am",
+    "Dentist Tuesday 3pm",
+  ];
+}
 
 /** Icon + accent tone per proposal type, matching the design's proposal cards. */
 const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: string }> = {
@@ -122,7 +127,10 @@ function Banner({ tone, message }: { tone: "info" | "warning"; message: string }
 export function QuickAddScreen(): React.JSX.Element {
   const deps = useRepositoryDeps();
   const { isPro } = useAuth();
-  const { locale } = useSettings();
+  const { locale, currency } = useSettings();
+  const chips = exampleChips(
+    formatMoney({ amountMinor: 2480 * 10 ** currencyMinorUnits(currency), currency }, locale),
+  );
   const goToUpgrade = useUpgradeNavigation();
   const goToSettings = useSettingsNavigation();
   const { status, proposals, error, errorCode, applyingId, submit, accept, dismiss } =
@@ -232,7 +240,7 @@ export function QuickAddScreen(): React.JSX.Element {
 
         {/* Example chips */}
         <View style={{ marginTop: 14, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {EXAMPLE_CHIPS.map((chip) => (
+          {chips.map((chip) => (
             <Pressable
               key={chip}
               onPress={() => handleSubmit(chip)}

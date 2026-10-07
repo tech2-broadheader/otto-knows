@@ -70,7 +70,7 @@ export const PLANS: readonly Plan[] = [
     price: "₱599",
     priceSuffix: "/yr",
     cadence: "annual",
-    tagline: "Everything in Pro — about ₱50/mo, billed yearly.",
+    tagline: "Everything in Pro, billed yearly — the best value.",
     benefits: PRO_BENEFITS(),
     badge: "Best value",
     isPaid: true,
@@ -132,4 +132,14 @@ export function priceLabel(plan: Plan): string {
 /** Accessible CTA label for a paid plan (no CTA for Free). */
 export function ctaLabel(plan: Plan): string {
   return `Choose ${plan.name}`;
+}
+
+/**
+ * Plans as shown to a user with this home currency. The placeholder prices are
+ * PHP; anyone else sees no amount (the paywall says "Price at checkout") until
+ * the app stores supply local prices per country (E9 / story 9.6).
+ */
+export function plansForCurrency(plans: readonly Plan[], currency: string): Plan[] {
+  if (currency === "PHP") return [...plans];
+  return plans.map((plan) => ({ ...plan, price: "", priceSuffix: "" }));
 }

@@ -11,6 +11,7 @@ import { useConsents } from "../hooks/useConsents";
 import { useGoogleCalendar } from "../hooks/useGoogleCalendar";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { AsyncBoundary } from "../components/AsyncBoundary";
+import { RegionSettings } from "../components/RegionSettings";
 import {
   OverlayScreen,
   GradientCard,
@@ -503,6 +504,12 @@ export function SettingsScreen({
         <SectionLabel>Connections</SectionLabel>
         <CalendarConnectCard />
 
+        {/* Region & currency (stories 13.1 / 13.4) */}
+        <View style={{ marginTop: 18 }}>
+          <SectionLabel>Region &amp; currency</SectionLabel>
+          <RegionSettings />
+        </View>
+
         {/* Consent */}
         <View style={{ marginTop: 18 }}>
           <SectionLabel>Consent</SectionLabel>
@@ -544,7 +551,7 @@ export function SettingsScreen({
                 color: OC.forest,
               }}
             >
-              Encrypted on your device, DPA-compliant, and never sold. Every access to health and
+              Encrypted on your device and never sold or used for ads. Every access to health and
               finance data is logged for your records.
             </Text>
           </View>

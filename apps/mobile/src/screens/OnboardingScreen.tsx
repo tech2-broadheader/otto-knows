@@ -187,7 +187,7 @@ function ConsentStep(): React.JSX.Element {
               color: OC.forest,
             }}
           >
-            Encrypted on your device, DPA-compliant, never sold. Every access to health and finance
+            Encrypted on your device and never sold or used for ads. Every access to health and finance
             data is logged for your records.
           </Text>
         </View>

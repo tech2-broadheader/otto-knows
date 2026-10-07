@@ -6,6 +6,7 @@ import {
   ctaLabel,
   paidPlans,
   planById,
+  plansForCurrency,
   priceLabel,
 } from "./pricing";
 
@@ -62,10 +63,11 @@ describe("display helpers", () => {
   it("builds a per-plan CTA label", () => {
     expect(ctaLabel(planById("pro-annual")!)).toBe("Choose Pro annual");
   });
-  it("annual plan is flagged as best value and sold as ~₱50/mo", () => {
+  it("annual plan is flagged as best value without a currency-specific tagline", () => {
     const annual = planById("pro-annual");
     expect(annual?.badge).toBe("Best value");
-    expect(annual?.tagline).toMatch(/₱50\/mo/);
+    expect(annual?.tagline).toMatch(/billed yearly/);
+    expect(annual?.tagline).not.toContain("₱");
   });
   it("trust line promises no ads (spec §2)", () => {
     expect(TRUST_LINE).toMatch(/no ads/i);
@@ -73,5 +75,21 @@ describe("display helpers", () => {
   it("free-vs-paid tagline captures the mental model (spec §3)", () => {
     expect(FREE_VS_PAID_TAGLINE).toMatch(/remembers/i);
     expect(FREE_VS_PAID_TAGLINE).toMatch(/thinks/i);
+  });
+});
+
+describe("plansForCurrency (international, story 13.1)", () => {
+  it("keeps the placeholder PHP prices for PHP users", () => {
+    expect(plansForCurrency(paidPlans(), "PHP").map((p) => p.price)).toEqual([
+      "₱99",
+      "₱599",
+      "₱1,299",
+    ]);
+  });
+
+  it("never shows peso prices to other currencies until the stores provide local prices", () => {
+    const usd = plansForCurrency(paidPlans(), "USD");
+    expect(usd.every((p) => p.price === "" && p.priceSuffix === "")).toBe(true);
+    expect(JSON.stringify(usd)).not.toContain("₱");
   });
 });

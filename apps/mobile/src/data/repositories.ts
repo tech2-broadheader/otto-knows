@@ -9,7 +9,7 @@
 // This module imports the db client (native expo-sqlite) and so is NOT covered
 // by the Node unit tests; the logic it composes (mappers, encryption core,
 // consent + audit decisions) is pure and tested in isolation.
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import {
   accountSchema,
   appointmentSchema,
@@ -161,6 +161,67 @@ export const settingsRepository = {
       .onConflictDoUpdate({ target: tables.userSettings.userId, set: row })
       .run();
     return entity;
+  },
+  /**
+   * True once any money has been recorded. The home currency is then fixed:
+   * amounts are never converted (ADR-007). The migration-created Cash wallet
+   * (no opening balance) does not count.
+   */
+  async hasMoneyData(userId: string): Promise<boolean> {
+    const db = getDatabase();
+    const any = (rows: unknown[]): boolean => rows.length > 0;
+    return (
+      any(
+        db
+          .select({ id: tables.transactions.id })
+          .from(tables.transactions)
+          .where(eq(tables.transactions.userId, userId))
+          .limit(1)
+          .all(),
+      ) ||
+      any(
+        db
+          .select({ id: tables.bills.id })
+          .from(tables.bills)
+          .where(eq(tables.bills.userId, userId))
+          .limit(1)
+          .all(),
+      ) ||
+      any(
+        db
+          .select({ id: tables.income.id })
+          .from(tables.income)
+          .where(eq(tables.income.userId, userId))
+          .limit(1)
+          .all(),
+      ) ||
+      any(
+        db
+          .select({ id: tables.accounts.id })
+          .from(tables.accounts)
+          .where(
+            and(eq(tables.accounts.userId, userId), isNotNull(tables.accounts.openingBalanceMinor)),
+          )
+          .limit(1)
+          .all(),
+      )
+    );
+  },
+  /**
+   * Save new settings. A currency change is refused once money exists; when
+   * allowed, the empty wallets follow the new currency so totals display in it.
+   */
+  async update(next: UserSettings): Promise<UserSettings | "currency-locked"> {
+    const current = await settingsRepository.get(next.userId);
+    if (current && current.currency !== next.currency) {
+      if (await settingsRepository.hasMoneyData(next.userId)) return "currency-locked";
+      getDatabase()
+        .update(tables.accounts)
+        .set({ openingBalanceCurrency: next.currency })
+        .where(eq(tables.accounts.userId, next.userId))
+        .run();
+    }
+    return settingsRepository.save(next);
   },
   async ensure(defaults: UserSettings): Promise<UserSettings> {
     return (

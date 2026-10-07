@@ -17,14 +17,29 @@ export function deviceSettings(userId: string = LOCAL_USER_ID): UserSettings {
 
 const SettingsContext = createContext<UserSettings>(deviceSettings());
 
+/** Saves new settings app-wide; "currency-locked" once money has been recorded. */
+export type UpdateSettings = (next: UserSettings) => Promise<UserSettings | "currency-locked">;
+const UpdateSettingsContext = createContext<UpdateSettings>(async (next) => next);
+
 export function SettingsProvider({
   value,
+  onUpdate,
   children,
 }: {
   value: UserSettings;
+  onUpdate: UpdateSettings;
   children: ReactNode;
 }): React.JSX.Element {
-  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
+  return (
+    <SettingsContext.Provider value={value}>
+      <UpdateSettingsContext.Provider value={onUpdate}>{children}</UpdateSettingsContext.Provider>
+    </SettingsContext.Provider>
+  );
+}
+
+/** Change the user's region / currency (Settings → Region & currency). */
+export function useUpdateSettings(): UpdateSettings {
+  return useContext(UpdateSettingsContext);
 }
 
 /** The user's home currency, locale and timezone. */

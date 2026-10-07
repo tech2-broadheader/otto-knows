@@ -82,7 +82,7 @@ development_status:
   13-1-home-currency-locale: review
   13-2-user-timezone: backlog
   13-3-translation-ready-copy: backlog
-  13-4-country-currency-onboarding: backlog
+  13-4-country-currency-onboarding: in-progress # Settings region & currency done; onboarding step pending
   13-5-semi-monthly-pay-days: review                  # income form asks for the two days
   13-6-regional-privacy: backlog               # GATE-6 per market
   epic-13-retrospective: optional

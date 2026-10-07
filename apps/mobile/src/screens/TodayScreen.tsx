@@ -102,7 +102,7 @@ export function TodayScreen(): React.JSX.Element {
     <Screen>
       <AppHeader
         title={greetingForHour(new Date().getHours())}
-        sub={longDateLabel()}
+        sub={longDateLabel(new Date(), locale)}
         isPro={isPro}
         onUpgrade={() => navigation.navigate("Upgrade")}
         onSettings={() => navigation.navigate("Settings")}

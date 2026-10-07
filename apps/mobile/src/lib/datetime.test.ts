@@ -3,6 +3,7 @@ import {
   briefingSlotForHour,
   currentMonth,
   isoFromDateTime,
+  longDateLabel,
   timeLabel,
   todayDate,
 } from "./datetime";
@@ -30,5 +31,13 @@ describe("datetime helpers", () => {
     expect(briefingSlotForHour(7)).toBe("morning");
     expect(briefingSlotForHour(13)).toBe("midday");
     expect(briefingSlotForHour(20)).toBe("evening");
+  });
+});
+
+describe("longDateLabel (locale-aware, story 13.1)", () => {
+  const thursday = new Date(2026, 5, 18, 9, 0);
+  it("writes the weekday and date the user's way", () => {
+    expect(longDateLabel(thursday, "en-US")).toBe("Thursday, June 18");
+    expect(longDateLabel(thursday, "en-GB")).toBe("Thursday 18 June");
   });
 });

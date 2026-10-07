@@ -5,7 +5,8 @@
 // rows reach the Pro surfaces. A first-run onboarding flow gates the app. The data
 // layer is initialized and notifications configured once at boot.
 import "./global.css";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { UserSettings } from "@otto/schemas";
 import { StatusBar } from "expo-status-bar";
 import {
   useFonts,
@@ -123,6 +124,11 @@ export default function App(): React.JSX.Element {
   const [dbError, setDbError] = useState<MigrationError | null>(null);
   // Home currency / locale / timezone (story 13.1); the device suggestion until loaded.
   const [settings, setSettings] = useState(() => deviceSettings());
+  const updateSettings = useCallback(async (next: UserSettings) => {
+    const saved = await settingsRepository.update(next);
+    if (saved !== "currency-locked") setSettings(saved);
+    return saved;
+  }, []);
   // Bumped by "Try again" on the error screen to re-run boot.
   const [bootAttempt, setBootAttempt] = useState(0);
 
@@ -159,6 +165,11 @@ export default function App(): React.JSX.Element {
       try {
         // First run stores the device's suggestion; later runs load the user's choice.
         bootSettings = await settingsRepository.ensure(deviceSettings(LOCAL_USER_ID));
+        // The timezone follows the phone (travel, DST rules): refresh it each launch.
+        const deviceTimezone = deviceSettings(LOCAL_USER_ID).timezone;
+        if (bootSettings.timezone !== deviceTimezone) {
+          bootSettings = await settingsRepository.save({ ...bootSettings, timezone: deviceTimezone });
+        }
         if (!cancelled) setSettings(bootSettings);
       } catch {
         // Non-fatal: screens keep formatting with the device suggestion.
@@ -203,7 +214,7 @@ export default function App(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <SettingsProvider value={settings}>
+        <SettingsProvider value={settings} onUpdate={updateSettings}>
           <AppResetProvider reset={() => setPhase("onboarding")}>
             <NavigationContainer>
               {phase === "booting" || !fontsLoaded ? (

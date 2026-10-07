@@ -63,23 +63,9 @@ export function greetingForHour(hour: number): string {
   return "Good evening";
 }
 
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-/** "Thursday, June 18" — the long date shown under the Today greeting. */
-export function longDateLabel(now: Date = new Date()): string {
-  return `${WEEKDAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
+/** "Thursday, June 18" (en-US) / "Thursday 18 June" (en-GB) — the date under the Today greeting. */
+export function longDateLabel(now: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { weekday: "long", month: "long", day: "numeric" }).format(
+    now,
+  );
 }

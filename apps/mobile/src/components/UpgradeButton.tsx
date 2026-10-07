@@ -2,15 +2,12 @@
 // next to every Pro gate (free caps, quota, not-pro banners) so the prompt is
 // consistent and always offers a way forward. Presentational — navigation logic
 // lives in useUpgradeNavigation.
-import { View } from "react-native";
-import { Button } from "./ui";
+import { PrimaryButton } from "../design/kit";
 import { useUpgradeNavigation } from "../hooks/useUpgradeNavigation";
 
 export function UpgradeButton({ label = "Upgrade to Pro" }: { label?: string }): React.JSX.Element {
   const goToUpgrade = useUpgradeNavigation();
   return (
-    <View className="mt-2">
-      <Button label={label} onPress={goToUpgrade} />
-    </View>
+    <PrimaryButton label={label} icon="sparkle" onPress={goToUpgrade} style={{ marginTop: 8 }} />
   );
 }

@@ -1,7 +1,8 @@
-import { randomUUID } from "node:crypto";
 import { fail, ok } from "@/lib/api";
 import { getAuthContext } from "@/server/auth";
+import { getConfig } from "@/lib/config";
 import { buildConsentUrl } from "@/server/google-oauth";
+import { createOAuthState } from "@/server/oauth-state";
 
 /**
  * GET /api/connectors/google/start — begin the Google OAuth consent flow.
@@ -19,9 +20,12 @@ export async function GET(request: Request) {
     return fail("UNAUTHORIZED", "Sign in to connect Google Calendar.");
   }
 
-  // Opaque CSRF/correlation token round-tripped through Google back to /callback.
-  // TODO(oauth-state): persist + verify this on callback (e.g. signed cookie).
-  const state = randomUUID();
+  // Signed CSRF token bound to this user (10-minute lifetime), round-tripped
+  // through Google and verified by /callback.
+  const state = createOAuthState(
+    auth.context.userId,
+    getConfig().server.GOOGLE_OAUTH_CLIENT_SECRET,
+  );
   const consentUrl = buildConsentUrl(state);
 
   return ok({ consentUrl, state });

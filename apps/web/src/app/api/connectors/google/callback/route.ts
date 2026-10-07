@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { fail, ok, validateBody } from "@/lib/api";
 import { getAuthContext } from "@/server/auth";
+import { getConfig } from "@/lib/config";
 import { exchangeCodeForTokens } from "@/server/google-oauth";
+import { verifyOAuthState } from "@/server/oauth-state";
 import { getTokenStore, toStoredToken } from "@/server/token-store";
 
 /**
@@ -50,7 +52,14 @@ export async function GET(request: Request) {
     return fail("INTERNAL", "Google Calendar connection isn't configured on this server.");
   }
 
-  // TODO(oauth-state): verify `query.data.state` matches the value issued by /start.
+  // CSRF: the state must be the one /start signed for THIS user, and fresh.
+  const secret = getConfig().server.GOOGLE_OAUTH_CLIENT_SECRET;
+  if (!query.data.state || !verifyOAuthState(query.data.state, auth.context.userId, secret)) {
+    return fail(
+      "FORBIDDEN",
+      "This Google connection link is invalid or expired. Please try again.",
+    );
+  }
 
   // `code` is guaranteed present here by the schema refinement above.
   const exchange = await exchangeCodeForTokens(query.data.code as string);

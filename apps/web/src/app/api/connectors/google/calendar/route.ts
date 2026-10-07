@@ -4,6 +4,7 @@ import { dateSchema } from "@otto/schemas";
 import { fail, ok, validateBody } from "@/lib/api";
 import { getAuthContext } from "@/server/auth";
 import { defaultGoogleCalendarClient, toCalendarEvents } from "@/server/google-calendar";
+import { mergeRefreshedToken, needsRefresh, refreshAccessToken } from "@/server/google-oauth";
 import { getTokenStore } from "@/server/token-store";
 
 /**
@@ -41,10 +42,24 @@ export async function GET(request: Request) {
     return fail("INTERNAL", "Google Calendar connection isn't configured on this server.");
   }
 
-  const token = await store.get(auth.context.userId, "google");
+  let token = await store.get(auth.context.userId, "google");
   if (!token) {
     // No grant on file — the user must connect Google first via /start.
     return fail("UNAUTHORIZED", "Connect Google Calendar before reading events.");
+  }
+
+  // Access tokens last about an hour; refresh with the stored refresh token
+  // shortly before expiry instead of failing and making the user reconnect.
+  if (needsRefresh(token) && token.refreshToken) {
+    const refreshed = await refreshAccessToken(token.refreshToken);
+    if (!refreshed.ok) {
+      return fail(
+        "UNAUTHORIZED",
+        "Your Google connection expired. Please reconnect Google Calendar.",
+      );
+    }
+    token = mergeRefreshedToken(token, refreshed.tokens);
+    await store.set(auth.context.userId, "google", token);
   }
 
   let rawEvents: unknown[];
@@ -55,7 +70,6 @@ export async function GET(request: Request) {
     );
   } catch {
     // Transport/HTTP failure (incl. expired token). Generic message; no leakage.
-    // TODO(token-refresh): use refresh_token to retry once on 401 before failing.
     return fail("INTERNAL", "Could not read your Google calendar right now.");
   }
 

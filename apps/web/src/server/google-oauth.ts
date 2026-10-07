@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getConfig } from "@/lib/config";
+import type { StoredToken } from "@/server/token-store";
 
 /**
  * Google OAuth (SERVER-ONLY) — Story 3.1 connector backend.
@@ -156,4 +157,68 @@ export async function exchangeCodeForTokens(code: string): Promise<ExchangeResul
   }
 
   return { ok: true, tokens: parsed.data };
+}
+
+/** Refresh an access token a minute before it expires, if we can. */
+const REFRESH_MARGIN_MS = 60_000;
+
+export function needsRefresh(token: StoredToken, now: number = Date.now()): boolean {
+  return token.refreshToken !== undefined && token.expiresAt - now < REFRESH_MARGIN_MS;
+}
+
+/**
+ * Exchange a refresh token for a new access token (grant_type=refresh_token).
+ * Same guarantees as `exchangeCodeForTokens`: secret stays server-side, the
+ * response is validated, and failures are generic (no token material).
+ */
+export async function refreshAccessToken(
+  refreshToken: string,
+  options: { clientId?: string; clientSecret?: string; fetchImpl?: typeof fetch } = {},
+): Promise<ExchangeResult> {
+  const fromEnv = options.clientId && options.clientSecret ? null : getOAuthConfig();
+  const body = new URLSearchParams({
+    refresh_token: refreshToken,
+    client_id: options.clientId ?? fromEnv?.clientId ?? "",
+    client_secret: options.clientSecret ?? fromEnv?.clientSecret ?? "",
+    grant_type: "refresh_token",
+  });
+
+  let response: Response;
+  try {
+    response = await (options.fetchImpl ?? fetch)(GOOGLE_TOKEN_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    });
+  } catch {
+    return { ok: false, reason: "Could not reach Google's token endpoint." };
+  }
+  if (!response.ok) {
+    return { ok: false, reason: `Token refresh failed (status ${response.status}).` };
+  }
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch {
+    return { ok: false, reason: "Google returned a malformed token response." };
+  }
+  const parsed = googleTokenResponseSchema.safeParse(json);
+  return parsed.success
+    ? { ok: true, tokens: parsed.data }
+    : { ok: false, reason: "Google's token response failed validation." };
+}
+
+/** Apply a refresh response; Google usually omits refresh_token, so keep ours. */
+export function mergeRefreshedToken(
+  token: StoredToken,
+  response: GoogleTokenResponse,
+  now: number = Date.now(),
+): StoredToken {
+  return {
+    accessToken: response.access_token,
+    refreshToken: response.refresh_token ?? token.refreshToken,
+    scope: response.scope,
+    tokenType: response.token_type,
+    expiresAt: now + response.expires_in * 1000,
+  };
 }

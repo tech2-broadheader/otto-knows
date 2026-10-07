@@ -347,3 +347,17 @@ describe("step 6 — user settings (story 13.1)", () => {
     expect(db.prepare("SELECT COUNT(*) AS n FROM user_settings").get()).toEqual({ n: 0 });
   });
 });
+
+describe("step 7 — income pay days (story 13.5)", () => {
+  it("adds an empty pay_days column to income", () => {
+    const db = new DatabaseSync(":memory:");
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 7))).toMatchObject({
+      ok: true,
+      toVersion: 7,
+    });
+    const columns = (db.prepare("PRAGMA table_info(income)").all() as { name: string }[]).map(
+      (c) => c.name,
+    );
+    expect(columns).toContain("pay_days");
+  });
+});

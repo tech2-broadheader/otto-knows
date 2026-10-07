@@ -94,6 +94,8 @@ export const income = sqliteTable("income", {
   amountCurrency: text("amount_currency").notNull(),
   cadence: text("cadence").notNull(),
   nextPayDate: text("next_pay_date").notNull(),
+  // JSON [first, second] semi-monthly pay days (story 13.5; migration step 7).
+  payDays: text("pay_days"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

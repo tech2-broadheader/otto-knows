@@ -99,3 +99,20 @@ describe("nextPayday", () => {
     expect(nextPayday([income("custom", "2026-10-01")], "2026-10-08")).toBeNull();
   });
 });
+
+describe("semi-monthly with the user's own pay days (story 13.5)", () => {
+  it("uses the stored pair, e.g. the US-style 1st and 15th", () => {
+    const usPay = { ...income("semi-monthly", "2026-10-01"), payDays: [1, 15] as [number, number] };
+    expect(effectiveNextPayDate(usPay, "2026-10-02")).toBe("2026-10-15");
+    expect(effectiveNextPayDate(usPay, "2026-10-16")).toBe("2026-11-01");
+  });
+
+  it("clamps a 31st pay day to short months", () => {
+    const endOfMonth = {
+      ...income("semi-monthly", "2026-01-15"),
+      payDays: [15, 31] as [number, number],
+    };
+    expect(effectiveNextPayDate(endOfMonth, "2026-02-16")).toBe("2026-02-28");
+    expect(effectiveNextPayDate(endOfMonth, "2026-04-16")).toBe("2026-04-30");
+  });
+});

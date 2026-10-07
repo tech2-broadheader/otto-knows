@@ -405,6 +405,8 @@ export interface IncomeRow {
   amountCurrency: string;
   cadence: string;
   nextPayDate: string;
+  /** JSON [first, second] for semi-monthly income; NULL otherwise. */
+  payDays: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -418,6 +420,7 @@ export function incomeToRow(i: Income, sealed: SealedIncome): IncomeRow {
     amountCurrency: i.amount.currency,
     cadence: i.cadence,
     nextPayDate: i.nextPayDate,
+    payDays: jsonOrNull(i.payDays),
     createdAt: i.createdAt,
     updatedAt: i.updatedAt,
   };
@@ -434,6 +437,7 @@ export function incomeFromRow(r: IncomeRow, openedAmountMinor: string): Income {
     },
     cadence: r.cadence as Income["cadence"],
     nextPayDate: r.nextPayDate,
+    payDays: parseJson<[number, number]>(r.payDays),
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };

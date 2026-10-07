@@ -62,6 +62,25 @@ const T = "2026-06-14T08:00:00+08:00";
 const ID = (n: number) =>
   `${n}${n}${n}${n}${n}${n}${n}${n}-${n}${n}${n}${n}-4${n}${n}${n}-8${n}${n}${n}-${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}`;
 
+describe("income pay days round-trip (story 13.5)", () => {
+  it("stores the two pay days as JSON and reads them back", () => {
+    const income: Income = incomeSchema.parse({
+      id: ID(1),
+      userId: ID(3),
+      source: "Salary",
+      amount: { amountMinor: 250000, currency: "USD" },
+      cadence: "semi-monthly",
+      nextPayDate: "2026-10-15",
+      payDays: [1, 15],
+      createdAt: T,
+      updatedAt: T,
+    });
+    const row = incomeToRow(income, { amountMinor: "250000" });
+    expect(row.payDays).toBe("[1,15]");
+    expect(incomeFromRow(row, row.amountMinor)).toEqual(income);
+  });
+});
+
 describe("non-sensitive mappers round-trip (entity -> row -> entity)", () => {
   it("appointment with all optional fields, and a bare one", () => {
     const full = appointmentSchema.parse({

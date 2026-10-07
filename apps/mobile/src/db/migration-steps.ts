@@ -266,6 +266,13 @@ const USER_SETTINGS: Migration = {
   ],
 };
 
+/** Step 7 — the user's two semi-monthly pay days (story 13.5); NULL = infer. */
+const INCOME_PAY_DAYS: Migration = {
+  version: 7,
+  name: "income-pay-days",
+  statements: ["ALTER TABLE income ADD COLUMN pay_days TEXT;"],
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   BASELINE,
   ACCOUNTS,
@@ -273,6 +280,7 @@ export const MIGRATIONS: readonly Migration[] = [
   NOTES,
   APPOINTMENTS,
   USER_SETTINGS,
+  INCOME_PAY_DAYS,
 ];
 
 /** Derived from the list — never hand-maintained. */

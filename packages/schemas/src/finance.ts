@@ -19,15 +19,40 @@ export const incomeCadenceSchema = z.enum([
 export type IncomeCadence = z.infer<typeof incomeCadenceSchema>;
 
 /** SENSITIVE. Salary / recurring income. `nextPayDate` drives payday-vs-bill nudges. */
-export const incomeSchema = z.object({
-  id: idSchema,
-  userId: idSchema,
-  source: z.string().min(1).max(140),
-  amount: moneySchema,
-  cadence: incomeCadenceSchema,
-  nextPayDate: dateSchema,
-  ...timestampFields,
-});
+const dayOfMonth = z.number().int().min(1).max(31);
+
+export const incomeSchema = z
+  .object({
+    id: idSchema,
+    userId: idSchema,
+    source: z.string().min(1).max(140),
+    amount: moneySchema,
+    cadence: incomeCadenceSchema,
+    nextPayDate: dateSchema,
+    /**
+     * Semi-monthly only: the two days of the month pay arrives, ascending
+     * (e.g. [1, 15] in the US, [15, 30] in PH). 31 means "end of month".
+     * Story 13.5 — entered by the user, never guessed from the country.
+     */
+    payDays: z.tuple([dayOfMonth, dayOfMonth]).optional(),
+    ...timestampFields,
+  })
+  .superRefine((income, ctx) => {
+    if (!income.payDays) return;
+    if (income.cadence !== "semi-monthly") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["payDays"],
+        message: "pay days apply to semi-monthly income only",
+      });
+    } else if (income.payDays[0] >= income.payDays[1]) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["payDays"],
+        message: "give two different days, earliest first",
+      });
+    }
+  });
 export type Income = z.infer<typeof incomeSchema>;
 
 /** A user-defined budget category with an optional monthly limit. */

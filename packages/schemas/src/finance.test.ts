@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   accountSchema,
   expenseDraftSchema,
+  incomeSchema,
   isSensitiveEntity,
   monthlyReportSchema,
   nudgeKindSchema,
@@ -210,6 +211,37 @@ describe("stored vs new transactions (review fix 2026-10-08)", () => {
     expect(
       expenseDraftSchema.safeParse({ ...draft, amount: { amountMinor: -5, currency: "PHP" } })
         .success,
+    ).toBe(false);
+  });
+});
+
+describe("incomeSchema.payDays (story 13.5)", () => {
+  const income = {
+    id: UUID,
+    userId: UUID,
+    source: "Salary",
+    amount: { amountMinor: 100, currency: "USD" },
+    cadence: "semi-monthly",
+    nextPayDate: "2026-10-15",
+    createdAt: ISO,
+    updatedAt: ISO,
+  };
+
+  it("accepts two ascending days for semi-monthly pay", () => {
+    expect(incomeSchema.safeParse({ ...income, payDays: [1, 15] }).success).toBe(true);
+    expect(incomeSchema.safeParse({ ...income, payDays: [15, 31] }).success).toBe(true);
+    expect(incomeSchema.safeParse(income).success).toBe(true);
+  });
+
+  it("rejects out-of-range, unordered or duplicate days", () => {
+    expect(incomeSchema.safeParse({ ...income, payDays: [0, 15] }).success).toBe(false);
+    expect(incomeSchema.safeParse({ ...income, payDays: [15, 1] }).success).toBe(false);
+    expect(incomeSchema.safeParse({ ...income, payDays: [15, 15] }).success).toBe(false);
+  });
+
+  it("only allows pay days on a semi-monthly income", () => {
+    expect(
+      incomeSchema.safeParse({ ...income, cadence: "monthly", payDays: [1, 15] }).success,
     ).toBe(false);
   });
 });

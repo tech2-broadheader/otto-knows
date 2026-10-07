@@ -78,7 +78,8 @@ export function effectiveNextPayDate(income: Income, asOfDate: string): string |
       }
     }
     case "semi-monthly": {
-      const days = semiMonthlyDays(seed);
+      // The user's own pair when known (13.5); else inferred from the stored date.
+      const days = income.payDays ?? semiMonthlyDays(seed);
       for (let offset = 0; ; offset += 1) {
         for (const day of days) {
           const candidate = dayInMonth(asOf, offset, day);

@@ -198,7 +198,24 @@ const TRANSACTION_TYPES: Migration = {
   ],
 };
 
-export const MIGRATIONS: readonly Migration[] = [BASELINE, ACCOUNTS, TRANSACTION_TYPES];
+/** Step 4 — notes (story 12.1). Plain text, not sensitive-tier (like reminders). */
+const NOTES: Migration = {
+  version: 4,
+  name: "notes",
+  statements: [
+    `CREATE TABLE notes (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      title TEXT,
+      body TEXT NOT NULL,
+      pinned INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+  ],
+};
+
+export const MIGRATIONS: readonly Migration[] = [BASELINE, ACCOUNTS, TRANSACTION_TYPES, NOTES];
 
 /** Derived from the list — never hand-maintained. */
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;
@@ -218,4 +235,5 @@ export const ALL_TABLE_NAMES: readonly string[] = [
   "consents",
   "audit_entries",
   "accounts",
+  "notes",
 ];

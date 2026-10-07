@@ -3,6 +3,7 @@ import {
   anchorFromDraft,
   billFromDraft,
   medicationFromDraft,
+  noteFromDraft,
   reminderFromDraft,
   reminderFromTimeBlock,
   transactionFromExpenseDraft,
@@ -84,6 +85,14 @@ describe("transactionFromExpenseDraft", () => {
       makeCtx(),
     );
     expect(tx.accountId).toBe(DEFAULT_CASH_ACCOUNT_ID);
+  });
+});
+
+describe("noteFromDraft", () => {
+  it("creates an unpinned note owned by the local user", () => {
+    const note = noteFromDraft({ title: "Gift", body: "Buy gift for Ana" }, makeCtx());
+    expect(note).toMatchObject({ title: "Gift", body: "Buy gift for Ana", pinned: false });
+    expect(note.userId).toBe(LOCAL_USER_ID);
   });
 });
 

@@ -21,6 +21,7 @@ export type {
   SafeToSpend,
   CategoryReportLine,
   MonthlyReport,
+  Note,
   Transaction,
   DataSource,
   CalendarEvent,

@@ -134,6 +134,17 @@ export const accounts = sqliteTable("accounts", {
   updatedAt: text("updated_at").notNull(),
 });
 
+/** Notes (story 12.1) — plain text, not sensitive-tier (like reminders). */
+export const notes = sqliteTable("notes", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  title: text("title"),
+  body: text("body").notNull(),
+  pinned: integer("pinned").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 /** Budget categories — not sensitive (limit is a user-set target, not real money flow). */
 export const budgetCategories = sqliteTable("budget_categories", {
   id: text("id").primaryKey(),
@@ -207,6 +218,7 @@ export const tables = {
   income,
   transactions,
   accounts,
+  notes,
   budgetCategories,
   calendarEvents,
   contextItems,

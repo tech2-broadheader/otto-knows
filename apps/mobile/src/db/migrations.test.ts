@@ -295,3 +295,19 @@ describe("step 3 — transaction types (story 11.3)", () => {
     ]);
   });
 });
+
+describe("step 4 — notes (story 12.1)", () => {
+  it("adds an empty notes table without touching earlier data", () => {
+    const db = new DatabaseSync(":memory:");
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 3)).ok).toBe(true);
+    const before = db.prepare("SELECT * FROM accounts").all();
+
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 4))).toMatchObject({
+      ok: true,
+      toVersion: 4,
+    });
+
+    expect(db.prepare("SELECT COUNT(*) AS n FROM notes").get()).toEqual({ n: 0 });
+    expect(db.prepare("SELECT * FROM accounts").all()).toEqual(before);
+  });
+});

@@ -17,6 +17,7 @@ const ACTION_LABEL: Record<ProposalAction["type"], string> = {
   add_medication: "Add medication",
   block_time: "Block time",
   add_routine_anchor: "Routine anchor",
+  add_note: "Save note",
 };
 
 /** Icon + accent tone per proposal type, matching the design's proposal cards. */
@@ -27,6 +28,8 @@ const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: OttoTo
   add_medication: { icon: "pill", tone: "green" },
   block_time: { icon: "cal", tone: "sky" },
   add_routine_anchor: { icon: "dumbbell", tone: "green" },
+  // No dedicated note glyph yet — the Notes design pass may add one.
+  add_note: { icon: "sparkle", tone: "sky" },
 };
 
 /**
@@ -53,6 +56,8 @@ export function summarizeAction(action: ProposalAction): string {
       return `${action.block.title} (${timeLabel(action.block.startAt)}–${timeLabel(action.block.endAt)})`;
     case "add_routine_anchor":
       return `${action.anchor.label} at ${action.anchor.time}`;
+    case "add_note":
+      return action.note.title ?? action.note.body.split("\n")[0] ?? action.note.body;
     default: {
       const _exhaustive: never = action;
       return JSON.stringify(_exhaustive);

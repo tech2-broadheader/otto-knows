@@ -7,11 +7,7 @@ import { wipeAllData } from "../db/client";
 
 // Keys this app writes to the secure store. The encryption key MUST go so old
 // ciphertext can never be read again.
-const SECURE_KEYS = [
-  "otto.encryption.key.v1",
-  "otto.launchCount.v1",
-  "otto.proOfferShown.v1",
-];
+const SECURE_KEYS = ["otto.encryption.key.v1", "otto.launchCount.v1", "otto.proOfferShown.v1"];
 
 /** Erase all locally stored data (DB rows + secure-store keys). Best-effort. */
 export async function wipeLocalData(): Promise<void> {

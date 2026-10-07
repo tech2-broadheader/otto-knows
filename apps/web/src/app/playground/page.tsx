@@ -27,6 +27,7 @@ const ACTION_LABEL: Record<ProposalAction["type"], string> = {
   add_medication: "Add medication",
   block_time: "Block time",
   add_routine_anchor: "Routine anchor",
+  add_note: "Save note",
 };
 
 const ACTION_COLOR: Record<ProposalAction["type"], string> = {
@@ -36,6 +37,7 @@ const ACTION_COLOR: Record<ProposalAction["type"], string> = {
   add_medication: "#DC5A48",
   block_time: "#004D00",
   add_routine_anchor: "#10A074",
+  add_note: "#3E91C9",
 };
 
 function money(m: { amountMinor: number; currency: string }): string {
@@ -100,6 +102,12 @@ function rows(a: ProposalAction): Array<[string, string]> {
         ["Time", a.anchor.time],
         ["Repeats", repeats(a.anchor.recurrence)],
       ];
+    case "add_note": {
+      const r: Array<[string, string]> = [];
+      if (a.note.title) r.push(["Title", a.note.title]);
+      r.push(["Note", a.note.body]);
+      return r;
+    }
   }
 }
 

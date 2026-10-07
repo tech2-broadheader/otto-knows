@@ -20,6 +20,7 @@ import {
   contextItemSchema,
   incomeSchema,
   medicationSchema,
+  noteSchema,
   reminderSchema,
   routineSchema,
   routineAnchorSchema,
@@ -33,6 +34,7 @@ import {
   type DataSource,
   type Income,
   type Medication,
+  type Note,
   type Reminder,
   type Routine,
   type RoutineAnchor,
@@ -62,6 +64,8 @@ import {
   incomeToRow,
   medicationFromRow,
   medicationToRow,
+  noteFromRow,
+  noteToRow,
   reminderFromRow,
   reminderToRow,
   routineFromRow,
@@ -116,6 +120,49 @@ export const reminderRepository = {
   },
   async delete(id: string): Promise<void> {
     getDatabase().delete(tables.reminders).where(eq(tables.reminders.id, id)).run();
+  },
+};
+
+/**
+ * Notes repository (story 12.1). Non-sensitive tier like reminders: validated at
+ * the boundary, stored as plain text on device, no encryption or audit.
+ */
+export const noteRepository = {
+  async create(input: Note): Promise<Note> {
+    const entity = noteSchema.parse(input);
+    getDatabase().insert(tables.notes).values(noteToRow(entity)).run();
+    return entity;
+  },
+  async get(userId: string, id: string): Promise<Note | undefined> {
+    const row = getDatabase()
+      .select()
+      .from(tables.notes)
+      .where(and(eq(tables.notes.id, id), eq(tables.notes.userId, userId)))
+      .get();
+    return row ? noteSchema.parse(noteFromRow(row)) : undefined;
+  },
+  async list(userId: string): Promise<Note[]> {
+    const rows = getDatabase()
+      .select()
+      .from(tables.notes)
+      .where(eq(tables.notes.userId, userId))
+      .all();
+    return rows.map((r) => noteSchema.parse(noteFromRow(r)));
+  },
+  async update(input: Note): Promise<Note> {
+    const entity = noteSchema.parse(input);
+    getDatabase()
+      .update(tables.notes)
+      .set(noteToRow(entity))
+      .where(eq(tables.notes.id, entity.id))
+      .run();
+    return entity;
+  },
+  async delete(userId: string, id: string): Promise<void> {
+    getDatabase()
+      .delete(tables.notes)
+      .where(and(eq(tables.notes.id, id), eq(tables.notes.userId, userId)))
+      .run();
   },
 };
 

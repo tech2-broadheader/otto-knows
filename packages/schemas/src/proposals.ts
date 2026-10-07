@@ -11,6 +11,7 @@ import {
   recurrenceSchema,
   timeOfDaySchema,
 } from "./common";
+import { NOTE_BODY_MAX, NOTE_TITLE_MAX } from "./notes";
 import { routineAnchorKindSchema } from "./routine";
 
 export const reminderDraftSchema = z.object({
@@ -57,6 +58,12 @@ export const routineAnchorDraftSchema = z.object({
   recurrence: recurrenceSchema,
 });
 
+/** A note to save (story 12.1). */
+export const noteDraftSchema = z.object({
+  title: z.string().min(1).max(NOTE_TITLE_MAX).optional(),
+  body: z.string().min(1).max(NOTE_BODY_MAX),
+});
+
 /** Discriminated by `type` — one variant per write-back the LLM may propose. */
 export const proposalActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("create_reminder"), reminder: reminderDraftSchema }),
@@ -65,6 +72,7 @@ export const proposalActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("add_medication"), medication: medicationDraftSchema }),
   z.object({ type: z.literal("block_time"), block: timeBlockDraftSchema }),
   z.object({ type: z.literal("add_routine_anchor"), anchor: routineAnchorDraftSchema }),
+  z.object({ type: z.literal("add_note"), note: noteDraftSchema }),
 ]);
 export type ProposalAction = z.infer<typeof proposalActionSchema>;
 export type ProposalActionType = ProposalAction["type"];

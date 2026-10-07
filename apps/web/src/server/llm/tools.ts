@@ -139,6 +139,20 @@ export const PROPOSAL_TOOLS: LlmToolDef[] = [
       required: ["rationale", "label", "kind", "time", "recurrence"],
     },
   },
+  {
+    name: "add_note",
+    description:
+      "Propose saving a plain note (something to remember, not a timed task). Use create_reminder instead when there is a time or deadline.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...RATIONALE,
+        title: { type: "string", description: "Optional short title (max 120 chars)." },
+        body: { type: "string", description: "The note text (max 10,000 chars)." },
+      },
+      required: ["rationale", "body"],
+    },
+  },
 ];
 
 /**
@@ -164,6 +178,8 @@ function toActionAndRationale(call: LlmToolCall): { action: unknown; rationale: 
       return { action: { type: "block_time", block: payload }, rationale };
     case "add_routine_anchor":
       return { action: { type: "add_routine_anchor", anchor: payload }, rationale };
+    case "add_note":
+      return { action: { type: "add_note", note: payload }, rationale };
     default:
       return null;
   }

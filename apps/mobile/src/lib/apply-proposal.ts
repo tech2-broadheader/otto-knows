@@ -13,6 +13,7 @@ import {
   makeBillRepository,
   makeMedicationRepository,
   makeTransactionRepository,
+  noteRepository,
   reminderRepository,
   routineRepository,
   type RepositoryDeps,
@@ -22,6 +23,7 @@ import {
   anchorFromDraft,
   billFromDraft,
   medicationFromDraft,
+  noteFromDraft,
   reminderFromDraft,
   reminderFromTimeBlock,
   transactionFromExpenseDraft,
@@ -33,6 +35,7 @@ export {
   anchorFromDraft,
   billFromDraft,
   medicationFromDraft,
+  noteFromDraft,
   reminderFromDraft,
   reminderFromTimeBlock,
   transactionFromExpenseDraft,
@@ -47,6 +50,7 @@ export {
  *   add_medication     → medicationRepository.create
  *   add_routine_anchor → routineRepository.addAnchor (needs an existing routine)
  *   block_time         → reminderRepository.create (timed reminder)
+ *   add_note           → noteRepository.create
  *
  * Throws if `add_routine_anchor` is accepted with no routine set up — the caller
  * surfaces a friendly message (set up your routine first).
@@ -99,6 +103,9 @@ export async function applyProposal(
     }
     case "block_time":
       await reminderRepository.create(reminderFromTimeBlock(action.block, ctx));
+      return;
+    case "add_note":
+      await noteRepository.create(noteFromDraft(action.note, ctx));
       return;
     default: {
       // Exhaustiveness guard — a new action variant must be handled above.

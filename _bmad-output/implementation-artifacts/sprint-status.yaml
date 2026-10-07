@@ -69,8 +69,8 @@ development_status:
   epic-11-retrospective: optional
 
   # --- Daily tasks (planned 2026-10-08; see sprint-change-proposal-2026-10-08.md) ---
-  epic-12: backlog
-  12-1-notes: backlog                          # no new deps; needs Claude Design
+  epic-12: in-progress
+  12-1-notes: in-progress                      # logic + quick-add done; Notes screen blocked on Claude Design
   12-2-alarms-spike: backlog                   # GATE-4 policy check
   12-3-alarms: backlog                         # after 12.2 + GATE-4 + dep approval
   12-4-appointments: backlog                   # needs 3.4 (Google path) + expo-calendar approval

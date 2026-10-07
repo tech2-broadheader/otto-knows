@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LlmClient, LlmResult } from "./client";
-import { toolCallToProposal } from "./tools";
+import { PROPOSAL_TOOLS, toolCallToProposal } from "./tools";
 import { generateBriefing } from "./brief";
 import { generateQuickAdd } from "./quick-add";
 
@@ -25,6 +25,22 @@ function stub(result: Partial<LlmResult>): LlmClient {
 }
 
 describe("toolCallToProposal", () => {
+  it("maps an add_note call to a note proposal (story 12.1)", () => {
+    const proposal = toolCallToProposal(
+      { name: "add_note", input: { rationale: "So you won't forget.", body: "Buy gift for Ana" } },
+      counter(),
+    );
+    expect(proposal?.action).toEqual({ type: "add_note", note: { body: "Buy gift for Ana" } });
+  });
+
+  it("rejects an add_note call with an empty body", () => {
+    expect(toolCallToProposal({ name: "add_note", input: { body: "" } }, counter())).toBeNull();
+  });
+
+  it("offers the add_note tool to the model", () => {
+    expect(PROPOSAL_TOOLS.map((t) => t.name)).toContain("add_note");
+  });
+
   it("maps a valid create_reminder call to a proposal", () => {
     const proposal = toolCallToProposal(
       {

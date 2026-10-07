@@ -8,11 +8,13 @@
 import {
   billSchema,
   medicationSchema,
+  noteSchema,
   reminderSchema,
   routineAnchorSchema,
   transactionSchema,
   type Bill,
   type Medication,
+  type Note,
   type ProposalAction,
   type Reminder,
   type RoutineAnchor,
@@ -76,6 +78,19 @@ export function transactionFromExpenseDraft(
     categoryId: draft.categoryId,
     description: draft.description,
     occurredAt: draft.occurredAt,
+  });
+}
+
+/** `add_note` draft → a validated, unpinned Note (story 12.1). */
+export function noteFromDraft(
+  draft: Extract<ProposalAction, { type: "add_note" }>["note"],
+  ctx: ApplyContext,
+): Note {
+  return noteSchema.parse({
+    ...stamp(ctx),
+    title: draft.title,
+    body: draft.body,
+    pinned: false,
   });
 }
 

@@ -58,6 +58,8 @@ function proposalDisplay(a: ProposalAction): { icon: IconName; tone: string; tit
       return { icon: "cal", tone: "sky", title: a.block.title, detail: timeLabel(a.block.startAt) || undefined };
     case "add_routine_anchor":
       return { icon: "dumbbell", tone: "green", title: `Add routine — ${a.anchor.label}`, detail: a.anchor.time };
+    case "add_note":
+      return { icon: "sparkle", tone: "sky", title: `Save note — ${a.note.title ?? a.note.body.split("\n")[0] ?? ""}` };
   }
 }
 

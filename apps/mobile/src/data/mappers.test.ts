@@ -8,6 +8,7 @@ import {
   contextItemSchema,
   incomeSchema,
   medicationSchema,
+  noteSchema,
   reminderSchema,
   routineSchema,
   routineAnchorSchema,
@@ -44,6 +45,8 @@ import {
   incomeToRow,
   medicationFromRow,
   medicationToRow,
+  noteFromRow,
+  noteToRow,
   reminderFromRow,
   reminderToRow,
   routineFromRow,
@@ -57,6 +60,29 @@ const ID = (n: number) =>
   `${n}${n}${n}${n}${n}${n}${n}${n}-${n}${n}${n}${n}-4${n}${n}${n}-8${n}${n}${n}-${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}`;
 
 describe("non-sensitive mappers round-trip (entity -> row -> entity)", () => {
+  it("note with and without a title, pinned stored as 0/1", () => {
+    const pinned = noteSchema.parse({
+      id: ID(1),
+      userId: ID(3),
+      title: "Birthday",
+      body: "Buy gift for Ana",
+      pinned: true,
+      createdAt: T,
+      updatedAt: T,
+    });
+    expect(noteToRow(pinned).pinned).toBe(1);
+    expect(noteFromRow(noteToRow(pinned))).toEqual(pinned);
+    const plain = noteSchema.parse({
+      id: ID(2),
+      userId: ID(3),
+      body: "x",
+      createdAt: T,
+      updatedAt: T,
+    });
+    expect(noteToRow(plain).title).toBeNull();
+    expect(noteFromRow(noteToRow(plain))).toEqual(plain);
+  });
+
   it("routine anchor", () => {
     const anchor: RoutineAnchor = routineAnchorSchema.parse({
       id: ID(1),

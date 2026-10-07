@@ -41,6 +41,7 @@ const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: string
   add_medication: { icon: "pill", tone: "green" },
   block_time: { icon: "cal", tone: "sky" },
   add_routine_anchor: { icon: "dumbbell", tone: "green" },
+  add_note: { icon: "sparkle", tone: "sky" },
 };
 
 /**

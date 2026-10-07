@@ -19,6 +19,7 @@ import type {
   ContextItem,
   Income,
   Medication,
+  Note,
   Recurrence,
   Reminder,
   Routine,
@@ -544,6 +545,40 @@ export function accountFromRow(r: AccountRow, openedOpeningBalance: string | nul
       currency: r.openingBalanceCurrency as Account["openingBalance"]["currency"],
     },
     archivedAt: optional(r.archivedAt),
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
+export interface NoteRow {
+  id: string;
+  userId: string;
+  title: string | null;
+  body: string;
+  pinned: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function noteToRow(n: Note): NoteRow {
+  return {
+    id: n.id,
+    userId: n.userId,
+    title: nullable(n.title),
+    body: n.body,
+    pinned: toBit(n.pinned),
+    createdAt: n.createdAt,
+    updatedAt: n.updatedAt,
+  };
+}
+
+export function noteFromRow(r: NoteRow): Note {
+  return {
+    id: r.id,
+    userId: r.userId,
+    title: optional(r.title),
+    body: r.body,
+    pinned: fromBit(r.pinned),
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };

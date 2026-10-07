@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   anchorFromDraft,
+  appointmentFromDraft,
   billFromDraft,
   medicationFromDraft,
   noteFromDraft,
+  reminderBeforeAppointment,
   reminderFromDraft,
   reminderFromTimeBlock,
   transactionFromExpenseDraft,
@@ -93,6 +95,55 @@ describe("noteFromDraft", () => {
     const note = noteFromDraft({ title: "Gift", body: "Buy gift for Ana" }, makeCtx());
     expect(note).toMatchObject({ title: "Gift", body: "Buy gift for Ana", pinned: false });
     expect(note.userId).toBe(LOCAL_USER_ID);
+  });
+});
+
+describe("appointmentFromDraft / reminderBeforeAppointment", () => {
+  it("computes the end from a duration and keeps the offset", () => {
+    const appt = appointmentFromDraft(
+      { title: "Dentist", startAt: "2026-10-13T15:00:00+08:00", durationMinutes: 45 },
+      makeCtx(),
+    );
+    expect(appt).toMatchObject({
+      title: "Dentist",
+      endAt: "2026-10-13T15:45:00+08:00",
+      destination: "otto",
+      userId: LOCAL_USER_ID,
+    });
+  });
+
+  it("prefers an explicit end time", () => {
+    const appt = appointmentFromDraft(
+      {
+        title: "Meeting",
+        startAt: "2026-10-13T09:00:00+08:00",
+        endAt: "2026-10-13T10:30:00+08:00",
+        durationMinutes: 15,
+      },
+      makeCtx(),
+    );
+    expect(appt.endAt).toBe("2026-10-13T10:30:00+08:00");
+  });
+
+  it("makes a reminder before the appointment only when asked", () => {
+    const ctx = makeCtx();
+    const withLead = appointmentFromDraft(
+      {
+        title: "Dentist",
+        startAt: "2026-10-13T15:00:00+08:00",
+        durationMinutes: 60,
+        location: "Makati",
+        remindMinutesBefore: 60,
+      },
+      ctx,
+    );
+    expect(reminderBeforeAppointment(withLead, ctx)).toMatchObject({
+      title: "Dentist at 15:00",
+      dueAt: "2026-10-13T14:00:00+08:00",
+      notes: "Makati",
+    });
+    const noLead = { ...withLead, remindMinutesBefore: undefined };
+    expect(reminderBeforeAppointment(noLead, ctx)).toBeNull();
   });
 });
 

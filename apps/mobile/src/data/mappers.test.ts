@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accountSchema,
+  appointmentSchema,
   billSchema,
   budgetCategorySchema,
   calendarEventSchema,
@@ -28,6 +29,8 @@ import {
 } from "@otto/schemas";
 import {
   accountFromRow,
+  appointmentFromRow,
+  appointmentToRow,
   accountToRow,
   anchorFromRow,
   anchorToRow,
@@ -60,6 +63,34 @@ const ID = (n: number) =>
   `${n}${n}${n}${n}${n}${n}${n}${n}-${n}${n}${n}${n}-4${n}${n}${n}-8${n}${n}${n}-${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}${n}`;
 
 describe("non-sensitive mappers round-trip (entity -> row -> entity)", () => {
+  it("appointment with all optional fields, and a bare one", () => {
+    const full = appointmentSchema.parse({
+      id: ID(1),
+      userId: ID(3),
+      title: "Dentist",
+      startAt: "2026-10-13T15:00:00+08:00",
+      endAt: "2026-10-13T16:00:00+08:00",
+      location: "Makati",
+      notes: "Bring x-rays",
+      remindMinutesBefore: 60,
+      destination: "otto",
+      createdAt: T,
+      updatedAt: T,
+    });
+    expect(appointmentFromRow(appointmentToRow(full))).toEqual(full);
+    const bare = appointmentSchema.parse({
+      id: ID(2),
+      userId: ID(3),
+      title: "Call",
+      startAt: "2026-10-13T09:00:00+08:00",
+      endAt: "2026-10-13T09:15:00+08:00",
+      createdAt: T,
+      updatedAt: T,
+    });
+    expect(appointmentToRow(bare).location).toBeNull();
+    expect(appointmentFromRow(appointmentToRow(bare))).toEqual(bare);
+  });
+
   it("note with and without a title, pinned stored as 0/1", () => {
     const pinned = noteSchema.parse({
       id: ID(1),

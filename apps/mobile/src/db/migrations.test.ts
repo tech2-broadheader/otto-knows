@@ -311,3 +311,14 @@ describe("step 4 — notes (story 12.1)", () => {
     expect(db.prepare("SELECT * FROM accounts").all()).toEqual(before);
   });
 });
+
+describe("step 5 — appointments (story 12.4)", () => {
+  it("adds an empty appointments table at version 5", () => {
+    const db = new DatabaseSync(":memory:");
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 5))).toMatchObject({
+      ok: true,
+      toVersion: 5,
+    });
+    expect(db.prepare("SELECT COUNT(*) AS n FROM appointments").get()).toEqual({ n: 0 });
+  });
+});

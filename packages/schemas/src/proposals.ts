@@ -12,6 +12,7 @@ import {
   timeOfDaySchema,
 } from "./common";
 import { NOTE_BODY_MAX, NOTE_TITLE_MAX } from "./notes";
+import { eventDraftSchema } from "./appointments";
 import { routineAnchorKindSchema } from "./routine";
 
 export const reminderDraftSchema = z.object({
@@ -73,6 +74,7 @@ export const proposalActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("block_time"), block: timeBlockDraftSchema }),
   z.object({ type: z.literal("add_routine_anchor"), anchor: routineAnchorDraftSchema }),
   z.object({ type: z.literal("add_note"), note: noteDraftSchema }),
+  z.object({ type: z.literal("create_event"), event: eventDraftSchema }),
 ]);
 export type ProposalAction = z.infer<typeof proposalActionSchema>;
 export type ProposalActionType = ProposalAction["type"];

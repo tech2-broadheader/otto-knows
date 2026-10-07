@@ -145,6 +145,22 @@ export const notes = sqliteTable("notes", {
   updatedAt: text("updated_at").notNull(),
 });
 
+/** Appointments (story 12.4) — user-created; not sensitive-tier (like reminders). */
+export const appointments = sqliteTable("appointments", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  title: text("title").notNull(),
+  startAt: text("start_at").notNull(),
+  endAt: text("end_at").notNull(),
+  location: text("location"),
+  notes: text("notes"),
+  remindMinutesBefore: integer("remind_minutes_before"),
+  destination: text("destination").notNull(),
+  externalId: text("external_id"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 /** Budget categories — not sensitive (limit is a user-set target, not real money flow). */
 export const budgetCategories = sqliteTable("budget_categories", {
   id: text("id").primaryKey(),
@@ -219,6 +235,7 @@ export const tables = {
   transactions,
   accounts,
   notes,
+  appointments,
   budgetCategories,
   calendarEvents,
   contextItems,

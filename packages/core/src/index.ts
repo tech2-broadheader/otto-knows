@@ -25,6 +25,8 @@ export * from "./format";
 export * from "./monthly-report";
 // Story 12.1 — notes ordering, search, note → reminder draft.
 export * from "./notes";
+// Story 12.4 — appointment time helpers.
+export * from "./appointments";
 // Cross-domain insights (payday-vs-bill nudges, …).
 export * from "./insights";
 // Story 4.2 — template-based briefing composer (free tier).

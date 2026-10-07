@@ -42,6 +42,7 @@ const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: string
   block_time: { icon: "cal", tone: "sky" },
   add_routine_anchor: { icon: "dumbbell", tone: "green" },
   add_note: { icon: "sparkle", tone: "sky" },
+  create_event: { icon: "cal", tone: "sky" },
 };
 
 /**

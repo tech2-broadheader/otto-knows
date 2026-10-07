@@ -153,6 +153,30 @@ export const PROPOSAL_TOOLS: LlmToolDef[] = [
       required: ["rationale", "body"],
     },
   },
+  {
+    name: "create_event",
+    description:
+      "Propose an appointment or meeting at a specific time (e.g. dentist Tuesday 3pm). Give endAt or durationMinutes. Use create_reminder for tasks without a set duration.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...RATIONALE,
+        title: { type: "string" },
+        startAt: { type: "string", description: "ISO-8601 with offset" },
+        endAt: { type: "string", description: "ISO-8601 with offset" },
+        durationMinutes: { type: "integer", minimum: 1, maximum: 1440 },
+        location: { type: "string" },
+        notes: { type: "string" },
+        remindMinutesBefore: {
+          type: "integer",
+          minimum: 0,
+          maximum: 10080,
+          description: "Heads-up reminder this many minutes before, if the user asked for one.",
+        },
+      },
+      required: ["rationale", "title", "startAt"],
+    },
+  },
 ];
 
 /**
@@ -180,6 +204,8 @@ function toActionAndRationale(call: LlmToolCall): { action: unknown; rationale: 
       return { action: { type: "add_routine_anchor", anchor: payload }, rationale };
     case "add_note":
       return { action: { type: "add_note", note: payload }, rationale };
+    case "create_event":
+      return { action: { type: "create_event", event: payload }, rationale };
     default:
       return null;
   }

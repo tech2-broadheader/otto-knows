@@ -73,7 +73,7 @@ development_status:
   12-1-notes: in-progress                      # logic + quick-add done; Notes screen blocked on Claude Design
   12-2-alarms-spike: review                    # research done; ADR-005 recommendation awaits owner approval
   12-3-alarms: backlog                         # after 12.2 + GATE-4 + dep approval
-  12-4-appointments: backlog                   # needs 3.4 (Google path) + expo-calendar approval
+  12-4-appointments: in-progress               # Otto-only appointments + quick-add done; device/Google need expo-calendar approval + 3.4 live; UI needs design
   12-5-meetings-invites: backlog               # GATE-5
   epic-12-retrospective: optional
 

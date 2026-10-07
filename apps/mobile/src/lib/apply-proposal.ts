@@ -9,6 +9,7 @@
 import type { ProposalAction } from "@otto/schemas";
 import { pickDefaultAccountId } from "@otto/core";
 import {
+  appointmentRepository,
   makeAccountRepository,
   makeBillRepository,
   makeMedicationRepository,
@@ -21,9 +22,11 @@ import {
 import { DEFAULT_CASH_ACCOUNT_ID, LOCAL_USER_ID } from "./constants";
 import {
   anchorFromDraft,
+  appointmentFromDraft,
   billFromDraft,
   medicationFromDraft,
   noteFromDraft,
+  reminderBeforeAppointment,
   reminderFromDraft,
   reminderFromTimeBlock,
   transactionFromExpenseDraft,
@@ -51,6 +54,7 @@ export {
  *   add_routine_anchor → routineRepository.addAnchor (needs an existing routine)
  *   block_time         → reminderRepository.create (timed reminder)
  *   add_note           → noteRepository.create
+ *   create_event       → appointmentRepository.create (+ a reminder before, if asked)
  *
  * Throws if `add_routine_anchor` is accepted with no routine set up — the caller
  * surfaces a friendly message (set up your routine first).
@@ -107,6 +111,14 @@ export async function applyProposal(
     case "block_time":
       await reminderRepository.create(reminderFromTimeBlock(action.block, ctx));
       return;
+    case "create_event": {
+      const appointment = await appointmentRepository.create(
+        appointmentFromDraft(action.event, ctx),
+      );
+      const heads = reminderBeforeAppointment(appointment, ctx);
+      if (heads) await reminderRepository.create(heads);
+      return;
+    }
     case "add_note":
       await noteRepository.create(noteFromDraft(action.note, ctx));
       return;

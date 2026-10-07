@@ -18,6 +18,7 @@ const ACTION_LABEL: Record<ProposalAction["type"], string> = {
   block_time: "Block time",
   add_routine_anchor: "Routine anchor",
   add_note: "Save note",
+  create_event: "New appointment",
 };
 
 /** Icon + accent tone per proposal type, matching the design's proposal cards. */
@@ -30,6 +31,7 @@ const ACTION_ICON: Record<ProposalAction["type"], { icon: IconName; tone: OttoTo
   add_routine_anchor: { icon: "dumbbell", tone: "green" },
   // No dedicated note glyph yet — the Notes design pass may add one.
   add_note: { icon: "sparkle", tone: "sky" },
+  create_event: { icon: "cal", tone: "sky" },
 };
 
 /**
@@ -56,6 +58,10 @@ export function summarizeAction(action: ProposalAction): string {
       return `${action.block.title} (${timeLabel(action.block.startAt)}–${timeLabel(action.block.endAt)})`;
     case "add_routine_anchor":
       return `${action.anchor.label} at ${action.anchor.time}`;
+    case "create_event": {
+      const where = action.event.location ? ` · ${action.event.location}` : "";
+      return `${action.event.title} (${timeLabel(action.event.startAt)})${where}`;
+    }
     case "add_note":
       return action.note.title ?? action.note.body.split("\n")[0] ?? action.note.body;
     default: {

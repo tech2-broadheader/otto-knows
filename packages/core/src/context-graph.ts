@@ -10,6 +10,7 @@
 // "+08:00"). Deriving the offset from an IANA zone needs the platform's
 // Intl/timezone data, which is an I/O concern kept OUT of this pure layer.
 import type {
+  Appointment,
   Bill,
   CalendarEvent,
   ContextItem,
@@ -26,6 +27,8 @@ export type UtcOffset = string;
 /** The full set of source entities for one user's day. */
 export type DaySources = {
   events?: readonly CalendarEvent[];
+  /** User-created appointments (story 12.4); only those starting on the day show. */
+  appointments?: readonly Appointment[];
   reminders?: readonly Reminder[];
   bills?: readonly Bill[];
   medications?: readonly Medication[];
@@ -96,6 +99,29 @@ function mapEvent(event: CalendarEvent, userId: string, idFor: IdFor, date: stri
     title: event.title,
     at: event.startAt,
     meta: event.location ? { location: event.location } : undefined,
+  };
+}
+
+function mapAppointment(
+  appointment: Appointment,
+  userId: string,
+  idFor: IdFor,
+  date: string,
+): ContextItem {
+  const kind: ContextItemKind = "event";
+  return {
+    id: idFor(kind, appointment.id, date),
+    userId,
+    kind,
+    refId: appointment.id,
+    source: "events",
+    title: appointment.title,
+    at: appointment.startAt,
+    meta: {
+      appointment: true,
+      endAt: appointment.endAt,
+      ...(appointment.location ? { location: appointment.location } : {}),
+    },
   };
 }
 
@@ -241,6 +267,13 @@ export function unifyContextGraph(
 
   for (const event of sources.events ?? []) {
     items.push(mapEvent(event, day.userId, idFor, day.date));
+  }
+  // Appointments carry their own date; keep only those starting on this day
+  // (by the local date they were written with).
+  for (const appointment of sources.appointments ?? []) {
+    if (appointment.startAt.startsWith(day.date)) {
+      items.push(mapAppointment(appointment, day.userId, idFor, day.date));
+    }
   }
   for (const reminder of sources.reminders ?? []) {
     const item = mapReminder(reminder, day, offset, anchorTimes, idFor);

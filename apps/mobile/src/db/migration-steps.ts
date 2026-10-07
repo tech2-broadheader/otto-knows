@@ -215,7 +215,38 @@ const NOTES: Migration = {
   ],
 };
 
-export const MIGRATIONS: readonly Migration[] = [BASELINE, ACCOUNTS, TRANSACTION_TYPES, NOTES];
+/**
+ * Step 5 — appointments (story 12.4). Own table, separate from synced provider
+ * events, so a calendar sync can never delete what the user created.
+ */
+const APPOINTMENTS: Migration = {
+  version: 5,
+  name: "appointments",
+  statements: [
+    `CREATE TABLE appointments (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      start_at TEXT NOT NULL,
+      end_at TEXT NOT NULL,
+      location TEXT,
+      notes TEXT,
+      remind_minutes_before INTEGER,
+      destination TEXT NOT NULL DEFAULT 'otto',
+      external_id TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+  ],
+};
+
+export const MIGRATIONS: readonly Migration[] = [
+  BASELINE,
+  ACCOUNTS,
+  TRANSACTION_TYPES,
+  NOTES,
+  APPOINTMENTS,
+];
 
 /** Derived from the list — never hand-maintained. */
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;
@@ -236,4 +267,5 @@ export const ALL_TABLE_NAMES: readonly string[] = [
   "audit_entries",
   "accounts",
   "notes",
+  "appointments",
 ];

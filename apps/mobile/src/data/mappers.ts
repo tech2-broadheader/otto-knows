@@ -12,6 +12,7 @@
 // which is exactly what the unit tests assert.
 import type {
   Account,
+  Appointment,
   Bill,
   BudgetCategory,
   CalendarEvent,
@@ -545,6 +546,55 @@ export function accountFromRow(r: AccountRow, openedOpeningBalance: string | nul
       currency: r.openingBalanceCurrency as Account["openingBalance"]["currency"],
     },
     archivedAt: optional(r.archivedAt),
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
+export interface AppointmentRow {
+  id: string;
+  userId: string;
+  title: string;
+  startAt: string;
+  endAt: string;
+  location: string | null;
+  notes: string | null;
+  remindMinutesBefore: number | null;
+  destination: string;
+  externalId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function appointmentToRow(a: Appointment): AppointmentRow {
+  return {
+    id: a.id,
+    userId: a.userId,
+    title: a.title,
+    startAt: a.startAt,
+    endAt: a.endAt,
+    location: nullable(a.location),
+    notes: nullable(a.notes),
+    remindMinutesBefore: nullable(a.remindMinutesBefore),
+    destination: a.destination,
+    externalId: nullable(a.externalId),
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  };
+}
+
+export function appointmentFromRow(r: AppointmentRow): Appointment {
+  return {
+    id: r.id,
+    userId: r.userId,
+    title: r.title,
+    startAt: r.startAt,
+    endAt: r.endAt,
+    location: optional(r.location),
+    notes: optional(r.notes),
+    remindMinutesBefore: optional(r.remindMinutesBefore),
+    destination: r.destination as Appointment["destination"],
+    externalId: optional(r.externalId),
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };

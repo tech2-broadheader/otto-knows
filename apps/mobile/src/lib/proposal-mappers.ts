@@ -6,12 +6,14 @@
 // boundary. The side-effecting persistence lives in apply-proposal.ts, which
 // re-exports these.
 import {
+  appointmentSchema,
   billSchema,
   medicationSchema,
   noteSchema,
   reminderSchema,
   routineAnchorSchema,
   transactionSchema,
+  type Appointment,
   type Bill,
   type Medication,
   type Note,
@@ -20,7 +22,9 @@ import {
   type RoutineAnchor,
   type Transaction,
 } from "@otto/schemas";
+import { addMinutesToIso } from "@otto/core";
 import { LOCAL_USER_ID, DEFAULT_CASH_ACCOUNT_ID } from "./constants";
+import { timeLabel } from "./datetime";
 
 /** Injected context so the mappers stay pure (no `Date.now`/native id inside). */
 export type ApplyContext = {
@@ -91,6 +95,42 @@ export function noteFromDraft(
     title: draft.title,
     body: draft.body,
     pinned: false,
+  });
+}
+
+/** `create_event` draft → a validated Otto appointment (story 12.4). */
+export function appointmentFromDraft(
+  draft: Extract<ProposalAction, { type: "create_event" }>["event"],
+  ctx: ApplyContext,
+): Appointment {
+  return appointmentSchema.parse({
+    ...stamp(ctx),
+    title: draft.title,
+    startAt: draft.startAt,
+    // The draft schema guarantees one of the two is present.
+    endAt: draft.endAt ?? addMinutesToIso(draft.startAt, draft.durationMinutes ?? 0),
+    location: draft.location,
+    notes: draft.notes,
+    remindMinutesBefore: draft.remindMinutesBefore,
+    destination: "otto",
+  });
+}
+
+/**
+ * The heads-up reminder before an appointment, or null when none was asked
+ * for. A normal reminder, so existing notification scheduling fires it.
+ */
+export function reminderBeforeAppointment(
+  appointment: Appointment,
+  ctx: ApplyContext,
+): Reminder | null {
+  if (appointment.remindMinutesBefore === undefined) return null;
+  return reminderSchema.parse({
+    ...stamp(ctx),
+    title: `${appointment.title} at ${timeLabel(appointment.startAt)}`.slice(0, 140),
+    notes: appointment.location,
+    dueAt: addMinutesToIso(appointment.startAt, -appointment.remindMinutesBefore),
+    status: "pending",
   });
 }
 

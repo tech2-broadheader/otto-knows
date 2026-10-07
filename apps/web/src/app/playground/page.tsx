@@ -28,6 +28,7 @@ const ACTION_LABEL: Record<ProposalAction["type"], string> = {
   block_time: "Block time",
   add_routine_anchor: "Routine anchor",
   add_note: "Save note",
+  create_event: "New appointment",
 };
 
 const ACTION_COLOR: Record<ProposalAction["type"], string> = {
@@ -38,6 +39,7 @@ const ACTION_COLOR: Record<ProposalAction["type"], string> = {
   block_time: "#004D00",
   add_routine_anchor: "#10A074",
   add_note: "#3E91C9",
+  create_event: "#007A33",
 };
 
 function money(m: { amountMinor: number; currency: string }): string {
@@ -102,6 +104,18 @@ function rows(a: ProposalAction): Array<[string, string]> {
         ["Time", a.anchor.time],
         ["Repeats", repeats(a.anchor.recurrence)],
       ];
+    case "create_event": {
+      const r: Array<[string, string]> = [
+        ["Title", a.event.title],
+        ["Starts", when(a.event.startAt)],
+      ];
+      if (a.event.endAt) r.push(["Ends", when(a.event.endAt)]);
+      if (a.event.durationMinutes) r.push(["Duration", `${a.event.durationMinutes} min`]);
+      if (a.event.location) r.push(["Where", a.event.location]);
+      if (a.event.remindMinutesBefore !== undefined)
+        r.push(["Heads-up", `${a.event.remindMinutesBefore} min before`]);
+      return r;
+    }
     case "add_note": {
       const r: Array<[string, string]> = [];
       if (a.note.title) r.push(["Title", a.note.title]);

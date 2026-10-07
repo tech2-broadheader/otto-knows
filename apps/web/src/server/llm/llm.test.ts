@@ -37,8 +37,34 @@ describe("toolCallToProposal", () => {
     expect(toolCallToProposal({ name: "add_note", input: { body: "" } }, counter())).toBeNull();
   });
 
+  it("maps a create_event call to an appointment proposal (story 12.4)", () => {
+    const proposal = toolCallToProposal(
+      {
+        name: "create_event",
+        input: {
+          rationale: "You mentioned a dentist visit.",
+          title: "Dentist",
+          startAt: "2026-10-13T15:00:00+08:00",
+          durationMinutes: 60,
+          remindMinutesBefore: 60,
+        },
+      },
+      counter(),
+    );
+    expect(proposal?.action.type).toBe("create_event");
+  });
+
+  it("rejects a create_event call with no end or duration", () => {
+    const call = {
+      name: "create_event",
+      input: { title: "Dentist", startAt: "2026-10-13T15:00:00+08:00" },
+    };
+    expect(toolCallToProposal(call, counter())).toBeNull();
+  });
+
   it("offers the add_note tool to the model", () => {
     expect(PROPOSAL_TOOLS.map((t) => t.name)).toContain("add_note");
+    expect(PROPOSAL_TOOLS.map((t) => t.name)).toContain("create_event");
   });
 
   it("maps a valid create_reminder call to a proposal", () => {

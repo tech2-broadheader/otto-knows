@@ -12,6 +12,7 @@
 import { and, eq, isNull, or } from "drizzle-orm";
 import {
   accountSchema,
+  appointmentSchema,
   auditEntrySchema,
   billSchema,
   budgetCategorySchema,
@@ -27,6 +28,7 @@ import {
   storedTransactionSchema,
   transactionSchema,
   type Account,
+  type Appointment,
   type Bill,
   type BudgetCategory,
   type CalendarEvent,
@@ -50,6 +52,8 @@ import { requireConsent } from "../security/consent";
 import { buildAuditEntry, shouldAudit, type AuditContext } from "../security/audit";
 import {
   accountFromRow,
+  appointmentFromRow,
+  appointmentToRow,
   accountToRow,
   billFromRow,
   billToRow,
@@ -121,6 +125,41 @@ export const reminderRepository = {
   },
   async delete(id: string): Promise<void> {
     getDatabase().delete(tables.reminders).where(eq(tables.reminders.id, id)).run();
+  },
+};
+
+/**
+ * Appointments repository (story 12.4). User-created, non-sensitive tier like
+ * reminders; kept apart from synced provider events.
+ */
+export const appointmentRepository = {
+  async create(input: Appointment): Promise<Appointment> {
+    const entity = appointmentSchema.parse(input);
+    getDatabase().insert(tables.appointments).values(appointmentToRow(entity)).run();
+    return entity;
+  },
+  async list(userId: string): Promise<Appointment[]> {
+    const rows = getDatabase()
+      .select()
+      .from(tables.appointments)
+      .where(eq(tables.appointments.userId, userId))
+      .all();
+    return rows.map((r) => appointmentSchema.parse(appointmentFromRow(r)));
+  },
+  async update(input: Appointment): Promise<Appointment> {
+    const entity = appointmentSchema.parse(input);
+    getDatabase()
+      .update(tables.appointments)
+      .set(appointmentToRow(entity))
+      .where(eq(tables.appointments.id, entity.id))
+      .run();
+    return entity;
+  },
+  async delete(userId: string, id: string): Promise<void> {
+    getDatabase()
+      .delete(tables.appointments)
+      .where(and(eq(tables.appointments.id, id), eq(tables.appointments.userId, userId)))
+      .run();
   },
 };
 

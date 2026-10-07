@@ -21,6 +21,7 @@ import { isConsentGranted as consentGranted } from "../security/consent";
 import { fetchBrief, getApiBaseUrl } from "../lib/api-client";
 import { useAuth } from "../auth/AuthProvider";
 import {
+  appointmentRepository,
   consentRepository,
   makeAccountRepository,
   makeBillRepository,
@@ -74,6 +75,8 @@ export function useToday(deps: RepositoryDeps): TodayState {
       // Always-available local sources: routine anchors + reminders.
       const routine = await routineRepository.getForUser(LOCAL_USER_ID);
       const reminders = await reminderRepository.list(LOCAL_USER_ID);
+      // User-created appointments need no source consent (story 12.4).
+      const appointments = await appointmentRepository.list(LOCAL_USER_ID);
 
       // Consent-gated sources.
       const bills = canFinance ? await makeBillRepository(deps).list(LOCAL_USER_ID) : [];
@@ -91,6 +94,7 @@ export function useToday(deps: RepositoryDeps): TodayState {
         bills: bills.filter((b) => !b.isPaid),
         medications,
         events,
+        appointments,
       };
 
       // Unique context-item ids (multi-dose meds collide on the default mapper).

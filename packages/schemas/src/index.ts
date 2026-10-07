@@ -11,3 +11,4 @@ export * from "./proposals";
 export * from "./optimizer";
 export * from "./tips";
 export * from "./notes";
+export * from "./appointments";

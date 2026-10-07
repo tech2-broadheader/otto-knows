@@ -63,7 +63,7 @@ development_status:
   epic-11: in-progress
   11-1-versioned-local-migrations: in-progress
   11-2-wallets-accounts: review                       # logic + UI done; on-device check pending
-  11-3-income-transfer-transactions: review           # logic + UI done; on-device check pending
+  11-3-income-transfer-transactions: review           # logic + UI done incl. Quick Add "Paid from" picker (AC5); on-device check pending
   11-4-safe-to-spend: review                          # logic + UI done; on-device check pending
   11-5-monthly-report: review                         # logic + UI done; on-device check pending
   epic-11-retrospective: optional

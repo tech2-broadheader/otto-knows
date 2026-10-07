@@ -10,14 +10,17 @@
 // RN inline styles via the design kit — Otto's light intro bubble, the
 // focus-emerald input with an inline "Ask Otto" button + quota text, example
 // chips, the "Reading your routine & money…" pulse, and proposals as
-// ProposalCards. Data logic is unchanged (useQuickAdd); only the look changed.
-import { useState } from "react";
+// ProposalCards. Expense proposals carry a "Paid from" wallet picker (11.3 AC5).
+import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import type { Proposal, ProposalAction } from "@otto/schemas";
 import { currencyMinorUnits } from "@otto/schemas";
 import { formatMoney } from "@otto/core";
 import { useRepositoryDeps } from "../hooks/useRepositoryDeps";
 import { useQuickAdd } from "../hooks/useQuickAdd";
+import { useFinance } from "../hooks/useFinance";
+import { initialExpenseWallet, withExpenseWallet } from "../lib/expense-wallet";
+import { ExpenseWalletPicker } from "../components/ExpenseWalletPicker";
 import { summarizeAction } from "../lib/proposal-summary";
 import { useSettings } from "../lib/settings-context";
 import { Screen, AppHeader, OttoVoice, ProposalCard, EmptyState } from "../design/kit";
@@ -29,7 +32,6 @@ import { useAuth } from "../auth/AuthProvider";
 import { useUpgradeNavigation } from "../hooks/useUpgradeNavigation";
 import { useSettingsNavigation } from "../hooks/useSettingsNavigation";
 
-/** Example prompts offered as one-tap chips (match the design's examples). */
 /** Example prompts; the bill amount is shown in the user's own currency (story 13.1). */
 function exampleChips(billAmount: string): readonly string[] {
   return [
@@ -66,7 +68,12 @@ function proposalDisplay(
   detail?: string;
 } {
   const { icon, tone } = ACTION_ICON[proposal.action.type];
-  return { icon, tone, title: summarizeAction(proposal.action, locale), detail: proposal.rationale };
+  return {
+    icon,
+    tone,
+    title: summarizeAction(proposal.action, locale),
+    detail: proposal.rationale,
+  };
 }
 
 /** Map an error code to a banner tone + message for the quick-add surface. */
@@ -92,7 +99,13 @@ function errorBanner(
 }
 
 /** A calm inline banner (info = mist/green, warning = amber). */
-function Banner({ tone, message }: { tone: "info" | "warning"; message: string }): React.JSX.Element {
+function Banner({
+  tone,
+  message,
+}: {
+  tone: "info" | "warning";
+  message: string;
+}): React.JSX.Element {
   const info = tone === "info";
   return (
     <View
@@ -135,6 +148,16 @@ export function QuickAddScreen(): React.JSX.Element {
   const goToSettings = useSettingsNavigation();
   const { status, proposals, error, errorCode, applyingId, submit, accept, dismiss } =
     useQuickAdd(deps);
+  // Wallets for the "Paid from" picker on expense proposals (story 11.3 AC5).
+  const finance = useFinance(deps, { isPro });
+  const [walletChoice, setWalletChoice] = useState<Record<string, string>>({});
+  const activeWallets = finance.wallets.perAccount.filter((w) => !w.archived);
+  const activeIds = activeWallets.map((w) => w.accountId);
+  const { reload: reloadFinance } = finance;
+  // Balances may have changed since this tab mounted; refresh when proposals arrive.
+  useEffect(() => {
+    if (proposals.length > 0) void reloadFinance();
+  }, [proposals.length, reloadFinance]);
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
   const configured = getApiBaseUrl() !== null;
@@ -150,14 +173,20 @@ export function QuickAddScreen(): React.JSX.Element {
 
   return (
     <Screen>
-      <AppHeader title="Quick add" sub="Tell Otto in plain words" isPro={isPro} onUpgrade={goToUpgrade} onSettings={goToSettings} />
+      <AppHeader
+        title="Quick add"
+        sub="Tell Otto in plain words"
+        isPro={isPro}
+        onUpgrade={goToUpgrade}
+        onSettings={goToSettings}
+      />
 
       <View style={{ paddingHorizontal: 18 }}>
         {/* Otto's intro bubble */}
         <View style={{ marginTop: 12 }}>
           <OttoVoice tone="light">
-            What can I take off your plate? A bill, a dose, a plan — say it however you&apos;d say it
-            to a friend.
+            What can I take off your plate? A bill, a dose, a plan — say it however you&apos;d say
+            it to a friend.
           </OttoVoice>
         </View>
 
@@ -187,7 +216,7 @@ export function QuickAddScreen(): React.JSX.Element {
             onChangeText={setText}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder="e.g. Pay Meralco ₱2,480 on Saturday"
+            placeholder={`e.g. ${chips[0]}`}
             placeholderTextColor={OC.ink400}
             multiline
             editable={!thinking}
@@ -317,6 +346,19 @@ export function QuickAddScreen(): React.JSX.Element {
             {proposals.map((proposal) => {
               const d = proposalDisplay(proposal, locale);
               const busy = applyingId === proposal.id;
+              const action = proposal.action;
+              const proposedWallet =
+                action.type === "log_expense" ? action.expense.accountId : undefined;
+              const defaultWallet = initialExpenseWallet(
+                proposedWallet,
+                activeIds,
+                finance.defaultAccountId,
+              );
+              const wallet = walletChoice[proposal.id] ?? defaultWallet;
+              const confirmed =
+                wallet !== undefined
+                  ? { ...proposal, action: withExpenseWallet(action, wallet) }
+                  : proposal;
               return (
                 <ProposalCard
                   key={proposal.id}
@@ -324,9 +366,21 @@ export function QuickAddScreen(): React.JSX.Element {
                   tone={d.tone}
                   title={d.title}
                   detail={d.detail}
-                  onAccept={busy ? undefined : () => void accept(proposal)}
+                  onAccept={busy ? undefined : () => void accept(confirmed)}
                   onDismiss={busy ? undefined : () => dismiss(proposal)}
-                />
+                >
+                  {action.type === "log_expense" && activeWallets.length > 0 ? (
+                    <ExpenseWalletPicker
+                      wallets={activeWallets}
+                      amountMinor={action.expense.amount.amountMinor}
+                      value={wallet}
+                      isLastUsed={wallet === finance.defaultAccountId && proposedWallet !== wallet}
+                      onChange={(id) =>
+                        setWalletChoice((current) => ({ ...current, [proposal.id]: id }))
+                      }
+                    />
+                  ) : null}
+                </ProposalCard>
               );
             })}
           </View>

@@ -213,6 +213,7 @@ export function ProposalCard({
   onAccept,
   onDismiss,
   state,
+  children,
 }: {
   icon?: IconName;
   tone?: string;
@@ -221,6 +222,8 @@ export function ProposalCard({
   onAccept?: () => void;
   onDismiss?: () => void;
   state?: "accepted" | "dismissed";
+  /** Extra controls between the summary and the buttons (e.g. a wallet picker). */
+  children?: ReactNode;
 }) {
   const accent = toneColor(tone);
   if (state === "accepted")
@@ -248,6 +251,7 @@ export function ProposalCard({
           {detail ? <Text style={{ fontSize: 13, color: OC.ink500, marginTop: 4, lineHeight: 19, fontFamily: FONT.body }}>{detail}</Text> : null}
         </View>
       </View>
+      {children ? <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>{children}</View> : null}
       <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: OC.line }}>
         <Pressable onPress={onDismiss} style={({ pressed }) => [{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: OC.line, opacity: pressed ? 0.6 : 1 }]}>
           <Text style={{ color: OC.ink500, fontFamily: FONT.bodyBold, fontSize: 14 }}>Not now</Text>

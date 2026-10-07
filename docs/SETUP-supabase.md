@@ -54,6 +54,15 @@ CREATE POLICY "read own profile" ON profiles FOR SELECT USING (auth.uid() = id);
 ```
 > The server reads entitlement over the direct `DATABASE_URL` connection (bypasses RLS by design). Entitlement is written by the billing flow (E9, not yet built) using the service role — never by the client.
 
+## 3b. Encrypted connector tokens + audit trail (story 3.4)
+Apply `apps/web/drizzle/0001_connector_tokens_audit.sql` (or `pnpm --filter @otto/web db:migrate`), then lock both tables to the server connection only:
+```sql
+-- No policies on purpose: anon/authenticated clients can't read or write these.
+ALTER TABLE connector_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY;
+```
+Set `TOKEN_ENCRYPTION_KEY` (32 random bytes, base64 — `openssl rand -base64 32`) in the server environment. Tokens are stored AES-256-GCM encrypted; without the key (or `DATABASE_URL`) production refuses to store tokens, and local dev falls back to in-memory storage. Keep the key out of the repo and back it up: losing it means every user must reconnect Google.
+
 ## 4. How it works
 - Mobile sends the Supabase access token as `Authorization: Bearer <token>`.
 - `getAuthContext` (`apps/web/src/server/auth.ts`) verifies it via `supabase.auth.getUser()` and loads `profiles.entitlement` (default `free`).

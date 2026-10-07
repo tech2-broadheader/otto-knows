@@ -27,7 +27,13 @@ export async function POST(request: Request): Promise<Response> {
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
   try {
-    // Remove the entitlement/profile row, then the auth user itself.
+    // Remove connector credentials and their audit trail, the entitlement/profile
+    // row, then the auth user itself (story 3.4: tokens must not outlive the account).
+    const tokens = await admin.from("connector_tokens").delete().eq("user_id", userId);
+    const audit = await admin.from("audit_events").delete().eq("user_id", userId);
+    if (tokens.error || audit.error) {
+      return fail("INTERNAL", "Could not delete the account. Please try again.");
+    }
     await admin.from("profiles").delete().eq("id", userId);
     const { error } = await admin.auth.admin.deleteUser(userId);
     if (error) return fail("INTERNAL", "Could not delete the account. Please try again.");

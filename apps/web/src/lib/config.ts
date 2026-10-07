@@ -46,6 +46,14 @@ const serverEnvSchema = z.object({
   // Google Calendar / Tasks OAuth.
   GOOGLE_OAUTH_CLIENT_ID: z.string().min(1, "GOOGLE_OAUTH_CLIENT_ID is required"),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(1, "GOOGLE_OAUTH_CLIENT_SECRET is required"),
+
+  // AES-256-GCM key for connector tokens at rest (story 3.4): 32 bytes, base64.
+  // Optional so local dev runs without it; production refuses to store tokens
+  // unencrypted when it is missing (server/token-store.ts).
+  TOKEN_ENCRYPTION_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, "base64").length === 32, "must decode to 32 bytes (base64)")
+    .optional(),
 });
 
 /**

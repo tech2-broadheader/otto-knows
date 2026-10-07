@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, timestamp } from "drizzle-orm/pg-core";
+import { integer, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /**
  * Cloud database schema (Drizzle / Supabase Postgres) — SERVER-ONLY.
@@ -22,3 +22,37 @@ export const profiles = pgTable("profiles", {
 });
 
 export type ProfileRow = typeof profiles.$inferSelect;
+
+/**
+ * Connector OAuth tokens, encrypted at rest (story 3.4). One row per user and
+ * provider. `ciphertext` is AES-256-GCM over the JSON token bundle (tag
+ * appended); plaintext tokens never touch the database. RLS is enabled with no
+ * client policies — only the server connection can read or write (SETUP-supabase.md).
+ */
+export const connectorTokens = pgTable(
+  "connector_tokens",
+  {
+    userId: uuid("user_id").notNull(),
+    provider: text("provider").notNull(),
+    ciphertext: text("ciphertext").notNull(),
+    iv: text("iv").notNull(),
+    keyVersion: integer("key_version").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.provider] })],
+);
+
+/**
+ * Server-side audit trail for access to sensitive records (Tier 3). Records who,
+ * what kind of record and which action — never the record's contents.
+ */
+export const auditEvents = pgTable("audit_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  entity: text("entity").notNull(),
+  action: text("action").notNull(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type ConnectorTokenRow = typeof connectorTokens.$inferSelect;

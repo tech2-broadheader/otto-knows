@@ -61,3 +61,22 @@ describe("parseConfig() — missing required", () => {
     );
   });
 });
+
+describe("parseConfig() — TOKEN_ENCRYPTION_KEY (story 3.4)", () => {
+  const key32 = Buffer.alloc(32, 7).toString("base64");
+
+  it("is optional, and accepted when it decodes to 32 bytes", () => {
+    expect(parseConfig(validEnv).server.TOKEN_ENCRYPTION_KEY).toBeUndefined();
+    expect(
+      parseConfig({ ...validEnv, TOKEN_ENCRYPTION_KEY: key32 }).server.TOKEN_ENCRYPTION_KEY,
+    ).toBe(key32);
+  });
+
+  it("rejects a key of the wrong length without echoing it", () => {
+    const short = Buffer.alloc(16, 7).toString("base64");
+    expect(() => parseConfig({ ...validEnv, TOKEN_ENCRYPTION_KEY: short })).toThrow(
+      /TOKEN_ENCRYPTION_KEY/,
+    );
+    expect(() => parseConfig({ ...validEnv, TOKEN_ENCRYPTION_KEY: short })).not.toThrow(short);
+  });
+});

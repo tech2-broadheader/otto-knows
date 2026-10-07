@@ -2,7 +2,7 @@ import { z } from "zod";
 import { fail, ok, validateBody } from "@/lib/api";
 import { getAuthContext } from "@/server/auth";
 import { exchangeCodeForTokens } from "@/server/google-oauth";
-import { defaultTokenStore, toStoredToken } from "@/server/token-store";
+import { getTokenStore, toStoredToken } from "@/server/token-store";
 
 /**
  * GET /api/connectors/google/callback — OAuth redirect target.
@@ -45,6 +45,11 @@ export async function GET(request: Request) {
     return fail("UNAUTHORIZED", "Sign in to finish connecting Google Calendar.");
   }
 
+  const store = await getTokenStore();
+  if (!store) {
+    return fail("INTERNAL", "Google Calendar connection isn't configured on this server.");
+  }
+
   // TODO(oauth-state): verify `query.data.state` matches the value issued by /start.
 
   // `code` is guaranteed present here by the schema refinement above.
@@ -54,7 +59,7 @@ export async function GET(request: Request) {
     return fail("INTERNAL", "Could not complete the Google connection.");
   }
 
-  await defaultTokenStore.set(auth.context.userId, "google", toStoredToken(exchange.tokens));
+  await store.set(auth.context.userId, "google", toStoredToken(exchange.tokens));
 
   return ok({ connected: true, provider: "google" });
 }

@@ -34,7 +34,7 @@ development_status:
   3-1-google-calendar-tasks-read: done        # web proxy + on-device OAuth/read/store (needs real Google creds + device to exercise); design pass pending
   3-2-manual-finance-entry-budget: done       # finance entry + budget UI; raw, design pass pending
   3-3-context-graph-unification: done
-  3-4-encrypted-token-storage: backlog         # added 2026-10-08; replaces in-memory Google token store
+  3-4-encrypted-token-storage: in-progress     # code done; needs manual check with real Supabase + Google creds
   epic-3-retrospective: optional
 
   epic-4: done

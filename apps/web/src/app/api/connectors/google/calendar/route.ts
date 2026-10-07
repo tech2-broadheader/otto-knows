@@ -4,7 +4,7 @@ import { dateSchema } from "@otto/schemas";
 import { fail, ok, validateBody } from "@/lib/api";
 import { getAuthContext } from "@/server/auth";
 import { defaultGoogleCalendarClient, toCalendarEvents } from "@/server/google-calendar";
-import { defaultTokenStore } from "@/server/token-store";
+import { getTokenStore } from "@/server/token-store";
 
 /**
  * GET /api/connectors/google/calendar?date=YYYY-MM-DD — read one day's events.
@@ -36,7 +36,12 @@ export async function GET(request: Request) {
     return fail("UNAUTHORIZED", "Sign in to read your calendar.");
   }
 
-  const token = await defaultTokenStore.get(auth.context.userId, "google");
+  const store = await getTokenStore();
+  if (!store) {
+    return fail("INTERNAL", "Google Calendar connection isn't configured on this server.");
+  }
+
+  const token = await store.get(auth.context.userId, "google");
   if (!token) {
     // No grant on file — the user must connect Google first via /start.
     return fail("UNAUTHORIZED", "Connect Google Calendar before reading events.");

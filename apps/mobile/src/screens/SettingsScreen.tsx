@@ -4,8 +4,7 @@
 // the encryption note, Pro tools rows, and the About footer. All data logic is
 // unchanged (useConsents, useAuth, useGoogleCalendar); only the look is the
 // inline-style design kit (reliable on SDK 54, unlike the prior NativeWind pass).
-import { useState } from "react";
-import { View, Text, Pressable, Image, Alert } from "react-native";
+import { View, Text, Pressable, Image } from "react-native";
 import type { DataSource } from "@otto/schemas";
 import { useConsents } from "../hooks/useConsents";
 import { useGoogleCalendar } from "../hooks/useGoogleCalendar";
@@ -25,9 +24,6 @@ import {
 import { Icon, type IconName } from "../design/Icon";
 import { OC, FONT, RADIUS, tint } from "../design/theme";
 import { useAuth } from "../auth/AuthProvider";
-import { useAppReset } from "../lib/app-reset";
-import { wipeLocalData } from "../lib/account";
-import { deleteAccount } from "../lib/api-client";
 import { CONSENT_POLICY_VERSION } from "../lib/constants";
 import appConfig from "../../app.json";
 
@@ -339,40 +335,6 @@ export function SettingsScreen({
   const { state, error, isGranted, setConsent, reload } = useConsents();
   const { status, email, isPro, signOut } = useAuth();
   const signedIn = status === "signed-in";
-  const reset = useAppReset();
-  const [deleting, setDeleting] = useState(false);
-
-  const runDelete = async (): Promise<void> => {
-    setDeleting(true);
-    try {
-      // Delete the cloud account first (only if signed in); if that fails, keep
-      // local data intact so the user can retry rather than lose it silently.
-      if (signedIn) {
-        const res = await deleteAccount();
-        if (!res.ok) {
-          Alert.alert("Couldn't delete your account", `${res.message} Your data is unchanged — please try again.`);
-          return;
-        }
-      }
-      await wipeLocalData();
-      await signOut();
-      reset(); // back to first-run onboarding
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const confirmDelete = (): void => {
-    Alert.alert(
-      "Delete account & data?",
-      "This permanently deletes your Otto account and erases all data on this device. This can't be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => void runDelete() },
-      ],
-    );
-  };
-
   return (
     <OverlayScreen title="Settings" onBack={() => navigation.goBack()}>
       {/* Profile header — dark gradient, driven by the live auth session. */}
@@ -616,31 +578,18 @@ export function SettingsScreen({
           </Card>
         </View>
 
-        {/* Danger zone — DPA right to erasure */}
+        {/* Your data — export, erase, delete account (right to erasure) */}
         <View style={{ marginTop: 18, marginBottom: 10 }}>
-          <SectionLabel>Account</SectionLabel>
-          <Pressable
-            onPress={confirmDelete}
-            disabled={deleting}
-            accessibilityRole="button"
-            accessibilityLabel="Delete account and data"
-            style={({ pressed }) => ({
-              borderRadius: RADIUS.btn,
-              borderWidth: 1.5,
-              borderColor: OC.coral,
-              backgroundColor: OC.surface,
-              paddingVertical: 13,
-              alignItems: "center",
-              opacity: pressed || deleting ? 0.6 : 1,
-            })}
-          >
-            <Text style={{ color: OC.coral, fontFamily: FONT.bodyX, fontSize: 14.5 }}>
-              {deleting ? "Deleting…" : "Delete account & data"}
-            </Text>
-          </Pressable>
-          <Text style={{ marginTop: 8, textAlign: "center", fontFamily: FONT.body, fontSize: 12, color: OC.ink400 }}>
-            Permanently erases your account and all on-device data. This can&apos;t be undone.
-          </Text>
+          <SectionLabel>Your data</SectionLabel>
+          <Card pad={16} style={{ paddingVertical: 2 }}>
+            <NavRow
+              icon="shield"
+              title="Your data"
+              subtitle="Download a copy, erase, or delete your account"
+              onPress={() => navigation.navigate("YourData")}
+              last
+            />
+          </Card>
         </View>
       </AsyncBoundary>
     </OverlayScreen>

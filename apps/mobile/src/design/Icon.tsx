@@ -7,7 +7,7 @@ export type IconName =
   | "sun" | "bell" | "plus" | "wallet" | "heart" | "pill" | "gear" | "check"
   | "chevR" | "chevL" | "x" | "sparkle" | "cal" | "clock" | "moon" | "coffee"
   | "peso" | "refresh" | "user" | "shield" | "lock" | "arrowR" | "dumbbell" | "trend"
-  | "note" | "pin" | "trash" | "search";
+  | "note" | "pin" | "trash" | "search" | "download";
 
 function paths(name: IconName): ReactNode {
   switch (name) {
@@ -128,6 +128,8 @@ function paths(name: IconName): ReactNode {
       );
     case "pin":
       return <Path d="M12 17v5M9 3h6l-1 6 4 4H6l4-4z" />;
+    case "download":
+      return <Path d="M12 3v12M7 10l5 5 5-5M5 21h14" />;
     case "trash":
       return <Path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15" />;
     case "search":

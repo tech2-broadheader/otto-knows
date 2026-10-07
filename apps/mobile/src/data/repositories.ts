@@ -29,6 +29,7 @@ import {
   userSettingsSchema,
   transactionSchema,
   type Account,
+  type AuditEntry,
   type Appointment,
   type Bill,
   type BudgetCategory,
@@ -456,6 +457,26 @@ export async function persistAuditEntry(ctx: AuditContext): Promise<void> {
     })
     .run();
 }
+
+/** The user's own access log, oldest first (export-my-data, story 13.6). */
+export const auditRepository = {
+  async list(userId: string): Promise<AuditEntry[]> {
+    const rows = getDatabase()
+      .select()
+      .from(tables.auditEntries)
+      .where(eq(tables.auditEntries.userId, userId))
+      .all();
+    return rows
+      .map((row) =>
+        auditEntrySchema.parse({
+          ...row,
+          entityId: row.entityId ?? undefined,
+          note: row.note ?? undefined,
+        }),
+      )
+      .sort((a, b) => a.at.localeCompare(b.at));
+  },
+};
 
 // --- source-backed read (consent-gated) -------------------------------------
 

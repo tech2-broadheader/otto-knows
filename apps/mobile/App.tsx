@@ -55,6 +55,7 @@ import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { UpgradeScreen } from "./src/screens/UpgradeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { HowItWorksScreen } from "./src/screens/HowItWorksScreen";
+import { YourDataScreen } from "./src/screens/YourDataScreen";
 import { AddTransactionScreen } from "./src/screens/AddTransactionScreen";
 import { WalletsScreen } from "./src/screens/WalletsScreen";
 import { WalletFormScreen } from "./src/screens/WalletFormScreen";
@@ -77,6 +78,8 @@ type RootStackParamList = {
   Tips: undefined;
   // Replayable "how Otto works" tour (Settings → How Otto works).
   HowItWorks: undefined;
+  // Settings → Your data: export, erase, delete account (stories 1.4 / 13.6).
+  YourData: undefined;
   // Budgeting+ and Daily tasks (approved design 2026-10-08).
   AddTransaction: { txId?: string; type?: "expense" | "income" | "transfer" } | undefined;
   Wallets: undefined;
@@ -205,6 +208,8 @@ export default function App(): React.JSX.Element {
   }, [bootAttempt]);
 
   const dbErrorCopy = dbError ? describeMigrationError(dbError) : null;
+  // Also the app reset after an erase: re-running boot recreates the settings
+  // row and default Cash wallet, then lands on onboarding (no routine left).
   const retryBoot = (): void => {
     setDbError(null);
     setPhase("booting");
@@ -215,7 +220,7 @@ export default function App(): React.JSX.Element {
     <SafeAreaProvider>
       <AuthProvider>
         <SettingsProvider value={settings} onUpdate={updateSettings}>
-          <AppResetProvider reset={() => setPhase("onboarding")}>
+          <AppResetProvider reset={retryBoot}>
             <NavigationContainer>
               {phase === "booting" || !fontsLoaded ? (
                 <LoadingState label="Starting Otto" />
@@ -251,6 +256,7 @@ export default function App(): React.JSX.Element {
                       <RootStack.Screen name="Optimizer" component={OptimizerScreen} />
                       <RootStack.Screen name="Tips" component={TipsScreen} />
                       <RootStack.Screen name="HowItWorks" component={HowItWorksScreen} />
+                      <RootStack.Screen name="YourData" component={YourDataScreen} />
                       <RootStack.Screen name="AddTransaction" component={AddTransactionScreen} />
                       <RootStack.Screen name="Wallets" component={WalletsScreen} />
                       <RootStack.Screen name="WalletForm" component={WalletFormScreen} />

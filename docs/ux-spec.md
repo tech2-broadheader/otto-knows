@@ -71,3 +71,10 @@ Approved Claude Design output is required before the UI work in stories 11.2–1
 - The E11/E12 screens were designed on the canvas "Otto — Budgeting+ & Daily Tasks screens" and **approved by the product owner on 2026-10-08**: Money home, safe-to-spend states, Add transaction, Wallets, Add wallet, Monthly report, Notes (inside the Reminders tab: Reminders / Notes / Appointments), Note editor, New appointment, Today additions.
 - **₱ in the designs is the example locale.** Implemented screens take the symbol, separators and date format from the user's home currency and locale (ADR-007); no screen hard-codes ₱.
 - Onboarding gains a **Country & currency** step (13.4); Settings shows and edits it.
+
+## 9. Still-to-build designs (approved 2026-10-08)
+Added to the same canvas ("Still to build" row) and **approved by the product owner on 2026-10-08**:
+- **Your data** (Settings): download a copy (JSON), erase data on this phone (account stays), delete account; erasures confirm in a bottom sheet first.
+- **Quick Add — Paid from:** a `log_expense` proposal shows wallet pills (last used pre-selected) and the wallet's balance after the expense before "Log it" (11.3 AC5).
+- **Alarms** (12.3): a fourth "Alarms" segment in Reminders ("Appointments" shortened to "Appts"), New alarm form, full-screen ringing with Snooze / Dismiss. Built once ADR-005 and GATE-4 clear.
+- **Meeting invites** (12.5): attendees by email, optional Meet link, and a confirm sheet listing exactly who will be emailed. Built once GATE-5 clears.

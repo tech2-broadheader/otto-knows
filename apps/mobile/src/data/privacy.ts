@@ -1,58 +1,81 @@
-// Export-my-data / delete-my-data stubs wired to the store (story 1.4 AC4).
-// These are intentionally thin: they enumerate the user's rows across tables.
-// Sensitive entities go through their repositories so decryption + audit apply.
-import type { Consent } from "@otto/schemas";
+// Export-my-data (story 1.4 AC4 / 13.6 AC2): every record Otto keeps for the
+// user, in one bundle. Sensitive entities go through their repositories so they
+// are decrypted and each read is audited. Erasure is lib/account.ts
+// (wipeLocalData), which clears every table and the encryption key.
+import type {
+  Account,
+  Appointment,
+  AuditEntry,
+  Bill,
+  BudgetCategory,
+  Consent,
+  Income,
+  Medication,
+  Note,
+  Reminder,
+  Routine,
+  Transaction,
+  UserSettings,
+} from "@otto/schemas";
 import {
+  appointmentRepository,
+  auditRepository,
   budgetCategoryRepository,
   consentRepository,
+  makeAccountRepository,
   makeBillRepository,
   makeIncomeRepository,
   makeMedicationRepository,
   makeTransactionRepository,
+  noteRepository,
   reminderRepository,
+  routineRepository,
+  settingsRepository,
   type RepositoryDeps,
 } from "./repositories";
+import { newUuid } from "../lib/id";
 
 export interface ExportBundle {
-  reminders: unknown[];
-  budgetCategories: unknown[];
-  bills: unknown[];
-  income: unknown[];
-  transactions: unknown[];
-  medications: unknown[];
+  settings: UserSettings | null;
+  routine: Routine | null;
+  accounts: Account[];
+  transactions: Transaction[];
+  budgetCategories: BudgetCategory[];
+  bills: Bill[];
+  income: Income[];
+  reminders: Reminder[];
+  notes: Note[];
+  appointments: Appointment[];
+  medications: Medication[];
   consents: Consent[];
+  auditLog: AuditEntry[];
 }
 
-/** Gather all of a user's data into a single bundle (decrypted, audited). */
+/** Gather all of a user's data into one bundle (decrypted; the export is audited). */
 export async function exportMyData(userId: string, deps: RepositoryDeps): Promise<ExportBundle> {
-  return {
-    reminders: await reminderRepository.list(userId),
+  const bundle: Omit<ExportBundle, "auditLog"> = {
+    settings: (await settingsRepository.get(userId)) ?? null,
+    routine: (await routineRepository.getForUser(userId)) ?? null,
+    accounts: await makeAccountRepository(deps).list(userId),
+    transactions: await makeTransactionRepository(deps).list(userId),
     budgetCategories: await budgetCategoryRepository.list(userId),
     bills: await makeBillRepository(deps).list(userId),
     income: await makeIncomeRepository(deps).list(userId),
-    transactions: await makeTransactionRepository(deps).list(userId),
+    reminders: await reminderRepository.list(userId),
+    notes: await noteRepository.list(userId),
+    appointments: await appointmentRepository.list(userId),
     medications: await makeMedicationRepository(deps).list(userId),
     consents: await consentRepository.list(userId),
   };
-}
-
-/**
- * Delete all of a user's data. Sensitive deletes are audited per-entity via the
- * repositories. This is a stub: it deletes what the current repositories expose
- * and is the hook for the full "right to erasure" flow (DPA).
- */
-export async function deleteMyData(userId: string, deps: RepositoryDeps): Promise<void> {
-  const billRepo = makeBillRepository(deps);
-  const incomeRepo = makeIncomeRepository(deps);
-  const txRepo = makeTransactionRepository(deps);
-  const medRepo = makeMedicationRepository(deps);
-
-  for (const bill of await billRepo.list(userId)) await billRepo.delete(userId, bill.id);
-  for (const inc of await incomeRepo.list(userId)) await incomeRepo.delete(userId, inc.id);
-  for (const tx of await txRepo.list(userId)) await txRepo.delete(userId, tx.id);
-  for (const med of await medRepo.list(userId)) await medRepo.delete(userId, med.id);
-  for (const rem of await reminderRepository.list(userId)) await reminderRepository.delete(rem.id);
-  for (const cat of await budgetCategoryRepository.list(userId))
-    await budgetCategoryRepository.delete(cat.id);
-  for (const con of await consentRepository.list(userId)) await consentRepository.delete(con.id);
+  await deps.writeAudit({
+    id: newUuid(),
+    userId,
+    entity: "all",
+    action: "export",
+    actor: "user",
+    at: new Date().toISOString(),
+    note: "Export my data",
+  });
+  // Read last so the log in the file includes this export.
+  return { ...bundle, auditLog: await auditRepository.list(userId) };
 }

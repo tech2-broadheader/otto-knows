@@ -22,7 +22,7 @@ development_status:
   1-1-monorepo-tooling-scaffold: done
   1-2-shared-zod-contracts: done
   1-3-local-store-sqlite-drizzle: done
-  1-4-consent-privacy-spine: in-progress   # consent UI + audit + persistent SecureStore key + real AES-256-GCM at rest (@noble/ciphers, authenticated, legacy-decrypt fallback) done; remaining: GATE-3 DPA consent/encryption review (process) + account deletion
+  1-4-consent-privacy-spine: in-progress   # consent UI + audit + persistent SecureStore key + real AES-256-GCM at rest (@noble/ciphers, authenticated, legacy-decrypt fallback) done; remaining: GATE-3 DPA consent/encryption review (process) + account deletion → Your data screen built (export + erase + delete account); GATE-3 remains
   epic-1-retrospective: optional
 
   epic-2: done
@@ -84,7 +84,7 @@ development_status:
   13-3-translation-ready-copy: backlog
   13-4-country-currency-onboarding: review # Onboarding region step (Philippines first) + Settings done; needs on-device check
   13-5-semi-monthly-pay-days: review                  # income form asks for the two days
-  13-6-regional-privacy: backlog               # GATE-6 per market
+  13-6-regional-privacy: in-progress           # AC2 done (Your data: JSON export, erase, delete account); AC1 + AC3 need GATE-6 legal review
   epic-13-retrospective: optional
 
 # BLOCKERS / GATES (clear before the related item -> ready-for-dev):

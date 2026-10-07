@@ -10,7 +10,7 @@
 # and any blocking gate/open-decision is cleared (see notes at bottom).
 
 generated: 06-14-2026
-last_updated: 06-15-2026  # M1 Claude Design pass IMPLEMENTED: OTTO design system (emerald palette, Bricolage/Jakarta/Space Mono, otter mascot) applied across all mobile screens + custom tab bar. Phases 1-3 built + designed. Remaining pre-launch: real auth/DB + entitlement, on-device run, live LLM validation, Google creds, real AES (GATE-3).
+last_updated: 10-07-2026  # Correct-course: added E11 Budgeting+ (next priority). Previously (06-15) — M1 Claude Design pass IMPLEMENTED: OTTO design system (emerald palette, Bricolage/Jakarta/Space Mono, otter mascot) applied across all mobile screens + custom tab bar. Phases 1-3 built + designed. Remaining pre-launch: real auth/DB + entitlement, on-device run, live LLM validation, Google creds, real AES (GATE-3).
 project: Otto (Personal Daily Assistant)
 project_key: OTTO
 tracking_system: file-system
@@ -42,7 +42,7 @@ development_status:
   epic-4-retrospective: optional
 
   # --- Phase 2-3: the paid brain (epic-level until detailed) ---
-  epic-5: in-progress                       # OD-2 resolved; real LLM proxy (claude-opus-4-8) brief + quick-add + tool-use proposals + mobile UI done. Remaining: real Supabase auth + cloud entitlement for true end-to-end (currently dev-bypass + local IS_PRO flag)
+  epic-5: in-progress                       # OD-2 resolved; real LLM proxy (claude-opus-5-5) brief + quick-add + tool-use proposals + mobile UI done. Remaining: real Supabase auth + cloud entitlement for true end-to-end (currently dev-bypass + local IS_PRO flag)
   epic-6: in-progress                       # routine optimizer (6.1, propose-and-confirm) + finance/health tips (6.2/6.3) done — proxy + mobile UI. Raw UI (design pass pending); needs live LLM validation
   epic-7: done                              # forecasts (med-refill, overspend), adaptive routine (7.1), deviation radar (7.2) — all pure + tested
 
@@ -54,6 +54,15 @@ development_status:
 
   # --- Phase 5: continuity & polish ---
   epic-10: backlog
+
+  # --- Budgeting+ (product-owner priority 2026-10-07; see sprint-change-proposal-2026-10-07.md) ---
+  epic-11: in-progress
+  11-1-versioned-local-migrations: in-progress
+  11-2-wallets-accounts: backlog                # needs Claude Design pass
+  11-3-income-transfer-transactions: backlog    # needs Claude Design pass
+  11-4-safe-to-spend: backlog                   # needs Claude Design pass
+  11-5-monthly-report: backlog                  # needs Claude Design pass
+  epic-11-retrospective: optional
 
 # BLOCKERS / GATES (clear before the related item -> ready-for-dev):
 #   GATE-1  Verify Google Play SMS policy   -> any FR-C5 SMS work

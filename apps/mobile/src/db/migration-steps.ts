@@ -1,0 +1,172 @@
+// The ordered list of on-device schema steps (ADR-004).
+//
+// RULES — read before editing:
+// - A shipped step is IMMUTABLE. Every schema change is a NEW step appended at the
+//   end with the next version number; never edit or reorder an existing one.
+// - Each step runs in one transaction with its user_version bump (migrations.ts).
+// - SQLite ALTER TABLE limits: ADD COLUMN with NOT NULL needs a DEFAULT; dropping
+//   or retyping a column needs a table rebuild (create new, copy, drop, rename).
+// - New tables must also be added to ALL_TABLE_NAMES so data wipe covers them.
+// PURE — no native imports, so Node tests can run every step against node:sqlite.
+import type { Migration } from "./migrations";
+
+/**
+ * Step 1 — baseline: the schema as it shipped before versioned migrations, kept
+ * verbatim. On a pre-migration install (tables exist, user_version 0) every
+ * statement is a no-op thanks to IF NOT EXISTS, so existing rows are untouched.
+ */
+const BASELINE: Migration = {
+  version: 1,
+  name: "baseline",
+  statements: [
+    `CREATE TABLE IF NOT EXISTS routine (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      mode TEXT NOT NULL DEFAULT 'fixed',
+      timezone TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS routine_anchors (
+      id TEXT PRIMARY KEY NOT NULL,
+      routine_id TEXT,
+      label TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      time TEXT NOT NULL,
+      recurrence TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS reminders (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      notes TEXT,
+      due_at TEXT,
+      anchor_id TEXT,
+      recurrence TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS medications (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      dosage TEXT,
+      times TEXT NOT NULL,
+      recurrence TEXT NOT NULL,
+      quantity_remaining INTEGER,
+      refill_reminder_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS bills (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      amount_minor TEXT NOT NULL,
+      amount_currency TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      recurrence TEXT NOT NULL,
+      is_autopay INTEGER NOT NULL DEFAULT 0,
+      is_paid INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS income (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      amount_minor TEXT NOT NULL,
+      amount_currency TEXT NOT NULL,
+      cadence TEXT NOT NULL,
+      next_pay_date TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS transactions (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      amount_minor TEXT NOT NULL,
+      amount_currency TEXT NOT NULL,
+      category_id TEXT,
+      description TEXT,
+      occurred_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS budget_categories (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      monthly_limit_amount_minor INTEGER,
+      monthly_limit_currency TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS calendar_events (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      external_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      start_at TEXT NOT NULL,
+      end_at TEXT NOT NULL,
+      location TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `CREATE TABLE IF NOT EXISTS context_items (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      ref_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      title TEXT NOT NULL,
+      at TEXT NOT NULL,
+      meta TEXT
+    );`,
+    `CREATE TABLE IF NOT EXISTS consents (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      granted INTEGER NOT NULL,
+      purpose TEXT NOT NULL,
+      policy_version TEXT NOT NULL,
+      granted_at TEXT,
+      revoked_at TEXT
+    );`,
+    `CREATE TABLE IF NOT EXISTS audit_entries (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      entity TEXT NOT NULL,
+      entity_id TEXT,
+      action TEXT NOT NULL,
+      actor TEXT NOT NULL,
+      at TEXT NOT NULL,
+      note TEXT
+    );`,
+  ],
+};
+
+export const MIGRATIONS: readonly Migration[] = [BASELINE];
+
+/** Derived from the list — never hand-maintained. */
+export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;
+
+/** Every table the migrations create — used by wipeAllData() (DPA erasure). */
+export const ALL_TABLE_NAMES: readonly string[] = [
+  "routine",
+  "routine_anchors",
+  "reminders",
+  "medications",
+  "bills",
+  "income",
+  "transactions",
+  "budget_categories",
+  "calendar_events",
+  "context_items",
+  "consents",
+  "audit_entries",
+];

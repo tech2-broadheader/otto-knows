@@ -29,7 +29,8 @@ import { createRepositoryDeps, initDataLayer, routineRepository } from "./src/da
 import { configureNotifications } from "./src/notifications";
 import { rescheduleDay } from "./src/lib/reschedule";
 import { LOCAL_USER_ID } from "./src/lib/constants";
-import { LoadingState } from "./src/components/AsyncBoundary";
+import { ErrorState, LoadingState } from "./src/components/AsyncBoundary";
+import { describeMigrationError, type MigrationError } from "./src/db/migrations";
 import { OttoTabBar } from "./src/design/kit";
 import { AuthProvider } from "./src/auth/AuthProvider";
 import { AppResetProvider } from "./src/lib/app-reset";
@@ -95,7 +96,13 @@ function MainTabs(): React.JSX.Element {
 export default function App(): React.JSX.Element {
   // "booting" while we init the store + decide first-run; then onboarding | main.
   // Flow: booting → onboarding (first run) → auth (sign-up panel, skippable) → main.
-  const [phase, setPhase] = useState<"booting" | "onboarding" | "auth" | "main">("booting");
+  const [phase, setPhase] = useState<"booting" | "db-error" | "onboarding" | "auth" | "main">(
+    "booting",
+  );
+  // Set when the on-device schema upgrade fails (Story 11.1); drives the error screen.
+  const [dbError, setDbError] = useState<MigrationError | null>(null);
+  // Bumped by "Try again" on the error screen to re-run boot.
+  const [bootAttempt, setBootAttempt] = useState(0);
 
   // OTTO type system: Bricolage Grotesque (display), Plus Jakarta Sans (body),
   // Space Mono (eyebrows/tabular). Gate render until loaded so text never flashes
@@ -115,7 +122,16 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     let cancelled = false;
     async function boot(): Promise<void> {
-      initDataLayer();
+      const migration = initDataLayer();
+      if (!migration.ok) {
+        // Stop here: repositories, notifications and rescheduling all read the
+        // store. Never fall through to onboarding — that would hide a user's data.
+        if (!cancelled) {
+          setDbError(migration.error);
+          setPhase("db-error");
+        }
+        return;
+      }
       configureNotifications();
       // First run = no routine set up yet → start with onboarding.
       let hasRoutine = false;
@@ -135,7 +151,14 @@ export default function App(): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [bootAttempt]);
+
+  const dbErrorCopy = dbError ? describeMigrationError(dbError) : null;
+  const retryBoot = (): void => {
+    setDbError(null);
+    setPhase("booting");
+    setBootAttempt((n) => n + 1);
+  };
 
   return (
     <SafeAreaProvider>
@@ -144,6 +167,11 @@ export default function App(): React.JSX.Element {
           <NavigationContainer>
           {phase === "booting" || !fontsLoaded ? (
             <LoadingState label="Starting Otto" />
+          ) : phase === "db-error" && dbErrorCopy ? (
+            <ErrorState
+              message={dbErrorCopy.message}
+              onRetry={dbErrorCopy.canRetry ? retryBoot : undefined}
+            />
           ) : (
             <RootStack.Navigator screenOptions={{ headerShown: false }}>
               {phase === "onboarding" ? (

@@ -2,7 +2,8 @@
 // provider from expo-crypto, and exposes ready-to-use repositories. This module
 // pulls in native modules (db client + expo-crypto) and is for app runtime use,
 // not for Node tests.
-import { ensureSchema } from "../db/client";
+import { migrateDatabase } from "../db/client";
+import type { MigrationResult } from "../db/migrations";
 import { createEncryptionProvider } from "../security/encryption";
 import { createSecureStoreKeyStore, defaultCryptoPrimitives } from "../security/crypto-primitives";
 import { consentRepository, persistAuditEntry, type RepositoryDeps } from "./repositories";
@@ -23,7 +24,10 @@ export function createRepositoryDeps(): RepositoryDeps {
   };
 }
 
-/** Call once at app boot before any repository use. */
-export function initDataLayer(): void {
-  ensureSchema();
+/**
+ * Call once at app boot before any repository use. Repositories must not be used
+ * unless the result is ok — the schema may be missing or out of date.
+ */
+export function initDataLayer(): MigrationResult {
+  return migrateDatabase();
 }

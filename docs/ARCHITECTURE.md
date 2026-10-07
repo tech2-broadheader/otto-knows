@@ -114,6 +114,7 @@ Overview (the contract is the Zod schema, not this table):
 | ADR-004 | Derived wallet balances + versioned on-device migrations | Accepted | 2026-10-07 |
 | ADR-005 | Alarms via an in-repo Expo module (AlarmManager + full-screen notification), SCHEDULE_EXACT_ALARM path — see spike 12.2 | Proposed (awaiting owner) | 2026-10-08 |
 | ADR-006 | Billing: RevenueCat verifies store receipts; server trusts only its webhook | Proposed | 2026-10-08 |
+| ADR-007 | One home currency per user; locale/timezone-driven formatting via Intl; translation-ready string catalog | Accepted | 2026-10-08 |
 
 ### ADR-001 — React Native + Expo + Next.js, unified by TypeScript + Zod
 - **Context:** The spec (§13) suggests Flutter (Android-first mobile). The project-starter's `CLAUDE.md` defaults to a Next.js-only web stack. The owner asked to standardize on React / React Native to keep web and mobile "inline" (one ecosystem), and delegated the final call.
@@ -139,7 +140,13 @@ Overview (the contract is the Zod schema, not this table):
 - **Status:** Accepted.
 - **Consequences:** No balance drift or double-counting on edit/delete. Small compute cost (decrypt + sum on device), acceptable at personal-finance volumes; revisit with cached monthly snapshots if needed. Every future local schema change ships as a new migration step with an upgrade-path test.
 
+### ADR-007 — Home currency, locale and timezone
+- **Context:** Otto launches in PH, Southeast Asia, US/Canada and UK/Europe (2026-10-08). The code assumed PHP, `en-PH` and Asia/Manila.
+- **Decision:** Each user has one home currency (ISO 4217 from a supported set) plus a locale and IANA timezone, stored on device. Money stays integer minor units in that currency (exponent per currency, e.g. VND 0). All display and input go through one formatter module using `Intl`; no currency symbol or locale is hard-coded. UI copy lives in a typed string catalog (English first). Multi-currency wallets and exchange rates are out of scope.
+- **Status:** Accepted.
+- **Consequences:** No exchange-rate service or cost; totals stay exact. Changing the home currency after money data exists is blocked (no conversion). Each market launch needs a privacy/legal review (GATE-6).
+
 ## 13. Constraints, risks & open questions
-- **Constraints:** PH DPA across finance/health/routine; Google Play SMS policy; platform health-data rules; LLM cost per paid user.
+- **Constraints:** privacy law per launch market (PH DPA, GDPR/UK GDPR, CCPA/CPRA, PIPEDA, PDPA, UU PDP) across finance/health/routine; Google Play SMS policy; platform health-data rules; LLM cost per paid user.
 - **Risks & mitigations:** SMS gate → manual-entry fallback (ADR-003); health-data rules → gated module + explicit consent; optimizer overreach → propose-and-confirm only; tone drift → non-prescriptive tip guardrails; LLM cost → free-tier quotas + Pro pricing.
 - **Open questions:** OD-1 platform confirm · OD-2 conversational depth of v1 · OD-3 finance capture method · OD-4 product name/brand · OD-5 pricing validation (see `docs/scope.md §13`).

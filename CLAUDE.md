@@ -5,7 +5,8 @@
 
 ## 0. PROJECT CONTEXT
 - **Project:** Otto (working name — see brand note below) · **Client:** Broadheader (internal product)
-- **Tier:** 3 — complex / regulated (cross-domain finance + health data, PH Data Privacy Act applies)
+- **Tier:** 3 — complex / regulated (cross-domain finance + health data; privacy law of every launch market applies — PH DPA, GDPR/UK GDPR, CCPA/CPRA, PIPEDA, PDPA, UU PDP; see ADR-007 / GATE-6)
+- **Markets:** Philippines, Southeast Asia, US / Canada, UK / Europe — one home currency per user, English at launch (translation-ready)
 - **BMAD path:** Greenfield · Full Method
 - **Goal (one line):** A proactive, cross-domain personal daily assistant that reads calendar, reminders, events, finance and health *through the lens of the user's daily routine* and tells them what matters today.
 - **Scope doc:** `docs/scope.md` → feeds the Analyst/PM

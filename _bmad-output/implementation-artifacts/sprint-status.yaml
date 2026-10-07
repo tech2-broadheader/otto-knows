@@ -77,10 +77,22 @@ development_status:
   12-5-meetings-invites: backlog               # GATE-5
   epic-12-retrospective: optional
 
+  # --- Internationalization (2026-10-08; see sprint-change-proposal-2026-10-08-international.md) ---
+  epic-13: in-progress
+  13-1-home-currency-locale: in-progress
+  13-2-user-timezone: backlog
+  13-3-translation-ready-copy: backlog
+  13-4-country-currency-onboarding: backlog
+  13-5-semi-monthly-pay-days: backlog
+  13-6-regional-privacy: backlog               # GATE-6 per market
+  epic-13-retrospective: optional
+
 # BLOCKERS / GATES (clear before the related item -> ready-for-dev):
 #   GATE-1  Verify Google Play SMS policy   -> any FR-C5 SMS work
 #   GATE-2  Verify Health Connect/HealthKit -> 8-1
 #   GATE-3  DPA consent + encryption review -> 1-4
 #   GATE-4  Verify Play exact-alarm / full-screen-intent policy -> 12-3
 #   GATE-5  Google OAuth verification (calendar.events) -> 12-5
+#   GATE-6  Privacy/legal review per launch market -> 13-6
+# DESIGN: E11/E12 screens approved 2026-10-08 (canvas "Otto — Budgeting+ & Daily Tasks screens") — UI tasks unblocked.
 #   OD-1 platform · OD-2 conv depth (E5) · OD-3 finance capture (FR-C5) · OD-4 name · OD-5 pricing (E9)

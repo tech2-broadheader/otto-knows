@@ -66,3 +66,8 @@ Approved Claude Design output is required before the UI work in stories 11.2–1
 3. **Wallets** — list, add/edit (type, provider label, opening balance), archive; credit card shows "owed" instead of a balance; free-cap upgrade prompt at 3.
 4. **Monthly report** — month switcher, income / spending / net summary, category bars with change vs last month, first-month "no comparison yet" state.
 - **Tone:** negative safe-to-spend is a heads-up ("Bills before payday exceed what's on hand by ₱X"), never a scold.
+
+## 8. Design approval & international notes (2026-10-08)
+- The E11/E12 screens were designed on the canvas "Otto — Budgeting+ & Daily Tasks screens" and **approved by the product owner on 2026-10-08**: Money home, safe-to-spend states, Add transaction, Wallets, Add wallet, Monthly report, Notes (inside the Reminders tab: Reminders / Notes / Appointments), Note editor, New appointment, Today additions.
+- **₱ in the designs is the example locale.** Implemented screens take the symbol, separators and date format from the user's home currency and locale (ADR-007); no screen hard-codes ₱.
+- Onboarding gains a **Country & currency** step (13.4); Settings shows and edits it.

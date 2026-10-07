@@ -87,8 +87,16 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **FR-D4** Meetings: Google Calendar invites to attendees — confirmed. [Free, needs Google] (GATE-5)
 - **FR-D5** Quick-add understands notes, alarms, appointments. [Free quota / Pro]
 
+### 5.11 International (added 2026-10-08)
+- **FR-I1** One home currency per user (ISO 4217, supported set), chosen at setup; all money uses it. [Free]
+- **FR-I2** Locale-aware money, date and time formatting and amount entry. [Free]
+- **FR-I3** The user's own timezone everywhere, including the LLM brain. [Free/Pro]
+- **FR-I4** Translation-ready copy (English at launch). [Free]
+- **FR-I5** Semi-monthly pay uses the user's two pay days. [Free]
+- **FR-I6** Per-market privacy compliance: data export + erasure, region-specific policy/consent copy. [Free]
+
 ## 6. Non-functional requirements
-- **NFR-1 Privacy (DPA):** granular per-source consent before connecting; explicit disclosure; export & delete; no ad use of sensitive data.
+- **NFR-1 Privacy (per market — PH DPA, GDPR/UK GDPR, CCPA/CPRA, PIPEDA, PDPA, UU PDP):** granular per-source consent before connecting; explicit disclosure; export & delete; no ad use of sensitive data.
 - **NFR-2 Security:** encryption at rest for finance/health; server-side secrets; LLM keys never on device; rate-limited LLM routes; **audit logging on sensitive-data access (Tier 3)**.
 - **NFR-3 Trust/safety:** all write-back is propose-and-confirm; tips non-prescriptive; tone never punitive.
 - **NFR-4 Cost:** free tier runs locally (zero backend marginal cost); free NL quota enforced; Pro priced to cover LLM spend.
@@ -103,6 +111,7 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **GATE-3** DPA consent + encryption design reviewed before finance/health data is stored.
 - **GATE-4** Verify current Google Play exact-alarm / full-screen-intent policy before FR-D2 (story 12.3).
 - **GATE-5** Google OAuth verification for the sensitive calendar.events scope before FR-D4 ships.
+- **GATE-6** Privacy/legal review per market before launching there (FR-I6).
 
 ## 8. Epics (see `epics-and-stories.md`)
 - **E1** Foundation & data model (monorepo, shared Zod contracts, local store, consent).
@@ -117,6 +126,7 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **E10** Continuity: backup, sync, export, widgets, themes [Pro].
 - **E11** Budgeting+: wallets, typed transactions, safe-to-spend, monthly report [Free] — current priority.
 - **E12** Daily tasks: notes, alarms, appointments, meetings [Free] — after E11 (see `sprint-change-proposal-2026-10-08.md`).
+- **E13** Internationalization: home currency, locale, timezone, translation-ready copy, regional privacy — launch markets PH, SEA, US/CA, UK/EU (see `sprint-change-proposal-2026-10-08-international.md`).
 
 ## 9. Release mapping
 M3 (v0.5.0) targets E1–E4 (Phase 1 free organizer core). E5–E7 → Phase 2–3. E8 → Phase 4. E10 → Phase 5. E9 spans (gates Pro features). See `PROJECT_RECORD.md §2`.

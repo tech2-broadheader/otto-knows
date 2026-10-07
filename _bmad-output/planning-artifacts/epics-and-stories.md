@@ -237,6 +237,39 @@ Goal: the small things in a day — notes, alarms, appointments, meetings — ne
 
 ---
 
+## E13 — Internationalization (added 2026-10-08)
+Goal: Otto works for people outside the Philippines — their currency, formats, timezone and privacy law.
+
+### Story 13.1 — Home currency & locale foundation
+- **AC1** currencySchema = supported ISO 4217 set (PHP, SGD, MYR, IDR, THB, VND, USD, CAD, GBP, EUR, CHF, SEK, NOK, DKK, PLN, CZK); each with its minor-unit exponent (VND 0, others 2).
+- **AC2** UserSettings (home currency, locale, timezone) stored on device; defaults from the device locale, user-changeable; existing installs default to PHP / en-PH / Asia/Manila (no data change).
+- **AC3** One formatter module: formatMoney(minor, currency, locale), formatDate/Time(…, locale, tz) via Intl; parseMoneyInput(text, currency, locale) accepts the locale's decimal/grouping separators.
+- **AC4** No hard-coded ₱ / en-PH remains in shared code; core nudge/briefing copy formats with the user's settings.
+- **AC5** Tests across PHP, USD, EUR (de-DE comma decimals), GBP, VND (0 decimals), IDR.
+
+### Story 13.2 — User timezone end-to-end
+- **AC1** Mobile sends the user's IANA timezone + current UTC offset with LLM requests.
+- **AC2** Prompts use the user's timezone (no hard-coded Manila); proposals keep that offset.
+
+### Story 13.3 — Translation-ready copy
+- **AC1** All user-facing strings live in a typed string catalog (en) with interpolation; screens use t(key).
+- **AC2** Adding a language = adding a catalog file; missing keys fall back to English; a test fails on keys present in a translation but not in English.
+- **AC3** No new dependency (small in-repo helper) unless a later language needs plural rules beyond English.
+
+### Story 13.4 — Country & currency onboarding
+- **AC1** Onboarding step: country (sets suggested currency/locale), confirm currency; editable in Settings.
+- **AC2** Changing currency later is allowed only while no money data exists, else explained (no conversion).
+
+### Story 13.5 — Semi-monthly pay days
+- **AC1** Income for semi-monthly cadence stores two pay days (1–31, end-of-month allowed); payday logic uses them; existing PH incomes keep their inferred pair.
+
+### Story 13.6 — Regional privacy compliance (GATE-6)
+- **AC1** Per-market legal review recorded before launch in that market.
+- **AC2** Data export (JSON) and account/data erasure available in Settings (completes 1.4 AC4).
+- **AC3** Privacy policy + consent copy versioned per region; lawful-basis wording for GDPR markets.
+
+---
+
 ## Sequencing & gates
 1. **E1 → E2 → E3 → E4** = Phase 1 free organizer core (M3 / v0.5.0).
 2. Clear **GATE-3** (DPA consent/encryption review) during E1.4 before storing real finance/health data.
@@ -245,3 +278,4 @@ Goal: the small things in a day — notes, alarms, appointments, meetings — ne
 5. E5–E7 = Phase 2–3 (the paid brain). E8 = Phase 4. E10 = Phase 5. E9 spans.
 6. **E11 is next** (2026-10-07): 11.1 → 11.2 → 11.3 → (11.4 ∥ 11.5). The Claude Design pass for 11.2–11.5 runs in parallel with 11.1. GATE-3 still applies (more finance data stored).
 7. **After E11** (2026-10-08): 3.4 → E12 (12.1 first; 12.3 needs GATE-4, 12.5 needs GATE-5) → E9 billing (needs OD-5 + store accounts).
+8. **International** (2026-10-08): 13.1 + 13.5 before building the E11/E12 screens; 13.6 (GATE-6) before each market launch.

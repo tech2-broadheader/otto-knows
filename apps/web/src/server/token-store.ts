@@ -101,6 +101,11 @@ const AUDIT_ENTITY = "connector_token";
 /** Bump when TOKEN_ENCRYPTION_KEY is rotated; rows keep the version they were sealed with. */
 const CURRENT_KEY_VERSION = 1;
 
+/** AAD binding a sealed token to its owner and provider. */
+function aadFor(userId: string, provider: string): string {
+  return `${userId}:${provider}`;
+}
+
 /** Encrypts on write, decrypts on read, audit-logs every access, fails closed. */
 export class EncryptedTokenStore implements TokenStore {
   constructor(
@@ -114,7 +119,12 @@ export class EncryptedTokenStore implements TokenStore {
     if (!row) return undefined;
     await this.audit.record({ userId, entity: AUDIT_ENTITY, action: "read" });
     try {
-      const parsed = storedTokenSchema.safeParse(decryptJson(row, this.key));
+      // Rows sealed with another key version can't be read with this key; treat
+      // them as not connected until key rotation support exists.
+      if (row.keyVersion !== CURRENT_KEY_VERSION) return undefined;
+      const parsed = storedTokenSchema.safeParse(
+        decryptJson(row, this.key, aadFor(userId, provider)),
+      );
       // A row we can't decrypt or that isn't a token bundle reads as "not
       // connected": the user reconnects rather than us using garbage credentials.
       return parsed.success ? parsed.data : undefined;
@@ -124,7 +134,12 @@ export class EncryptedTokenStore implements TokenStore {
   }
 
   async set(userId: string, provider: TokenProvider, token: StoredToken): Promise<void> {
-    const sealed = encryptJson(storedTokenSchema.parse(token), this.key, CURRENT_KEY_VERSION);
+    const sealed = encryptJson(
+      storedTokenSchema.parse(token),
+      this.key,
+      CURRENT_KEY_VERSION,
+      aadFor(userId, provider),
+    );
     await this.rows.upsert({ userId, provider, ...sealed, expiresAt: new Date(token.expiresAt) });
     await this.audit.record({ userId, entity: AUDIT_ENTITY, action: "write" });
   }
@@ -150,15 +165,21 @@ export function selectTokenStoreKind(env: {
   return env.production ? "unconfigured" : "memory";
 }
 
-let cached: TokenStore | null | undefined;
+// The PROMISE is cached so concurrent first requests share one store (two
+// in-memory stores would silently lose tokens written to the other one).
+let cached: Promise<TokenStore | null> | undefined;
 
 /**
  * The process-wide token store, or null when production lacks a database or
  * TOKEN_ENCRYPTION_KEY (routes then answer "not configured"). Shared so a token
  * stored by the OAuth callback is visible to the calendar route.
  */
-export async function getTokenStore(): Promise<TokenStore | null> {
-  if (cached !== undefined) return cached;
+export function getTokenStore(): Promise<TokenStore | null> {
+  cached ??= createTokenStore();
+  return cached;
+}
+
+async function createTokenStore(): Promise<TokenStore | null> {
   const { isDbConfigured } = await import("@/server/db/client");
   const rawKey = process.env.TOKEN_ENCRYPTION_KEY;
   const kind = selectTokenStoreKind({
@@ -168,13 +189,11 @@ export async function getTokenStore(): Promise<TokenStore | null> {
   });
   if (kind === "encrypted" && rawKey) {
     const { DbAuditSink, DbTokenRowStore } = await import("@/server/token-store-db");
-    cached = new EncryptedTokenStore(
+    return new EncryptedTokenStore(
       new DbTokenRowStore(),
       parseEncryptionKey(rawKey),
       new DbAuditSink(),
     );
-  } else {
-    cached = kind === "memory" ? new InMemoryTokenStore() : null;
   }
-  return cached;
+  return kind === "memory" ? new InMemoryTokenStore() : null;
 }

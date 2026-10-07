@@ -9,6 +9,8 @@ import type { Income } from "@otto/schemas";
 /** PH-standard semi-monthly paydays: the 15th and the 30th (month end if shorter). */
 const SEMI_MONTHLY_FIRST_DAY = 15;
 const SEMI_MONTHLY_SECOND_DAY = 30;
+/** Days between the two semi-monthly paydays when the user's pair isn't 15/30. */
+const SEMI_MONTHLY_GAP = 15;
 
 function toUtc(date: string): Date {
   const [y, m, d] = date.split("-").map(Number);
@@ -29,6 +31,22 @@ function dayInMonth(date: Date, offset: number, day: number): Date {
   const monthIndex = date.getUTCMonth() + offset;
   const last = daysInMonth(year, monthIndex);
   return new Date(Date.UTC(year, monthIndex, Math.min(day, last)));
+}
+
+/**
+ * The two days of the month a semi-monthly income pays on, inferred from the
+ * stored date: a month-end date (or the 30th/31st) means the 15th & 30th; any
+ * other day d pairs with d ± 15 (e.g. the 10th → 10th & 25th, the 20th → 5th & 20th).
+ */
+function semiMonthlyDays(seed: Date): [number, number] {
+  const day = seed.getUTCDate();
+  const isMonthEnd = day === daysInMonth(seed.getUTCFullYear(), seed.getUTCMonth());
+  if (isMonthEnd || day >= SEMI_MONTHLY_SECOND_DAY || day === SEMI_MONTHLY_FIRST_DAY) {
+    return [SEMI_MONTHLY_FIRST_DAY, SEMI_MONTHLY_SECOND_DAY];
+  }
+  return day < SEMI_MONTHLY_FIRST_DAY
+    ? [day, day + SEMI_MONTHLY_GAP]
+    : [day - SEMI_MONTHLY_GAP, day];
 }
 
 function addDays(date: Date, days: number): Date {
@@ -60,8 +78,9 @@ export function effectiveNextPayDate(income: Income, asOfDate: string): string |
       }
     }
     case "semi-monthly": {
+      const days = semiMonthlyDays(seed);
       for (let offset = 0; ; offset += 1) {
-        for (const day of [SEMI_MONTHLY_FIRST_DAY, SEMI_MONTHLY_SECOND_DAY]) {
+        for (const day of days) {
           const candidate = dayInMonth(asOf, offset, day);
           if (candidate >= asOf) return fromUtc(candidate);
         }

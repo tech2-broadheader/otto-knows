@@ -23,7 +23,7 @@ export const reminderDraftSchema = z.object({
 });
 
 export const expenseDraftSchema = z.object({
-  amount: moneySchema,
+  amount: moneySchema.refine((m) => m.amountMinor > 0, { message: "amount must be positive" }),
   /** Optional wallet; when absent the app picks the last-used wallet, else Cash. */
   accountId: idSchema.optional(),
   categoryId: idSchema.optional(),

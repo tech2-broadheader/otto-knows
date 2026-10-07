@@ -29,9 +29,20 @@ export function parseEncryptionKey(base64: string): Buffer {
   return key;
 }
 
-export function encryptJson(value: unknown, key: Buffer, keyVersion: number): SealedJson {
+/**
+ * `context` is authenticated but not encrypted (GCM AAD): decryption fails
+ * unless the same context is supplied, which binds a ciphertext to its owner so
+ * it can't be copied into another user's row and still decrypt.
+ */
+export function encryptJson(
+  value: unknown,
+  key: Buffer,
+  keyVersion: number,
+  context = "",
+): SealedJson {
   const iv = randomBytes(IV_BYTES);
   const cipher = createCipheriv(ALGORITHM, key, iv);
+  cipher.setAAD(Buffer.from(context, "utf8"));
   const body = Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]);
   return {
     ciphertext: Buffer.concat([body, cipher.getAuthTag()]).toString("base64"),
@@ -40,11 +51,12 @@ export function encryptJson(value: unknown, key: Buffer, keyVersion: number): Se
   };
 }
 
-/** @throws when the data was tampered with or the key is wrong. */
-export function decryptJson(sealed: SealedJson, key: Buffer): unknown {
+/** @throws when the data was tampered with, the key is wrong, or the context differs. */
+export function decryptJson(sealed: SealedJson, key: Buffer, context = ""): unknown {
   const bytes = Buffer.from(sealed.ciphertext, "base64");
   if (bytes.length <= TAG_BYTES) throw new Error("Sealed value is too short.");
   const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(sealed.iv, "base64"));
+  decipher.setAAD(Buffer.from(context, "utf8"));
   decipher.setAuthTag(bytes.subarray(bytes.length - TAG_BYTES));
   const plain = Buffer.concat([
     decipher.update(bytes.subarray(0, bytes.length - TAG_BYTES)),

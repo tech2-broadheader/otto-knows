@@ -67,8 +67,11 @@ export async function applyProposal(
     case "log_expense": {
       const userId = ctx.userId ?? LOCAL_USER_ID;
       const txRepo = makeTransactionRepository(deps);
+      const accountRepo = makeAccountRepository(deps);
+      // Guarantees an active wallet exists, so the default below is never archived.
+      await accountRepo.ensureDefault(userId);
       const [accounts, transactions] = await Promise.all([
-        makeAccountRepository(deps).list(userId),
+        accountRepo.list(userId),
         txRepo.list(userId),
       ]);
       // The LLM must never pick an arbitrary wallet id: keep the draft's wallet

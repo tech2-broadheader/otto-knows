@@ -90,6 +90,15 @@ describe("EncryptedTokenStore", () => {
     expect(await store.get(USER, "google")).toBeUndefined();
   });
 
+  it("refuses a token row copied from another user", async () => {
+    const { rows, store } = setup();
+    const OTHER = "00000000-0000-4000-8000-000000000002";
+    await store.set(USER, "google", TOKEN);
+    const stolen = rows.rows.get(`google:${USER}`)!;
+    rows.rows.set(`google:${OTHER}`, { ...stolen, userId: OTHER });
+    expect(await store.get(OTHER, "google")).toBeUndefined();
+  });
+
   it("audit-logs every access without any token material", async () => {
     const { audit, store } = setup();
     await store.set(USER, "google", TOKEN);

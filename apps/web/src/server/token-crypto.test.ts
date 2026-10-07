@@ -45,6 +45,12 @@ describe("encryptJson / decryptJson", () => {
     expect(() => decryptJson({ ...sealed, ciphertext: bytes.toString("base64") }, KEY)).toThrow();
   });
 
+  it("binds the ciphertext to its context (owner) via AAD", () => {
+    const sealed = encryptJson(SECRET, KEY, 1, "user-a:google");
+    expect(decryptJson(sealed, KEY, "user-a:google")).toEqual(SECRET);
+    expect(() => decryptJson(sealed, KEY, "user-b:google")).toThrow();
+  });
+
   it("fails closed with the wrong key", () => {
     expect(() => decryptJson(encryptJson(SECRET, KEY, 1), OTHER_KEY)).toThrow();
   });

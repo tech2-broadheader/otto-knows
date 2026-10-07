@@ -6,6 +6,7 @@ import {
   monthlyReportSchema,
   nudgeKindSchema,
   safeToSpendSchema,
+  storedTransactionSchema,
   transactionSchema,
 } from "./index";
 
@@ -174,5 +175,41 @@ describe("monthlyReportSchema", () => {
   it("accepts a report and rejects a malformed month", () => {
     expect(monthlyReportSchema.safeParse(report).success).toBe(true);
     expect(monthlyReportSchema.safeParse({ ...report, month: "Oct 2026" }).success).toBe(false);
+  });
+});
+
+describe("stored vs new transactions (review fix 2026-10-08)", () => {
+  const legacyZero = {
+    id: UUID,
+    userId: UUID,
+    type: "expense",
+    amount: { amountMinor: 0, currency: "PHP" },
+    accountId: ACCOUNT_ID,
+    occurredAt: ISO,
+    createdAt: ISO,
+    updatedAt: ISO,
+  };
+
+  it("still reads a legacy ₱0 row saved before amounts had to be positive", () => {
+    expect(storedTransactionSchema.safeParse(legacyZero).success).toBe(true);
+  });
+
+  it("rejects ₱0 for anything newly written", () => {
+    expect(transactionSchema.safeParse(legacyZero).success).toBe(false);
+  });
+
+  it("keeps the transfer rules on stored rows too", () => {
+    expect(storedTransactionSchema.safeParse({ ...legacyZero, type: "transfer" }).success).toBe(
+      false,
+    );
+  });
+
+  it("rejects a quick-add expense draft of ₱0 or less", () => {
+    const draft = { amount: { amountMinor: 0, currency: "PHP" }, occurredAt: ISO };
+    expect(expenseDraftSchema.safeParse(draft).success).toBe(false);
+    expect(
+      expenseDraftSchema.safeParse({ ...draft, amount: { amountMinor: -5, currency: "PHP" } })
+        .success,
+    ).toBe(false);
   });
 });

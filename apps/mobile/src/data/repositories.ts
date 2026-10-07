@@ -9,7 +9,7 @@
 // This module imports the db client (native expo-sqlite) and so is NOT covered
 // by the Node unit tests; the logic it composes (mappers, encryption core,
 // consent + audit decisions) is pure and tested in isolation.
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import {
   accountSchema,
   auditEntrySchema,
@@ -24,6 +24,7 @@ import {
   reminderSchema,
   routineSchema,
   routineAnchorSchema,
+  storedTransactionSchema,
   transactionSchema,
   type Account,
   type Bill,
@@ -552,7 +553,9 @@ export function makeTransactionRepository(deps: RepositoryDeps) {
       const openedAmount = await deps.encryption.decrypt(row.amountMinor);
       const openedDescription =
         row.description === null ? null : await deps.encryption.decrypt(row.description);
-      return transactionSchema.parse(transactionFromRow(row, openedAmount, openedDescription));
+      return storedTransactionSchema.parse(
+        transactionFromRow(row, openedAmount, openedDescription),
+      );
     },
     async list(userId: string): Promise<Transaction[]> {
       const rows = getDatabase()
@@ -566,7 +569,9 @@ export function makeTransactionRepository(deps: RepositoryDeps) {
         const openedAmount = await deps.encryption.decrypt(row.amountMinor);
         const openedDescription =
           row.description === null ? null : await deps.encryption.decrypt(row.description);
-        out.push(transactionSchema.parse(transactionFromRow(row, openedAmount, openedDescription)));
+        out.push(
+          storedTransactionSchema.parse(transactionFromRow(row, openedAmount, openedDescription)),
+        );
       }
       return out;
     },
@@ -667,30 +672,43 @@ export function makeAccountRepository(deps: RepositoryDeps) {
       await audit(entity.userId, entity.id, "write");
       return entity;
     },
-    /** Refuses while any transaction still points at the wallet — archive it instead. */
+    /**
+     * Refuses while any transaction touches the wallet — as source OR transfer
+     * destination — since deleting it would orphan that history and skew other
+     * wallets' balances. Archive it instead.
+     */
     async delete(userId: string, id: string): Promise<AccountDeleteResult> {
       const referencing = getDatabase()
         .select({ id: tables.transactions.id })
         .from(tables.transactions)
-        .where(eq(tables.transactions.accountId, id))
+        .where(
+          and(
+            eq(tables.transactions.userId, userId),
+            or(eq(tables.transactions.accountId, id), eq(tables.transactions.toAccountId, id)),
+          ),
+        )
         .get();
       if (referencing) return { ok: false, reason: "has-transactions" };
-      getDatabase().delete(tables.accounts).where(eq(tables.accounts.id, id)).run();
+      getDatabase()
+        .delete(tables.accounts)
+        .where(and(eq(tables.accounts.id, id), eq(tables.accounts.userId, userId)))
+        .run();
       await audit(userId, id, "delete");
       return { ok: true };
     },
     /**
-     * Make sure the user has at least one wallet (a default Cash). Idempotent.
-     * Migration step 2 creates Cash only once; after a data wipe it must be
-     * recreated here. The fixed id is reused when free so it matches the one
-     * the migration assigns, otherwise a fresh id avoids a primary-key clash.
+     * Make sure the user has at least one ACTIVE wallet (a default Cash).
+     * Idempotent. Migration step 2 creates Cash only once; after a data wipe, or
+     * if every wallet was archived, it is (re)created here so new spending never
+     * lands in an archived wallet that totals ignore. The fixed id is reused when
+     * free so it matches the migration's, otherwise a fresh id avoids a clash.
      */
     async ensureDefault(userId: string): Promise<void> {
       const db = getDatabase();
       const existing = db
         .select({ id: tables.accounts.id })
         .from(tables.accounts)
-        .where(eq(tables.accounts.userId, userId))
+        .where(and(eq(tables.accounts.userId, userId), isNull(tables.accounts.archivedAt)))
         .get();
       if (existing) return;
       const defaultIdTaken = db

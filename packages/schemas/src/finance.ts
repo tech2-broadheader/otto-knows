@@ -65,14 +65,18 @@ export type TransactionType = z.infer<typeof transactionTypeSchema>;
  * between two wallets (transfer — e.g. bank → GCash, or paying a credit card).
  * The amount is always positive; `type` decides the direction.
  */
-export const transactionSchema = z
+/**
+ * Shape + wallet rules for a transaction AS STORED. Amounts are not required to
+ * be positive here: installs from before story 11.3 may hold ₱0 rows, and reads
+ * must not fail on them. Everything newly written goes through
+ * `transactionSchema`, which adds the positive-amount rule.
+ */
+export const storedTransactionSchema = z
   .object({
     id: idSchema,
     userId: idSchema,
     type: transactionTypeSchema,
-    amount: moneySchema.refine((m) => m.amountMinor > 0, {
-      message: "amount must be positive; the type gives the direction",
-    }),
+    amount: moneySchema,
     /** The wallet money leaves (expense, transfer) or arrives in (income). */
     accountId: idSchema,
     /** Transfers only: the wallet money arrives in. */
@@ -113,6 +117,17 @@ export const transactionSchema = z
       });
     }
   });
+
+/** A transaction being written: stored rules + the amount must be positive. */
+export const transactionSchema = storedTransactionSchema.superRefine((t, ctx) => {
+  if (t.amount.amountMinor <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["amount", "amountMinor"],
+      message: "amount must be positive; the type gives the direction",
+    });
+  }
+});
 export type Transaction = z.infer<typeof transactionSchema>;
 
 /**

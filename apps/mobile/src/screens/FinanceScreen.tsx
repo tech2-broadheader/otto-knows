@@ -119,6 +119,7 @@ export function FinanceScreen(): React.JSX.Element {
   const handleAddTx = async (): Promise<void> => {
     const centavos = parsePesoToCentavos(txAmount);
     if (centavos === null) return setFormError("Enter a valid transaction amount.");
+    if (centavos === 0) return setFormError("Enter an amount above ₱0.");
     setFormError(undefined);
     await addTransaction({ amountMinor: centavos, description: txDesc.trim() });
     setTxAmount("");

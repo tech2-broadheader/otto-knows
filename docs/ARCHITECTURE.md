@@ -112,7 +112,7 @@ Overview (the contract is the Zod schema, not this table):
 | ADR-002 | Local-first SQLite for free tier; cloud Supabase only for Pro sync/LLM | Accepted | 2026-06-14 |
 | ADR-003 | Manual finance entry is the launch baseline; SMS parsing gated on Play policy | Accepted | 2026-06-14 |
 | ADR-004 | Derived wallet balances + versioned on-device migrations | Accepted | 2026-10-07 |
-| ADR-005 | Alarm mechanism (native module) — decided by spike 12.2 | Proposed | 2026-10-08 |
+| ADR-005 | Alarms via an in-repo Expo module (AlarmManager + full-screen notification), SCHEDULE_EXACT_ALARM path — see spike 12.2 | Proposed (awaiting owner) | 2026-10-08 |
 | ADR-006 | Billing: RevenueCat verifies store receipts; server trusts only its webhook | Proposed | 2026-10-08 |
 
 ### ADR-001 — React Native + Expo + Next.js, unified by TypeScript + Zod

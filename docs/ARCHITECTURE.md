@@ -54,7 +54,7 @@ User --natural language--> LLM Brain
 | routine | The lens: anchors, scheduling substrate, deviation radar | Routine, RoutineAnchor |
 | calendar | Read calendar/events; write blocks (confirmed) | CalendarEvent |
 | reminders | Routine-timed reminders, meds, bills | Reminder, Medication, Bill |
-| finance | Manual entry, budget, spending patterns | Transaction, BudgetCategory, Income |
+| finance | Manual entry, wallets, budget, safe-to-spend, monthly report | Account, Transaction (expense / income / transfer), BudgetCategory, Income |
 | health | Wearable data (gated module) | HealthMetric |
 | briefing | Compose routine-anchored daily briefs + nudges | Briefing, Nudge |
 | brain | LLM reasoning + tool-calling (proposes actions) | Proposal, ToolCall |
@@ -65,6 +65,8 @@ User --natural language--> LLM Brain
 
 ## 6. Data model
 Entities and relationships live as Zod schemas in `/packages/schemas`; types via `z.infer`. Local migrations (Drizzle/SQLite) live in the mobile app; cloud migrations (Supabase) live in the web app. Never edit a shipped migration. Sensitive entities (finance, health) are encrypted at rest and access is audit-logged (Tier 3).
+
+The on-device SQLite schema evolves via versioned migrations (`PRAGMA user_version`, ordered steps, each in a transaction) — see ADR-004. Never edit a shipped step; every schema change is a new step.
 
 ## 7. API surface
 Overview (the contract is the Zod schema, not this table):
@@ -109,6 +111,7 @@ Overview (the contract is the Zod schema, not this table):
 | ADR-001 | React Native + Expo (mobile) + Next.js (backend/web), shared TS + Zod — instead of Flutter (spec) or Next-only (starter default) | Accepted | 2026-06-14 |
 | ADR-002 | Local-first SQLite for free tier; cloud Supabase only for Pro sync/LLM | Accepted | 2026-06-14 |
 | ADR-003 | Manual finance entry is the launch baseline; SMS parsing gated on Play policy | Accepted | 2026-06-14 |
+| ADR-004 | Derived wallet balances + versioned on-device migrations | Accepted | 2026-10-07 |
 
 ### ADR-001 — React Native + Expo + Next.js, unified by TypeScript + Zod
 - **Context:** The spec (§13) suggests Flutter (Android-first mobile). The project-starter's `CLAUDE.md` defaults to a Next.js-only web stack. The owner asked to standardize on React / React Native to keep web and mobile "inline" (one ecosystem), and delegated the final call.
@@ -127,6 +130,12 @@ Overview (the contract is the Zod schema, not this table):
 - **Decision:** Ship manual salary + recurring entry as the baseline. Pursue SMS/notification parsing only after verifying current Play policy; keep it behind a feature flag.
 - **Status:** Accepted.
 - **Consequences:** De-risks launch and store review; finance still works day one. SMS auto-capture becomes an additive enhancement, not a launch dependency.
+
+### ADR-004 — Derived wallet balances + versioned on-device migrations
+- **Context:** E11 Budgeting+ adds wallets with balances and extends `transactions` (type, account, transfer target). The mobile store was created with `CREATE TABLE IF NOT EXISTS` at boot, which cannot evolve tables on installed devices. A stored running balance would drift whenever a transaction is edited or deleted.
+- **Decision:** (1) Wallet balances are computed (opening balance + typed transactions) in `/packages/core`, never stored as a mutable total. (2) The mobile SQLite schema moves to versioned migrations tracked by `PRAGMA user_version`; each step runs in a transaction, and shipped steps are never edited.
+- **Status:** Accepted.
+- **Consequences:** No balance drift or double-counting on edit/delete. Small compute cost (decrypt + sum on device), acceptable at personal-finance volumes; revisit with cached monthly snapshots if needed. Every future local schema change ships as a new migration step with an upgrade-path test.
 
 ## 13. Constraints, risks & open questions
 - **Constraints:** PH DPA across finance/health/routine; Google Play SMS policy; platform health-data rules; LLM cost per paid user.

@@ -17,7 +17,7 @@
 | Production URL | TBD |
 | Tech stack | React Native + Expo (mobile) · Next.js + Supabase (backend/web) · TypeScript + Zod (shared contracts) · cloud LLM via server-side proxy |
 | **Current version** | **0.1.0** |
-| Status | In development (planning phase) |
+| Status | In development (Phases 1–3 built, pre-release; not yet deployed) |
 | Start date | 2026-06-14 |
 | Launch date | — |
 
@@ -29,9 +29,9 @@ Record the start/finish of each phase and milestone.
 | Phase / Milestone | Started | Completed | Version | Notes |
 |-------------------|---------|-----------|---------|-------|
 | Setup (M0) | 2026-06-14 | 2026-06-14 | 0.1.0 | Repo bootstrapped from project-starter; governance files filled; BMAD planning artifacts authored |
-| Structure & design (M1) | | | 0.2.0 | Incl. Claude Design pass |
-| Data & backend (M2) | | | 0.3.0 | |
-| Core build (M3) | | | 0.5.0 | Phase 1 organizer core (free tier) |
+| Structure & design (M1) | 2026-06-15 | 2026-06-15 | 0.2.0 | Claude Design pass: OTTO design system applied across all mobile screens + nav |
+| Data & backend (M2) | 2026-06-14 | | 0.3.0 | Local SQLite, Supabase auth + DB-backed entitlement, LLM proxy done; encrypted connector-token storage pending |
+| Core build (M3) | 2026-06-14 | | 0.5.0 | Phase 1 organizer core (free tier) built; story 1.4 (GATE-3 DPA review + account deletion) open. Phases 2–3 (brain, optimizer, tips) also built ahead of M3 close |
 | Content & polish (M4) | | | 0.9.0 | |
 | Launch & handover (M5) | | | 1.0.0 | Live on production |
 
@@ -86,3 +86,6 @@ Record significant decisions and their date so future-you knows *why* something 
 - 2026-06-14 — **ADR-001:** Stack reconciled to React Native + Expo (mobile) + Next.js (backend/web) with shared TypeScript + Zod contracts, instead of the spec's Flutter suggestion or the starter's pure-Next.js web default. Rationale: keeps web + mobile in one TS/React ecosystem ("inline") while satisfying native-mobile needs (Health Connect, SMS paths). See `docs/ARCHITECTURE.md`.
 - 2026-06-14 — Working product name set to **Otto** ("Otto knows"); spec candidates Cadence / Daylo / Routine remain open pending brand sign-off (OD-4).
 - 2026-06-14 — Story 1.1 (monorepo & tooling scaffold) done: pnpm workspace with `apps/{mobile,web}` + `packages/{schemas,types,core}`, TS strict, ESLint flat config + Prettier, Vitest. Verified — typecheck/tests/lint green, `next build` succeeds, Expo Metro bundle (Android) succeeds. React pinned to 19.0.0 workspace-wide (Expo SDK 53 constraint) via pnpm overrides; `node-linker=hoisted` for RN compatibility.
+- 2026-06-15 — Phases 1–3 built and the M1 Claude Design pass applied (OTTO design system). Real Supabase auth + DB-backed entitlement wired; LLM provider made swappable (Anthropic default, Gemini free-tier adapter). No production deploy yet, so the version stays 0.1.0 until the first release is tagged.
+- 2026-10-07 — Default LLM model moved to `claude-opus-5-5` (latest, per CLAUDE.md §2); overridable via `LLM_MODEL`.
+- 2026-10-07 — **Scope focus: Budgeting.** Product owner approved Sprint Change Proposal `_bmad-output/planning-artifacts/sprint-change-proposal-2026-10-07.md`: new **E11 Budgeting+** (wallets, income/transfer transactions, safe-to-spend, monthly report — all Free; 3 free wallets) is the next priority. **ADR-004:** derived balances + versioned on-device migrations. Health/meds/optimizer/caregiver kept, not reprioritized.

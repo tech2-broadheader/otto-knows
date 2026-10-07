@@ -38,7 +38,7 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 
 ### 5.2 Connectors / context graph
 - **FR-C1** Connect & read Google Calendar, reminders/tasks, events (with consent). [Free]
-- **FR-C2** Manual finance entry: salary/income, recurring bills, spending; basic monthly budget. [Free]
+- **FR-C2** Manual finance entry: salary/income schedule, recurring bills, transactions (expense / income / transfer) across wallets; basic monthly budget. [Free] *(extended 2026-10-07, see §5.9)*
 - **FR-C3** Unify all sources into one context-graph model interpreted through the routine lens. [Free]
 - **FR-C4** Write-back to calendar/reminders (create reminder, block time) — **confirmed**. [Free for reminders; LLM-driven write-back Pro]
 - **FR-C5** (Conditional) SMS/notification finance parsing behind a feature flag, pending Play policy. [Pro]
@@ -65,7 +65,7 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **FR-G1** A caregiver receives a linked person's med alerts and bill due dates, with explicit, revocable consent from both sides. [Pro]
 
 ### 5.7 Monetization & entitlements
-- **FR-M1** Free caps: ~5 bills, ~3 meds, a few budget categories, small daily NL quick-add quota.
+- **FR-M1** Free caps: ~5 bills, ~3 meds, a few budget categories, ~3 wallets, small daily NL quick-add quota.
 - **FR-M2** Pro unlocks unlimited entities, conversational AI, adaptive routine, optimizer, insights, tips, backup/sync/export, caregiver, widgets, themes.
 - **FR-M3** SKUs: Free, Pro monthly, Pro annual, one-time Lifetime. No ads. Receipts verified server-side.
 
@@ -73,6 +73,12 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **FR-K1** Cloud backup + cross-device sync. [Pro]
 - **FR-K2** Export (PDF / CSV). [Pro]
 - **FR-K3** Widgets, themes. [Pro]
+
+### 5.9 Budgeting+ (added 2026-10-07 — product-owner priority)
+- **FR-F1** Wallets/accounts (cash, e-wallet, bank, credit card) with derived balances; credit cards tracked as amount owed. [Free, capped]
+- **FR-F2** Income and transfer transactions; transfers never count as spending. [Free]
+- **FR-F3** Safe-to-spend until next payday, after upcoming bills and card debt, with a per-day figure. [Free]
+- **FR-F4** Monthly report: income vs spending, by category, vs previous month. [Free]
 
 ## 6. Non-functional requirements
 - **NFR-1 Privacy (DPA):** granular per-source consent before connecting; explicit disclosure; export & delete; no ad use of sensitive data.
@@ -100,9 +106,11 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **E8** Health + caregiver mode [Pro].
 - **E9** Monetization & entitlements.
 - **E10** Continuity: backup, sync, export, widgets, themes [Pro].
+- **E11** Budgeting+: wallets, typed transactions, safe-to-spend, monthly report [Free] — current priority.
 
 ## 9. Release mapping
 M3 (v0.5.0) targets E1–E4 (Phase 1 free organizer core). E5–E7 → Phase 2–3. E8 → Phase 4. E10 → Phase 5. E9 spans (gates Pro features). See `PROJECT_RECORD.md §2`.
+**E11 is prioritized next** (product-owner direction 2026-10-07, `sprint-change-proposal-2026-10-07.md`), ahead of remaining E5/E6 work.
 
 ## 10. Open decisions
 OD-1…OD-5 per `docs/scope.md §13`. OD-2 (conversational depth) directly scopes E5; OD-3 (finance capture) gates FR-C5; resolve before those epics enter ready-for-dev.

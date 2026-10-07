@@ -35,7 +35,7 @@ Onboarding flow: Welcome → Consent (per-source) → Routine setup (seeded anch
 | Quick Add | NL note → proposals → confirm | LabeledInput, Button, ProposalCard | loading / error / empty / quota-reached |
 | Reminders | List / add / mark done | Card, LabeledInput, Button, ToggleRow | loading / error / empty |
 | Health (Meds) | List / add / edit medications | Card, LabeledInput, Button | loading / error / empty / at free cap |
-| Finance | Income, bills, transactions, budget summary | Card, LabeledInput, Button, Banner | loading / error / empty / at free cap |
+| Finance | Wallets, safe-to-spend, transactions (expense / income / transfer), bills, budget, monthly report (see §7) | Card, LabeledInput, Button, Banner | loading / error / empty / at free cap / no income set up / negative safe-to-spend |
 | Settings | Consent, Google Calendar, About, Pro links | Card, ToggleRow, GoogleCalendarCard, Button | — |
 | Optimizer (Pro) | Describe new routine → proposed reshaped day → Apply | LabeledInput, Button, Card | idle / proposing / proposal / applied / not-pro / error |
 | Tips (Pro) | Finance/health tips, domain toggle | Card, Button | loading / error / empty / not-pro |
@@ -58,3 +58,11 @@ Onboarding flow: Welcome → Consent (per-source) → Routine setup (seeded anch
 
 ## 6. Out of scope for this pass
 Caregiver/family mode (Phase 4), Health Connect UI (Phase 4), widgets/themes (Phase 5). Real auth/login UI is pending the foundations work (separate track).
+
+## 7. Budgeting+ screens (E11 — for the Claude Design pass, added 2026-10-07)
+Approved Claude Design output is required before the UI work in stories 11.2–11.5 starts (CLAUDE.md §5).
+1. **Finance home** — safe-to-spend hero (with per-day figure and payday date), wallets strip with balances, budget ring, recent transactions, link to monthly report.
+2. **Add / edit transaction** — type segmented control (Expense / Income / Transfer), wallet picker (from + to for transfers), amount, category (expense only), note, date.
+3. **Wallets** — list, add/edit (type, provider label, opening balance), archive; credit card shows "owed" instead of a balance; free-cap upgrade prompt at 3.
+4. **Monthly report** — month switcher, income / spending / net summary, category bars with change vs last month, first-month "no comparison yet" state.
+- **Tone:** negative safe-to-spend is a heads-up ("Bills before payday exceed what's on hand by ₱X"), never a scold.

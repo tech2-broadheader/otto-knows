@@ -2,7 +2,7 @@
 
 > A proactive, cross-domain personal **chief-of-staff**. It connects to your calendar, reminders, events, finances and wearable, reads them *through the lens of your daily routine*, and tells you what matters today — and reshapes your day when you want to add something new. **Otto knows.**
 
-**Status:** Planning phase (M0 complete) · **Version:** 0.1.0 · see [`PROJECT_RECORD.md`](PROJECT_RECORD.md)
+**Status:** In development — Phases 1–3 built + designed (M1 complete), not yet deployed · **Version:** 0.1.0 · see [`PROJECT_RECORD.md`](PROJECT_RECORD.md)
 **Identity:** explicitly *not* Siri — proactive and cross-domain, not reactive. _"Heads up — you get paid Friday but the electric bill is due Saturday. Want a Thursday nudge?"_
 
 ## Core mental model
@@ -43,5 +43,4 @@
 Cross-domain finance + health data is DPA-regulated and platform-restricted. Granular consent, encryption at rest, no ad use. Verify current Google Play SMS policy and Health Connect / HealthKit policy before building those capture paths. The routine optimizer **never** rewrites the day silently — it proposes, you confirm.
 
 ## Working with this repo
-This project runs **BMAD** (v6.8.0) inside Claude Code. Planning artifacts are in `_bmad-output/`. Next step out of planning is **M1 (UX + Claude Design pass)** then **M2/M3 (Phase 1 organizer core)**.
-# otto-knows
+This project runs **BMAD** (v6.8.0) inside Claude Code. Planning artifacts are in `_bmad-output/`. Story progress lives in [`sprint-status.yaml`](_bmad-output/implementation-artifacts/sprint-status.yaml). Remaining before first release: GATE-3 DPA review + account deletion (1.4), encrypted connector-token storage, billing that writes entitlement (E9), and on-device + live-LLM validation. See [`docs/RUN.md`](docs/RUN.md) to run it locally.

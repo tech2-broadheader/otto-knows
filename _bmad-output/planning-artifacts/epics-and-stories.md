@@ -135,9 +135,54 @@ Goal: LLM proxy + conversational quick-add + proactive cross-domain reasoning.
 
 ---
 
+## E11 — Budgeting+ (Free core)
+Goal: know where your money is, what came in, and how much you can safely spend until payday. Added 2026-10-07 by product-owner direction — see `sprint-change-proposal-2026-10-07.md`. Current priority.
+
+### Story 11.1 — Versioned local DB migrations (enabler)
+- **AC1** The mobile store tracks a schema version (SQLite `PRAGMA user_version`) and applies ordered, idempotent migration steps at boot; fresh installs and upgraded installs end at the same schema.
+- **AC2** A failed migration is rolled back in a transaction and surfaced as a typed error screen — never a half-migrated database or silent data loss.
+- **AC3** Tests: fresh install → latest; v0 (current shipped schema with data) → latest with data preserved; failure path rolls back.
+- **Contract:** none (infrastructure). Never edit a shipped migration step.
+
+### Story 11.2 — Wallets / accounts
+- **AC1** User can add, rename, archive wallets of type `cash | ewallet | bank | credit_card`, with an optional provider label (e.g. GCash, Maya, BDO) and an opening balance.
+- **AC2** Balances are **derived** (opening balance + transactions), never stored as a mutable total. Credit cards show "amount owed" (spending increases it, payments reduce it).
+- **AC3** Migration creates a default "Cash" wallet and assigns all existing transactions to it.
+- **AC4** Finance screen shows each wallet's balance and a total "money on hand" (cash + e-wallet + bank; credit card owed shown separately).
+- **AC5** Free cap: 3 wallets (Pro unlimited) with the standard upgrade prompt.
+- **AC6** Wallet data is SENSITIVE: amounts encrypted at rest, access audit-logged.
+- **Contract:** `AccountSchema` (new). **Depends on:** 11.1. **Design:** Claude Design pass required.
+
+### Story 11.3 — Income & transfer transactions
+- **AC1** A transaction has type `expense | income | transfer`. Expense/income require `accountId`; transfer requires `accountId` (from) and `toAccountId` (to), which must differ.
+- **AC2** Add-transaction form has a type picker; transfer shows from/to wallets. Paying a credit card = transfer from a wallet to the card.
+- **AC3** Edit and delete transactions; balances update accordingly.
+- **AC4** Transfers are excluded from spending totals, budgets, overspend forecasts and tips.
+- **AC5** Quick-add `log_expense` proposals resolve to a wallet (last-used, else Cash) and the user can change it before confirming (propose-and-confirm preserved).
+- **AC6** Existing data loads as `type=expense` (backward compatible); invalid shapes rejected at the schema boundary.
+- **Contract:** `TransactionSchema` (extended), `ExpenseDraftSchema` (optional `accountId`). **Depends on:** 11.2. **Design:** Claude Design pass required.
+
+### Story 11.4 — Safe-to-spend until payday
+- **AC1** Core computes: money on hand − unpaid bills due on/before next payday − credit card amount owed = safe-to-spend; plus a per-day figure (÷ days until payday, min 1).
+- **AC2** Next payday is derived from each Income's cadence and advances automatically once passed (fixes stale `nextPayDate`; payday-vs-bill nudge uses the same function).
+- **AC3** Shown as the hero number on Finance and as a line in the Today briefing ("₱3,200 safe to spend until the 15th — about ₱400/day").
+- **AC4** Edge cases handled with gentle copy: no income set up, payday today, negative result ("Bills before payday exceed what's on hand by ₱X" — never scolding).
+- **AC5** Pure functions in `/packages/core` with boundary tests (month ends, semi-monthly 15/30, February, payday = today, no bills, overdue bills).
+- **Contract:** `SafeToSpendSchema` (new). Free tier. **Depends on:** 11.2, 11.3. **Design:** Claude Design pass required.
+
+### Story 11.5 — Monthly report
+- **AC1** For a selected month: total income, total spending, net; spending by category (incl. uncategorized), sorted by amount.
+- **AC2** Comparison to previous month per category and in total (amount + % change), with "no data" handling for the first month.
+- **AC3** Transfers excluded; credit-card purchases count as spending when made.
+- **AC4** Month switcher (previous/next); works offline; computed on device.
+- **Contract:** `MonthlyReportSchema` (new). Free tier. **Depends on:** 11.3. **Design:** Claude Design pass required.
+
+---
+
 ## Sequencing & gates
 1. **E1 → E2 → E3 → E4** = Phase 1 free organizer core (M3 / v0.5.0).
 2. Clear **GATE-3** (DPA consent/encryption review) during E1.4 before storing real finance/health data.
 3. Resolve **OD-2** before E5 enters ready-for-dev; **OD-3** before any FR-C5 SMS work (**GATE-1**).
 4. Clear **GATE-2** before E8.1.
 5. E5–E7 = Phase 2–3 (the paid brain). E8 = Phase 4. E10 = Phase 5. E9 spans.
+6. **E11 is next** (2026-10-07): 11.1 → 11.2 → 11.3 → (11.4 ∥ 11.5). The Claude Design pass for 11.2–11.5 runs in parallel with 11.1. GATE-3 still applies (more finance data stored).

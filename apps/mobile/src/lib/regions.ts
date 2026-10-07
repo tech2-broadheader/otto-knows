@@ -1,4 +1,4 @@
-// Regions a user can pick in Settings (story 13.1/13.4). A region sets the
+// Regions a user can pick in onboarding and Settings (story 13.1/13.4). A region sets the
 // locale used for number and date formatting and suggests the home currency.
 // The app's copy stays English at launch (ADR-007). PURE — unit-tested.
 import type { CurrencyCode } from "@otto/schemas";
@@ -36,4 +36,29 @@ export function regionForLocale(locale: string): Region | undefined {
   if (exact) return exact;
   const country = locale.split("-").find((part) => /^[A-Z]{2}$/.test(part));
   return country ? REGIONS.find((r) => r.locale.endsWith(`-${country}`)) : undefined;
+}
+
+export type RegionGroup = { title: string; regions: readonly Region[] };
+
+const SOUTHEAST_ASIA = ["Singapore", "Malaysia", "Indonesia", "Thailand", "Vietnam"];
+const NORTH_AMERICA = ["United States", "Canada"];
+const inGroup = (labels: readonly string[]) => (r: Region) => labels.includes(r.label);
+
+/** REGIONS grouped by launch market for the picker — the Philippines first. */
+export const REGION_GROUPS: readonly RegionGroup[] = [
+  { title: "Philippines", regions: REGIONS.filter(inGroup(["Philippines"])) },
+  { title: "Southeast Asia", regions: REGIONS.filter(inGroup(SOUTHEAST_ASIA)) },
+  { title: "US & Canada", regions: REGIONS.filter(inGroup(NORTH_AMERICA)) },
+  {
+    title: "UK & Europe",
+    regions: REGIONS.filter(
+      (r) => !inGroup(["Philippines", ...SOUTHEAST_ASIA, ...NORTH_AMERICA])(r),
+    ),
+  },
+];
+
+/** Pre-selected region in onboarding: the phone's, else the Philippines (home market). */
+export function startingRegion(locale: string): Region {
+  // reason: REGIONS is a non-empty literal whose first entry is the Philippines
+  return regionForLocale(locale) ?? REGIONS[0]!;
 }

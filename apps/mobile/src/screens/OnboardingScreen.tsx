@@ -1,8 +1,8 @@
-// First-run onboarding flow: Welcome → Consent → Routine Setup → main app. Owns
+// First-run onboarding flow: Welcome → Region → Consent → Routine Setup → main app. Owns
 // the wizard shell (top row with back + progress dots + Skip, scrollable step
 // body, bottom CTA) and renders each step's body inline. On finish it calls
 // onComplete so the navigation root swaps to the tab navigator. Each step's data
-// is persisted by its own hook/repository (consent, routine).
+// is persisted by its own hook/repository (region, consent, routine).
 //
 // Visual: OTTO onboarding flow (otto/app-screens.jsx OnboardingScreen), ported to
 // RN inline styles via the design kit. NativeWind does not render on SDK 54, so
@@ -11,11 +11,7 @@
 import { useState, type ReactNode } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type {
-  DataSource,
-  RoutineAnchor,
-  RoutineAnchorKind,
-} from "@otto/schemas";
+import type { CurrencyCode, DataSource, RoutineAnchor, RoutineAnchorKind } from "@otto/schemas";
 import { useConsents } from "../hooks/useConsents";
 import { useRoutine } from "../hooks/useRoutine";
 import { AsyncBoundary } from "../components/AsyncBoundary";
@@ -32,9 +28,21 @@ import {
 import { Icon, type IconName } from "../design/Icon";
 import { OC, FONT, RADIUS, toneColor, tint } from "../design/theme";
 import { WelcomeStep, TeachStep, TEACH } from "../components/teaching";
+import { RegionStep } from "../components/RegionStep";
+import { startingRegion, type Region } from "../lib/regions";
+import { useSettings, useUpdateSettings } from "../lib/settings-context";
 
-// Flow: Welcome → 3 "how Otto works" teaching cards → Consent → Routine.
-const CTA_LABELS = ["Show me how", "Next", "Next", "Set me up", "I agree", "Set my rhythm"] as const;
+// Flow: Welcome → 3 "how Otto works" teaching cards → Region → Consent → Routine.
+const CTA_LABELS = [
+  "Show me how",
+  "Next",
+  "Next",
+  "Set me up",
+  "That's me",
+  "I agree",
+  "Set my rhythm",
+] as const;
+const REGION_STEP = TEACH.length + 1;
 const STEP_COUNT = CTA_LABELS.length;
 
 /** The free-tier sources we ask consent for, with plain-language what & why. */
@@ -154,7 +162,9 @@ function ConsentStep(): React.JSX.Element {
                 <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
                   {s.title}
                 </Text>
-                <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
+                <Text
+                  style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}
+                >
                   {s.description}
                 </Text>
               </View>
@@ -187,8 +197,8 @@ function ConsentStep(): React.JSX.Element {
               color: OC.forest,
             }}
           >
-            Encrypted on your device and never sold or used for ads. Every access to health and finance
-            data is logged for your records.
+            Encrypted on your device and never sold or used for ads. Every access to health and
+            finance data is logged for your records.
           </Text>
         </View>
       </AsyncBoundary>
@@ -376,21 +386,63 @@ function RoutineStep(): React.JSX.Element {
 
 export function OnboardingScreen({ onComplete }: { onComplete: () => void }): React.JSX.Element {
   const insets = useSafeAreaInsets();
+  const settings = useSettings();
+  const updateSettings = useUpdateSettings();
   const [step, setStep] = useState(0);
+  const [region, setRegion] = useState<Region>(() => startingRegion(settings.locale));
+  const [currency, setCurrency] = useState<CurrencyCode>(
+    () => startingRegion(settings.locale).currency,
+  );
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | undefined>();
 
-  const next = (): void => {
+  const pickRegion = (next: Region): void => {
+    setRegion(next);
+    setCurrency(next.currency);
+  };
+
+  // Saves the region step's choice. A fresh install has no money yet, so the
+  // currency is free to change; if it is somehow locked, keep the region anyway.
+  const saveRegion = async (): Promise<boolean> => {
+    setSaving(true);
+    try {
+      const result = await updateSettings({ ...settings, locale: region.locale, currency });
+      if (result === "currency-locked") {
+        await updateSettings({ ...settings, locale: region.locale });
+      }
+      setSaveError(undefined);
+      return true;
+    } catch {
+      setSaveError("Couldn't save your region. Try again.");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const next = async (): Promise<void> => {
+    if (step === REGION_STEP && !(await saveRegion())) return;
     if (step < STEP_COUNT - 1) setStep((s) => s + 1);
     else onComplete();
   };
 
-  // 0 = welcome · 1..3 = teaching cards · 4 = consent · 5 = routine
+  // 0 = welcome · 1..3 = teaching cards · 4 = region · 5 = consent · 6 = routine
   let stepBody: ReactNode;
   if (step === 0) {
     stepBody = <WelcomeStep />;
   } else if (step <= TEACH.length) {
     const t = TEACH[step - 1];
     stepBody = t ? <TeachStep title={t.title} body={t.body} art={t.art} /> : null;
-  } else if (step === TEACH.length + 1) {
+  } else if (step === REGION_STEP) {
+    stepBody = (
+      <RegionStep
+        region={region}
+        currency={currency}
+        onRegion={pickRegion}
+        onCurrency={setCurrency}
+      />
+    );
+  } else if (step === REGION_STEP + 1) {
     stepBody = <ConsentStep />;
   } else {
     stepBody = <RoutineStep />;
@@ -450,7 +502,11 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }): Re
           onPress={onComplete}
           accessibilityRole="button"
           accessibilityLabel="Skip onboarding"
-          style={({ pressed }) => ({ width: 36, alignItems: "flex-end", opacity: pressed ? 0.6 : 1 })}
+          style={({ pressed }) => ({
+            width: 36,
+            alignItems: "flex-end",
+            opacity: pressed ? 0.6 : 1,
+          })}
         >
           <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.ink400 }}>Skip</Text>
         </Pressable>
@@ -474,7 +530,20 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }): Re
           paddingBottom: insets.bottom + 16,
         }}
       >
-        <PrimaryButton label={CTA_LABELS[step]!} onPress={next} />
+        {saveError ? (
+          <Text
+            style={{
+              fontFamily: FONT.bodySemi,
+              fontSize: 13,
+              color: OC.amberInk,
+              textAlign: "center",
+              marginBottom: 10,
+            }}
+          >
+            {saveError}
+          </Text>
+        ) : null}
+        <PrimaryButton label={CTA_LABELS[step]!} onPress={() => void next()} disabled={saving} />
       </View>
     </View>
   );

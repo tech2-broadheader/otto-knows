@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   billSchema,
   budgetCategorySchema,
+  type Account,
   incomeSchema,
   transactionSchema,
   type Bill,
@@ -13,8 +14,15 @@ import {
   type Income,
   type IncomeCadence,
   type Transaction,
+  type TransactionType,
 } from "@otto/schemas";
-import { computeBudgetSummary, type BudgetSummary } from "@otto/core";
+import {
+  computeBudgetSummary,
+  pickDefaultAccountId,
+  summarizeWallets,
+  type BudgetSummary,
+  type WalletSummary,
+} from "@otto/core";
 import {
   budgetCategoryRepository,
   makeAccountRepository,
@@ -36,7 +44,10 @@ export type FinanceState = {
   income: Income[];
   transactions: Transaction[];
   categories: BudgetCategory[];
+  accounts: Account[];
   summary: BudgetSummary;
+  /** Derived wallet balances, money on hand and card debt (stories 11.2/11.3). */
+  wallets: WalletSummary;
   /** True when the user has reached the free cap for the entity. */
   billsAtCap: boolean;
   categoriesAtCap: boolean;
@@ -55,7 +66,15 @@ export type FinanceState = {
     amountMinor: number;
     description?: string;
     categoryId?: string;
+    /** Defaults to "expense". */
+    type?: TransactionType;
+    /** Defaults to the last-used wallet, else Cash. */
+    accountId?: string;
+    /** Transfers only. */
+    toAccountId?: string;
   }) => Promise<Transaction>;
+  updateTransaction: (tx: Transaction) => Promise<Transaction>;
+  deleteTransaction: (id: string) => Promise<void>;
   addCategory: (input: {
     name: string;
     monthlyLimitMinor?: number;
@@ -75,6 +94,7 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
   const [income, setIncome] = useState<Income[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
   const reload = useCallback(async () => {
     setState("loading");
@@ -82,16 +102,18 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
       // After a data wipe the app returns to onboarding without rebooting, so the
       // boot-time default wallet may be gone; recreate it before any transaction.
       await accountRepo.ensureDefault(LOCAL_USER_ID);
-      const [b, i, t, c] = await Promise.all([
+      const [b, i, t, c, a] = await Promise.all([
         billRepo.list(LOCAL_USER_ID),
         incomeRepo.list(LOCAL_USER_ID),
         txRepo.list(LOCAL_USER_ID),
         budgetCategoryRepository.list(LOCAL_USER_ID),
+        accountRepo.list(LOCAL_USER_ID),
       ]);
       setBills(b);
       setIncome(i);
       setTransactions(t);
       setCategories(c);
+      setAccounts(a);
       setState("ready");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not load your finances.");
@@ -107,6 +129,7 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
     () => computeBudgetSummary(categories, transactions, currentMonth()),
     [categories, transactions],
   );
+  const wallets = useMemo(() => summarizeWallets(accounts, transactions), [accounts, transactions]);
 
   const addBill = useCallback(
     async (input: { name: string; amountMinor: number; dueDate: string }) => {
@@ -157,15 +180,20 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
   );
 
   const addTransaction = useCallback(
-    async (input: { amountMinor: number; description?: string; categoryId?: string }) => {
+    async (input: Parameters<FinanceState["addTransaction"]>[0]) => {
       const now = nowIso();
+      const type = input.type ?? "expense";
       const tx = transactionSchema.parse({
         id: newUuid(),
         userId: LOCAL_USER_ID,
+        type,
         amount: { amountMinor: input.amountMinor, currency: "PHP" },
-        // Story 11.3 replaces this with the wallet the user picks.
-        accountId: DEFAULT_CASH_ACCOUNT_ID,
-        categoryId: input.categoryId,
+        accountId:
+          input.accountId ??
+          pickDefaultAccountId(accounts, transactions, DEFAULT_CASH_ACCOUNT_ID) ??
+          DEFAULT_CASH_ACCOUNT_ID,
+        toAccountId: input.toAccountId,
+        categoryId: type === "expense" ? input.categoryId : undefined,
         description:
           input.description && input.description.length > 0 ? input.description : undefined,
         occurredAt: isoFromDateTime(todayDate(), "12:00", localUtcOffset()),
@@ -175,6 +203,23 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
       const created = await txRepo.create(tx);
       await reload();
       return created;
+    },
+    [accounts, transactions, txRepo, reload],
+  );
+
+  const updateTransaction = useCallback(
+    async (tx: Transaction) => {
+      const updated = await txRepo.update(transactionSchema.parse({ ...tx, updatedAt: nowIso() }));
+      await reload();
+      return updated;
+    },
+    [txRepo, reload],
+  );
+
+  const deleteTransaction = useCallback(
+    async (id: string) => {
+      await txRepo.delete(LOCAL_USER_ID, id);
+      await reload();
     },
     [txRepo, reload],
   );
@@ -208,12 +253,16 @@ export function useFinance(deps: RepositoryDeps): FinanceState {
     income,
     transactions,
     categories,
+    accounts,
     summary,
+    wallets,
     billsAtCap: bills.length >= FREE_CAPS.bills,
     categoriesAtCap: categories.length >= FREE_CAPS.budgetCategories,
     addBill,
     addIncome,
     addTransaction,
+    updateTransaction,
+    deleteTransaction,
     addCategory,
     reload,
   };

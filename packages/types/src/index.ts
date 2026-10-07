@@ -17,6 +17,7 @@ export type {
   AccountType,
   Account,
   BudgetCategory,
+  TransactionType,
   Transaction,
   DataSource,
   CalendarEvent,

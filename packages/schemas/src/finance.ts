@@ -56,16 +56,61 @@ export const accountSchema = z.object({
 });
 export type Account = z.infer<typeof accountSchema>;
 
-/** SENSITIVE. A spending transaction (manual entry at launch). */
-export const transactionSchema = z.object({
-  id: idSchema,
-  userId: idSchema,
-  amount: moneySchema,
-  // Optional until story 11.3 makes it required alongside the transaction type.
-  accountId: idSchema.optional(),
-  categoryId: idSchema.optional(),
-  description: z.string().max(280).optional(),
-  occurredAt: isoDateTimeSchema,
-  ...timestampFields,
-});
+/** What a transaction does to money (story 11.3). */
+export const transactionTypeSchema = z.enum(["expense", "income", "transfer"]);
+export type TransactionType = z.infer<typeof transactionTypeSchema>;
+
+/**
+ * SENSITIVE. Money leaving a wallet (expense), arriving (income) or moving
+ * between two wallets (transfer — e.g. bank → GCash, or paying a credit card).
+ * The amount is always positive; `type` decides the direction.
+ */
+export const transactionSchema = z
+  .object({
+    id: idSchema,
+    userId: idSchema,
+    type: transactionTypeSchema,
+    amount: moneySchema.refine((m) => m.amountMinor > 0, {
+      message: "amount must be positive; the type gives the direction",
+    }),
+    /** The wallet money leaves (expense, transfer) or arrives in (income). */
+    accountId: idSchema,
+    /** Transfers only: the wallet money arrives in. */
+    toAccountId: idSchema.optional(),
+    /** Expenses only. */
+    categoryId: idSchema.optional(),
+    description: z.string().max(280).optional(),
+    occurredAt: isoDateTimeSchema,
+    ...timestampFields,
+  })
+  .superRefine((t, ctx) => {
+    if (t.type === "transfer") {
+      if (t.toAccountId === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["toAccountId"],
+          message: "a transfer needs a destination wallet",
+        });
+      } else if (t.toAccountId === t.accountId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["toAccountId"],
+          message: "a transfer must go to a different wallet",
+        });
+      }
+    } else if (t.toAccountId !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["toAccountId"],
+        message: "only transfers have a destination wallet",
+      });
+    }
+    if (t.type !== "expense" && t.categoryId !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["categoryId"],
+        message: "only expenses have a budget category",
+      });
+    }
+  });
 export type Transaction = z.infer<typeof transactionSchema>;

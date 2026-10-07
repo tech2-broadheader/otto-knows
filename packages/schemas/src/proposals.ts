@@ -23,6 +23,8 @@ export const reminderDraftSchema = z.object({
 
 export const expenseDraftSchema = z.object({
   amount: moneySchema,
+  /** Optional wallet; when absent the app picks the last-used wallet, else Cash. */
+  accountId: idSchema.optional(),
   categoryId: idSchema.optional(),
   description: z.string().max(280).optional(),
   occurredAt: isoDateTimeSchema,

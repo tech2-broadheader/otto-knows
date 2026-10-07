@@ -24,9 +24,9 @@ export type WalletSummary = {
 };
 
 /**
- * Summarize every wallet. Until story 11.3 adds income/transfers, every
- * transaction is spending, so it moves its wallet's balance down (on a credit
- * card that means more owed).
+ * Summarize every wallet. Expenses move money out of a wallet (on a credit card
+ * that means more owed), income moves it in, and a transfer does both — so a
+ * transfer never changes money on hand, and paying a card reduces what's owed.
  */
 export function summarizeWallets(
   accounts: readonly Account[],
@@ -38,12 +38,22 @@ export function summarizeWallets(
   const orphanTransactionIds: string[] = [];
 
   for (const tx of transactions) {
-    const current = tx.accountId === undefined ? undefined : balances.get(tx.accountId);
-    if (current === undefined || tx.accountId === undefined) {
+    const from = balances.get(tx.accountId);
+    const to = tx.type === "transfer" && tx.toAccountId ? balances.get(tx.toAccountId) : undefined;
+    // Skip (and report) anything touching an unknown wallet rather than half-applying it.
+    if (from === undefined || (tx.type === "transfer" && to === undefined)) {
       orphanTransactionIds.push(tx.id);
       continue;
     }
-    balances.set(tx.accountId, current - tx.amount.amountMinor);
+    const amount = tx.amount.amountMinor;
+    if (tx.type === "income") {
+      balances.set(tx.accountId, from + amount);
+    } else {
+      balances.set(tx.accountId, from - amount);
+      if (tx.type === "transfer" && tx.toAccountId && to !== undefined) {
+        balances.set(tx.toAccountId, to + amount);
+      }
+    }
   }
 
   const perAccount: AccountBalance[] = accounts.map((a) => ({
@@ -78,4 +88,23 @@ export function summarizeWallets(
 /** A wallet can be archived only once it's empty, so no money silently disappears from totals. */
 export function canArchiveAccount(balanceMinor: number): boolean {
   return balanceMinor === 0;
+}
+
+/**
+ * The wallet a new expense goes to when the user hasn't chosen one (quick-add):
+ * the wallet of their most recent transaction, else Cash, else the first active
+ * wallet. Archived wallets are never picked.
+ */
+export function pickDefaultAccountId(
+  accounts: readonly Account[],
+  transactions: readonly Transaction[],
+  cashAccountId: string,
+): string | undefined {
+  const active = new Set(accounts.filter((a) => a.archivedAt === undefined).map((a) => a.id));
+  const latest = [...transactions]
+    .filter((t) => active.has(t.accountId))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  if (latest) return latest.accountId;
+  if (active.has(cashAccountId)) return cashAccountId;
+  return accounts.find((a) => active.has(a.id))?.id;
 }

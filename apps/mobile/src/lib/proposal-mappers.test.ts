@@ -60,7 +60,25 @@ describe("transactionFromExpenseDraft", () => {
     expect(tx.userId).toBe(LOCAL_USER_ID);
   });
 
-  it("files the expense under the default Cash wallet until wallets are pickable (11.3)", () => {
+  it("records an expense, filed under the wallet the draft names", () => {
+    const gcash = "00000000-0000-4000-8000-0000000000aa";
+    const tx = transactionFromExpenseDraft(
+      { amount: PHP, accountId: gcash, occurredAt: "2026-06-15T12:00:00+08:00" },
+      makeCtx({ defaultAccountId: "00000000-0000-4000-8000-0000000000bb" }),
+    );
+    expect(tx.type).toBe("expense");
+    expect(tx.accountId).toBe(gcash);
+  });
+
+  it("uses the context default wallet when the draft names none", () => {
+    const tx = transactionFromExpenseDraft(
+      { amount: PHP, occurredAt: "2026-06-15T12:00:00+08:00" },
+      makeCtx({ defaultAccountId: "00000000-0000-4000-8000-0000000000bb" }),
+    );
+    expect(tx.accountId).toBe("00000000-0000-4000-8000-0000000000bb");
+  });
+
+  it("falls back to Cash when neither draft nor context names a wallet", () => {
     const tx = transactionFromExpenseDraft(
       { amount: PHP, occurredAt: "2026-06-15T12:00:00+08:00" },
       makeCtx(),

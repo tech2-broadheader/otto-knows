@@ -105,8 +105,12 @@ export const transactions = sqliteTable("transactions", {
   // ENCRYPTED ciphertext of the minor-units amount
   amountMinor: text("amount_minor").notNull(),
   amountCurrency: text("amount_currency").notNull(),
-  // Wallet the money moved in/out of (story 11.2; migration step 2).
+  // expense | income | transfer (story 11.3; migration step 3, default expense).
+  type: text("type").notNull(),
+  // Wallet the money left (expense, transfer) or arrived in (income). Step 2.
   accountId: text("account_id"),
+  // Transfers only: the wallet the money arrived in. Step 3.
+  toAccountId: text("to_account_id"),
   categoryId: text("category_id"),
   // ENCRYPTED ciphertext (nullable)
   description: text("description"),

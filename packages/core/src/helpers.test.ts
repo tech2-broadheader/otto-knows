@@ -42,6 +42,8 @@ describe("budget", () => {
     {
       id: UUID(10),
       userId: UUID(99),
+      type: "expense",
+      accountId: UUID(50),
       amount: { amountMinor: 600000, currency: "PHP" },
       categoryId: UUID(1),
       occurredAt: "2026-06-03T12:00:00+08:00",
@@ -51,6 +53,8 @@ describe("budget", () => {
     {
       id: UUID(11),
       userId: UUID(99),
+      type: "expense",
+      accountId: UUID(50),
       amount: { amountMinor: 5000, currency: "PHP" },
       occurredAt: "2026-06-05T09:00:00+08:00",
       createdAt: ISO,
@@ -59,6 +63,8 @@ describe("budget", () => {
     {
       id: UUID(12),
       userId: UUID(99),
+      type: "expense",
+      accountId: UUID(50),
       amount: { amountMinor: 9999, currency: "PHP" },
       categoryId: UUID(1),
       occurredAt: "2026-05-30T09:00:00+08:00",

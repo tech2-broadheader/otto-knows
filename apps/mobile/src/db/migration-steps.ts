@@ -185,7 +185,20 @@ const ACCOUNTS: Migration = {
   ],
 };
 
-export const MIGRATIONS: readonly Migration[] = [BASELINE, ACCOUNTS];
+/**
+ * Step 3 — transaction types (story 11.3). Existing rows become expenses (the
+ * only kind there was); NOT NULL needs the DEFAULT for ADD COLUMN in SQLite.
+ */
+const TRANSACTION_TYPES: Migration = {
+  version: 3,
+  name: "transaction-types",
+  statements: [
+    "ALTER TABLE transactions ADD COLUMN type TEXT NOT NULL DEFAULT 'expense';",
+    "ALTER TABLE transactions ADD COLUMN to_account_id TEXT;",
+  ],
+};
+
+export const MIGRATIONS: readonly Migration[] = [BASELINE, ACCOUNTS, TRANSACTION_TYPES];
 
 /** Derived from the list — never hand-maintained. */
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;

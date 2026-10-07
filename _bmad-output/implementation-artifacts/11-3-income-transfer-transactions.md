@@ -1,6 +1,6 @@
 # Story 11.3: Income & transfer transactions
 
-Status: drafted — logic tasks ready after 11.2; UI tasks blocked on Claude Design approval
+Status: in-progress — Tasks 1–5 (logic) done; Tasks 6–7 (UI, manual check) blocked on Claude Design approval
 
 ## Story
 
@@ -21,23 +21,23 @@ so that my wallet balances match reality and transfers are never counted as spen
 
 **Design-independent**
 
-- [ ] **Task 1 — Contract** (AC: 1, 6)
-  - [ ] 1.1 `packages/schemas/src/finance.ts`: `transactionTypeSchema = z.enum(["expense","income","transfer"])`; `transactionSchema` gains `type` (required), `accountId` (now **required**), `toAccountId?`. Add `.superRefine`: transfer ⇒ `toAccountId` present and ≠ `accountId`; non-transfer ⇒ no `toAccountId`; `categoryId` only on expense. Amount is always positive (`amountMinor > 0`); direction comes from `type`.
-  - [ ] 1.2 `packages/schemas/src/proposals.ts`: `expenseDraftSchema.accountId?: idSchema` (LLM may omit it).
-  - [ ] 1.3 Schema tests for every refinement branch.
-- [ ] **Task 2 — Migration step 3** (AC: 6)
-  - [ ] 2.1 Append `{ version: 3, name: "transaction-types" }`: `ALTER TABLE transactions ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'`; `ALTER TABLE transactions ADD COLUMN to_account_id TEXT`. Update Drizzle `schema.ts`.
-  - [ ] 2.2 Migration test: v2 → v3 keeps rows, all existing rows read back as `expense`.
-- [ ] **Task 3 — Data layer** (AC: 3)
-  - [ ] 3.1 Mappers carry `type` / `toAccountId`; repository `update` and `delete` already exist — verify they are wired and audit-logged.
-  - [ ] 3.2 Remove the interim `DEFAULT_CASH_ACCOUNT_ID` fallback in `useFinance.addTransaction` (11.2 Task 3.4) — callers now pass the chosen wallet.
-- [ ] **Task 4 — Core math** (AC: 4)
-  - [ ] 4.1 `packages/core/src/accounts.ts`: balances handle income (+ to account), expense (− from account), transfer (− from, + to). Credit card: an expense on the card makes its signed balance more negative (more owed); a transfer into the card reduces owed.
-  - [ ] 4.2 `packages/core/src/budget.ts` `computeBudgetSummary` and `forecasts.ts` `detectOverspendNudges`: consider **expenses only**. Add regression tests proving transfers/income don't count.
-  - [ ] 4.3 Tests: transfer between two wallets keeps total on-hand unchanged; card payment reduces owed and on-hand equally; edit/delete recomputes.
-- [ ] **Task 5 — Quick-add** (AC: 5)
-  - [ ] 5.1 `apps/mobile/src/lib/proposal-mappers.ts` `transactionFromExpenseDraft`: set `type: "expense"`, `accountId: draft.accountId ?? ctx.defaultAccountId` where `defaultAccountId` = last-used wallet else Cash (add to `ApplyContext`).
-  - [ ] 5.2 Tests in `proposal-mappers.test.ts` for both branches. Server tool schema (`apps/web/src/server/llm/tools.ts` `log_expense`) unchanged unless a wallet-name hint is trivially supported — do **not** let the LLM invent wallet ids.
+- [x] **Task 1 — Contract** (AC: 1, 6)
+  - [x] 1.1 `packages/schemas/src/finance.ts`: `transactionTypeSchema = z.enum(["expense","income","transfer"])`; `transactionSchema` gains `type` (required), `accountId` (now **required**), `toAccountId?`. Add `.superRefine`: transfer ⇒ `toAccountId` present and ≠ `accountId`; non-transfer ⇒ no `toAccountId`; `categoryId` only on expense. Amount is always positive (`amountMinor > 0`); direction comes from `type`.
+  - [x] 1.2 `packages/schemas/src/proposals.ts`: `expenseDraftSchema.accountId?: idSchema` (LLM may omit it).
+  - [x] 1.3 Schema tests for every refinement branch.
+- [x] **Task 2 — Migration step 3** (AC: 6)
+  - [x] 2.1 Append `{ version: 3, name: "transaction-types" }`: `ALTER TABLE transactions ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'`; `ALTER TABLE transactions ADD COLUMN to_account_id TEXT`. Update Drizzle `schema.ts`.
+  - [x] 2.2 Migration test: v2 → v3 keeps rows, all existing rows read back as `expense`.
+- [x] **Task 3 — Data layer** (AC: 3)
+  - [x] 3.1 Mappers carry `type` / `toAccountId`; repository `update` and `delete` already exist — verify they are wired and audit-logged.
+  - [x] 3.2 Remove the interim `DEFAULT_CASH_ACCOUNT_ID` fallback in `useFinance.addTransaction` (11.2 Task 3.4) — callers now pass the chosen wallet.
+- [x] **Task 4 — Core math** (AC: 4)
+  - [x] 4.1 `packages/core/src/accounts.ts`: balances handle income (+ to account), expense (− from account), transfer (− from, + to). Credit card: an expense on the card makes its signed balance more negative (more owed); a transfer into the card reduces owed.
+  - [x] 4.2 `packages/core/src/budget.ts` `computeBudgetSummary` and `forecasts.ts` `detectOverspendNudges`: consider **expenses only**. Add regression tests proving transfers/income don't count.
+  - [x] 4.3 Tests: transfer between two wallets keeps total on-hand unchanged; card payment reduces owed and on-hand equally; edit/delete recomputes.
+- [x] **Task 5 — Quick-add** (AC: 5)
+  - [x] 5.1 `apps/mobile/src/lib/proposal-mappers.ts` `transactionFromExpenseDraft`: set `type: "expense"`, `accountId: draft.accountId ?? ctx.defaultAccountId` where `defaultAccountId` = last-used wallet else Cash (add to `ApplyContext`).
+  - [x] 5.2 Tests in `proposal-mappers.test.ts` for both branches. Server tool schema (`apps/web/src/server/llm/tools.ts` `log_expense`) unchanged unless a wallet-name hint is trivially supported — do **not** let the LLM invent wallet ids.
 
 **UI (after Claude Design approval of `docs/ux-spec.md` §7 screen 2)**
 
@@ -64,10 +64,29 @@ so that my wallet balances match reality and transfers are never counted as spen
 
 ### Agent Model Used
 
+Claude Opus 5.5 (claude-opus-5-5)
+
 ### Debug Log References
 
 ### Completion Notes List
 
 - Story drafted 2026-10-08.
+- Tasks 1–5 implemented 2026-10-08:
+  - `transactionTypeSchema`; `transactionSchema` now requires `type` + `accountId`, optional `toAccountId`; superRefine enforces transfer rules and expense-only categories; amount must be > 0. `expenseDraftSchema.accountId` optional.
+  - Migration step 3 (`type NOT NULL DEFAULT 'expense'`, `to_account_id`); Drizzle schema updated (parity test green).
+  - Mappers carry `type`/`toAccountId`; a stored row with NULL `account_id` throws a clear error instead of inventing a wallet.
+  - `summarizeWallets` handles income/transfer (transfers to unknown wallets reported as orphans, never half-applied); `computeBudgetSummary` counts expenses only (so overspend forecast does too).
+  - `pickDefaultAccountId` (last-used active wallet → Cash → first active). Quick-add: `applyProposal` keeps the LLM's wallet only if it is one of the user's active wallets, else uses the default — the LLM can never inject an arbitrary wallet id.
+  - `useFinance`: exposes `accounts` + `wallets` summary; `addTransaction` takes optional type/wallet(s) (defaults keep the current screen working); new `updateTransaction` / `deleteTransaction`.
+  - Existing core test fixtures updated with `type`/`accountId` (stricter contract).
+  - TDD note: the mapper transfer/no-wallet tests were written in the same step as the mapper change rather than run red first.
+  - Gates: typecheck ✅, tests ✅ 333 (schemas 29, core 86, mobile 169, web 49), lint ✅.
 
 ### File List
+
+- packages/schemas/src/finance.ts, finance.test.ts, proposals.ts; packages/types/src/index.ts
+- packages/core/src/accounts.ts, accounts.test.ts, budget.ts, expense-only.test.ts (new), helpers.test.ts, phase2.test.ts
+- apps/mobile/src/db/migration-steps.ts, schema.ts, migrations.test.ts
+- apps/mobile/src/data/mappers.ts, mappers.test.ts
+- apps/mobile/src/lib/proposal-mappers.ts, proposal-mappers.test.ts, apply-proposal.ts
+- apps/mobile/src/hooks/useFinance.ts

@@ -123,6 +123,8 @@ describe("forecasts", () => {
       {
         id: U(31),
         userId: U(99),
+        type: "expense",
+        accountId: U(50),
         amount: { amountMinor: 600000, currency: "PHP" },
         categoryId: U(30),
         occurredAt: "2026-06-05T12:00:00+08:00",

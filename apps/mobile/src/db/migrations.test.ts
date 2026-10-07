@@ -274,3 +274,24 @@ describe("step 2 — accounts (story 11.2)", () => {
     ]);
   });
 });
+
+describe("step 3 — transaction types (story 11.3)", () => {
+  it("reads every existing transaction back as an expense with no transfer target", () => {
+    const db = new DatabaseSync(":memory:");
+    const ts = "2026-06-15T08:00:00+08:00";
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 2)).ok).toBe(true);
+    db.exec(
+      `INSERT INTO transactions (id, user_id, amount_minor, amount_currency, account_id, occurred_at, created_at, updated_at)
+       VALUES ('t1','u1','CIPHER:a','PHP','00000000-0000-4000-8000-0000000000ca','${ts}','${ts}','${ts}')`,
+    );
+
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 3))).toMatchObject({
+      ok: true,
+      toVersion: 3,
+    });
+
+    expect(db.prepare("SELECT id, type, to_account_id FROM transactions").all()).toEqual([
+      { id: "t1", type: "expense", to_account_id: null },
+    ]);
+  });
+});

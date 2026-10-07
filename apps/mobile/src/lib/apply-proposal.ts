@@ -7,7 +7,9 @@
 // to the matching repository. This module imports the data layer (native), so
 // it is NOT covered by the Node unit tests; the mappers it composes are.
 import type { ProposalAction } from "@otto/schemas";
+import { pickDefaultAccountId } from "@otto/core";
 import {
+  makeAccountRepository,
   makeBillRepository,
   makeMedicationRepository,
   makeTransactionRepository,
@@ -15,7 +17,7 @@ import {
   routineRepository,
   type RepositoryDeps,
 } from "../data";
-import { LOCAL_USER_ID } from "./constants";
+import { DEFAULT_CASH_ACCOUNT_ID, LOCAL_USER_ID } from "./constants";
 import {
   anchorFromDraft,
   billFromDraft,
@@ -58,11 +60,29 @@ export async function applyProposal(
     case "create_reminder":
       await reminderRepository.create(reminderFromDraft(action.reminder, ctx));
       return;
-    case "log_expense":
-      await makeTransactionRepository(deps).create(
-        transactionFromExpenseDraft(action.expense, ctx),
+    case "log_expense": {
+      const userId = ctx.userId ?? LOCAL_USER_ID;
+      const txRepo = makeTransactionRepository(deps);
+      const [accounts, transactions] = await Promise.all([
+        makeAccountRepository(deps).list(userId),
+        txRepo.list(userId),
+      ]);
+      // The LLM must never pick an arbitrary wallet id: keep the draft's wallet
+      // only if it is one of the user's active wallets, else use last-used/Cash.
+      const draftWalletIsActive = accounts.some(
+        (a) => a.id === action.expense.accountId && a.archivedAt === undefined,
       );
+      const expense = draftWalletIsActive
+        ? action.expense
+        : { ...action.expense, accountId: undefined };
+      const defaultAccountId = pickDefaultAccountId(
+        accounts,
+        transactions,
+        DEFAULT_CASH_ACCOUNT_ID,
+      );
+      await txRepo.create(transactionFromExpenseDraft(expense, { ...ctx, defaultAccountId }));
       return;
+    }
     case "add_bill":
       await makeBillRepository(deps).create(billFromDraft(action.bill, ctx));
       return;

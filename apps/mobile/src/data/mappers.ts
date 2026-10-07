@@ -447,7 +447,9 @@ export interface TransactionRow {
   userId: string;
   amountMinor: string;
   amountCurrency: string;
+  type: string;
   accountId: string | null;
+  toAccountId: string | null;
   categoryId: string | null;
   description: string | null;
   occurredAt: string;
@@ -461,7 +463,9 @@ export function transactionToRow(t: Transaction, sealed: SealedTransaction): Tra
     userId: t.userId,
     amountMinor: sealed.amountMinor,
     amountCurrency: t.amount.currency,
-    accountId: nullable(t.accountId),
+    type: t.type,
+    accountId: t.accountId,
+    toAccountId: nullable(t.toAccountId),
     categoryId: nullable(t.categoryId),
     description: sealed.description,
     occurredAt: t.occurredAt,
@@ -475,14 +479,21 @@ export function transactionFromRow(
   openedAmountMinor: string,
   openedDescription: string | null,
 ): Transaction {
+  // Migration step 2 gave every row a wallet; a NULL here means corrupt data.
+  // Fail loudly rather than inventing a wallet and skewing balances.
+  if (r.accountId === null) {
+    throw new Error(`Transaction ${r.id} has no wallet`);
+  }
   return {
     id: r.id,
     userId: r.userId,
+    type: r.type as Transaction["type"],
     amount: {
       amountMinor: Number.parseInt(openedAmountMinor, 10),
       currency: r.amountCurrency as Transaction["amount"]["currency"],
     },
-    accountId: optional(r.accountId),
+    accountId: r.accountId,
+    toAccountId: optional(r.toAccountId),
     categoryId: optional(r.categoryId),
     description: openedDescription === null ? undefined : openedDescription,
     occurredAt: r.occurredAt,

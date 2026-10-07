@@ -63,7 +63,7 @@ development_status:
   epic-11: in-progress
   11-1-versioned-local-migrations: in-progress
   11-2-wallets-accounts: in-progress            # logic (tasks 1-4) done; UI blocked on Claude Design
-  11-3-income-transfer-transactions: backlog    # story file drafted; after 11.2; UI blocked on Claude Design
+  11-3-income-transfer-transactions: in-progress # logic (tasks 1-5) done; UI blocked on Claude Design
   11-4-safe-to-spend: backlog                   # story file drafted; after 11.3; also fixes stale nextPayDate; UI blocked on Claude Design
   11-5-monthly-report: backlog                  # story file drafted; after 11.3; UI blocked on Claude Design
   epic-11-retrospective: optional

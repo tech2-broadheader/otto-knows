@@ -34,7 +34,10 @@ export function computeBudgetSummary(
   transactions: readonly Transaction[],
   month: string,
 ): BudgetSummary {
-  const monthTx = transactions.filter((t) => isInMonth(t.occurredAt, month));
+  // Only expenses are spending: income and transfers (incl. card payments) never count.
+  const monthTx = transactions.filter(
+    (t) => t.type === "expense" && isInMonth(t.occurredAt, month),
+  );
   const currency = categories[0]?.monthlyLimit?.currency ?? monthTx[0]?.amount.currency ?? "PHP";
 
   const spentByCategory = new Map<string, number>();

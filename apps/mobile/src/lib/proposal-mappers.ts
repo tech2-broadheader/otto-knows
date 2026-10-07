@@ -28,6 +28,8 @@ export type ApplyContext = {
   now: string;
   /** Owner of the created entity. Defaults to the local free-tier user. */
   userId?: string;
+  /** Wallet for an expense whose draft names none (last-used, else Cash). */
+  defaultAccountId?: string;
 };
 
 /** Stamp fields every persisted entity carries. */
@@ -68,9 +70,9 @@ export function transactionFromExpenseDraft(
 ): Transaction {
   return transactionSchema.parse({
     ...stamp(ctx),
+    type: "expense",
     amount: draft.amount,
-    // Story 11.3 resolves the wallet from the draft / last-used wallet instead.
-    accountId: DEFAULT_CASH_ACCOUNT_ID,
+    accountId: draft.accountId ?? ctx.defaultAccountId ?? DEFAULT_CASH_ACCOUNT_ID,
     categoryId: draft.categoryId,
     description: draft.description,
     occurredAt: draft.occurredAt,

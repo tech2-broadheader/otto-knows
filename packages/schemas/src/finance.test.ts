@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountSchema, isSensitiveEntity, transactionSchema } from "./index";
+import { accountSchema, expenseDraftSchema, isSensitiveEntity, transactionSchema } from "./index";
 
 const ISO = "2026-10-08T08:00:00+08:00";
 const UUID = "11111111-1111-4111-8111-111111111111";
@@ -50,20 +50,62 @@ describe("accountSchema", () => {
   });
 });
 
-describe("transactionSchema.accountId", () => {
-  const tx = {
+describe("transactionSchema (typed, story 11.3)", () => {
+  const OTHER = "33333333-3333-4333-8333-333333333333";
+  const base = {
     id: UUID,
     userId: UUID,
     amount: { amountMinor: 2500, currency: "PHP" },
+    accountId: ACCOUNT_ID,
     occurredAt: ISO,
     createdAt: ISO,
     updatedAt: ISO,
   };
+  const ok = (v: object): boolean => transactionSchema.safeParse(v).success;
 
-  it("accepts a transaction with or without a wallet (required from story 11.3)", () => {
-    expect(transactionSchema.safeParse(tx).success).toBe(true);
-    expect(transactionSchema.safeParse({ ...tx, accountId: ACCOUNT_ID }).success).toBe(true);
-    expect(transactionSchema.safeParse({ ...tx, accountId: "cash" }).success).toBe(false);
+  it("accepts expense and income with a wallet", () => {
+    expect(ok({ ...base, type: "expense", categoryId: OTHER })).toBe(true);
+    expect(ok({ ...base, type: "income" })).toBe(true);
+  });
+
+  it("requires a type and a wallet", () => {
+    expect(ok({ ...base })).toBe(false);
+    const { accountId: _omit, ...noWallet } = base;
+    expect(ok({ ...noWallet, type: "expense" })).toBe(false);
+  });
+
+  it("requires a different destination wallet for a transfer", () => {
+    expect(ok({ ...base, type: "transfer", toAccountId: OTHER })).toBe(true);
+    expect(ok({ ...base, type: "transfer" })).toBe(false);
+    expect(ok({ ...base, type: "transfer", toAccountId: ACCOUNT_ID })).toBe(false);
+  });
+
+  it("rejects a destination wallet on expense or income", () => {
+    expect(ok({ ...base, type: "expense", toAccountId: OTHER })).toBe(false);
+    expect(ok({ ...base, type: "income", toAccountId: OTHER })).toBe(false);
+  });
+
+  it("only lets expenses carry a budget category", () => {
+    expect(ok({ ...base, type: "income", categoryId: OTHER })).toBe(false);
+    expect(ok({ ...base, type: "transfer", toAccountId: OTHER, categoryId: OTHER })).toBe(false);
+  });
+
+  it("requires a positive amount (direction comes from the type)", () => {
+    expect(ok({ ...base, type: "expense", amount: { amountMinor: 0, currency: "PHP" } })).toBe(
+      false,
+    );
+    expect(ok({ ...base, type: "expense", amount: { amountMinor: -5, currency: "PHP" } })).toBe(
+      false,
+    );
+  });
+});
+
+describe("expenseDraftSchema.accountId", () => {
+  it("lets quick-add drafts optionally name a wallet", () => {
+    const draft = { amount: { amountMinor: 100, currency: "PHP" }, occurredAt: ISO };
+    expect(expenseDraftSchema.safeParse(draft).success).toBe(true);
+    expect(expenseDraftSchema.safeParse({ ...draft, accountId: ACCOUNT_ID }).success).toBe(true);
+    expect(expenseDraftSchema.safeParse({ ...draft, accountId: "gcash" }).success).toBe(false);
   });
 });
 

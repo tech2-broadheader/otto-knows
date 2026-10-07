@@ -220,6 +220,7 @@ describe("sensitive mappers round-trip (identity seal/open)", () => {
     const tx: Transaction = transactionSchema.parse({
       id: ID(4),
       userId: ID(3),
+      type: "expense",
       amount: { amountMinor: 25050, currency: "PHP" },
       accountId: ID(7),
       categoryId: ID(5),
@@ -239,7 +240,9 @@ describe("sensitive mappers round-trip (identity seal/open)", () => {
     const tx: Transaction = transactionSchema.parse({
       id: ID(4),
       userId: ID(3),
+      type: "income",
       amount: { amountMinor: 9900, currency: "PHP" },
+      accountId: ID(7),
       occurredAt: T,
       createdAt: T,
       updatedAt: T,
@@ -249,6 +252,44 @@ describe("sensitive mappers round-trip (identity seal/open)", () => {
       description: null,
     });
     expect(transactionFromRow(row, row.amountMinor, row.description)).toEqual(tx);
+  });
+
+  it("transfer keeps its destination wallet", () => {
+    const tx: Transaction = transactionSchema.parse({
+      id: ID(4),
+      userId: ID(3),
+      type: "transfer",
+      amount: { amountMinor: 300000, currency: "PHP" },
+      accountId: ID(7),
+      toAccountId: ID(8),
+      occurredAt: T,
+      createdAt: T,
+      updatedAt: T,
+    });
+    const row = transactionToRow(tx, { amountMinor: "300000", description: null });
+    expect(row.type).toBe("transfer");
+    expect(row.toAccountId).toBe(ID(8));
+    expect(transactionFromRow(row, row.amountMinor, row.description)).toEqual(tx);
+  });
+
+  it("refuses a stored transaction with no wallet instead of guessing one", () => {
+    const row = {
+      ...transactionToRow(
+        transactionSchema.parse({
+          id: ID(4),
+          userId: ID(3),
+          type: "expense",
+          amount: { amountMinor: 1, currency: "PHP" },
+          accountId: ID(7),
+          occurredAt: T,
+          createdAt: T,
+          updatedAt: T,
+        }),
+        { amountMinor: "1", description: null },
+      ),
+      accountId: null,
+    };
+    expect(() => transactionFromRow(row, "1", null)).toThrow(/no wallet/);
   });
 
   it("wallet with provider, archived, negative (card owed) opening balance", () => {

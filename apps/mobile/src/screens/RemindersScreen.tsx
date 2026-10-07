@@ -8,13 +8,16 @@
 // each pending reminder still offers "Remind me". Data logic is unchanged.
 //
 // Approved design (2026-10-08): the tab also holds Notes (story 12.1) and
-// Appointments (story 12.4) behind a Reminders / Notes / Appointments switch.
+// Appointments (story 12.4) behind a Reminders / Notes / Appointments switch,
+// and Alarms (story 12.3) as a fourth segment ("Appointments" shortened to "Appts").
 import { useCallback, useMemo, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { Reminder } from "@otto/schemas";
 import { useNotes } from "../hooks/useNotes";
 import { useAppointments } from "../hooks/useAppointments";
+import { useAlarms } from "../hooks/useAlarms";
+import { AlarmsSection } from "../components/AlarmsSection";
 import { IconTile } from "../components/money-ui";
 import { Icon } from "../design/Icon";
 import { useMoney } from "../lib/settings-context";
@@ -77,16 +80,21 @@ export function RemindersScreen(): React.JSX.Element {
   const noteList = useNotes();
   const appointments = useAppointments(deps);
   const money = useMoney();
-  const [view, setView] = useState<"reminders" | "notes" | "appointments">("reminders");
+  const alarms = useAlarms();
+  const [view, setView] = useState<"reminders" | "notes" | "alarms" | "appointments">(
+    "reminders",
+  );
   const reloadNotes = noteList.reload;
   const reloadAppointments = appointments.reload;
+  const reloadAlarms = alarms.reload;
   // The note and appointment editors are pushed on top; refresh when coming back.
   useFocusEffect(
     useCallback(() => {
       void reload();
       void reloadNotes();
       void reloadAppointments();
-    }, [reload, reloadNotes, reloadAppointments]),
+      void reloadAlarms();
+    }, [reload, reloadNotes, reloadAppointments, reloadAlarms]),
   );
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -160,7 +168,9 @@ export function RemindersScreen(): React.JSX.Element {
             ? `${noteList.notes.length} note${noteList.notes.length === 1 ? "" : "s"}`
             : view === "appointments"
               ? `${appointments.upcoming.length} upcoming`
-              : `${openCount} open`
+              : view === "alarms"
+                ? `${alarms.alarms.filter((a) => a.enabled).length} on`
+                : `${openCount} open`
         }
         isPro={isPro}
         onUpgrade={goToUpgrade}
@@ -172,7 +182,8 @@ export function RemindersScreen(): React.JSX.Element {
           options={[
             { k: "reminders", l: "Reminders" },
             { k: "notes", l: "Notes" },
-            { k: "appointments", l: "Appointments" },
+            { k: "alarms", l: "Alarms" },
+            { k: "appointments", l: "Appts" },
           ]}
           value={view}
           onChange={(k) => setView(k as typeof view)}
@@ -268,6 +279,17 @@ export function RemindersScreen(): React.JSX.Element {
             )}
             <AddButton label="New note" onPress={() => navigation.navigate("NoteEditor")} />
           </AsyncBoundary>
+        </View>
+      ) : null}
+
+      {view === "alarms" ? (
+        <View style={{ paddingHorizontal: 18, marginTop: 14 }}>
+          <AlarmsSection
+            alarms={alarms}
+            onOpen={(alarmId) =>
+              navigation.navigate("AlarmForm", alarmId ? { alarmId } : undefined)
+            }
+          />
         </View>
       ) : null}
 

@@ -13,3 +13,4 @@ export * from "./tips";
 export * from "./notes";
 export * from "./appointments";
 export * from "./locale";
+export * from "./alarms";

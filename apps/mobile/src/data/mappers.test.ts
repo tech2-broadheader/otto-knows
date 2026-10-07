@@ -9,6 +9,7 @@ import {
   contextItemSchema,
   incomeSchema,
   medicationSchema,
+  alarmSchema,
   noteSchema,
   reminderSchema,
   routineSchema,
@@ -37,6 +38,8 @@ import {
   billFromRow,
   billToRow,
   budgetCategoryFromRow,
+  alarmFromRow,
+  alarmToRow,
   budgetCategoryToRow,
   calendarEventFromRow,
   calendarEventToRow,
@@ -108,6 +111,35 @@ describe("non-sensitive mappers round-trip (entity -> row -> entity)", () => {
     });
     expect(appointmentToRow(bare).location).toBeNull();
     expect(appointmentFromRow(appointmentToRow(bare))).toEqual(bare);
+  });
+
+  it("alarm: repeat days as JSON, switches as 0/1, label optional", () => {
+    const weekdays = alarmSchema.parse({
+      id: ID(1),
+      userId: ID(3),
+      time: "06:00",
+      repeatDays: ["mon", "tue", "wed", "thu", "fri"],
+      label: "Wake up",
+      vibrate: false,
+      createdAt: T,
+      updatedAt: T,
+    });
+    const row = alarmToRow(weekdays);
+    expect(row).toMatchObject({
+      repeatDays: '["mon","tue","wed","thu","fri"]',
+      enabled: 1,
+      vibrate: 0,
+    });
+    expect(alarmFromRow(row)).toEqual(weekdays);
+    const once = alarmSchema.parse({
+      id: ID(2),
+      userId: ID(3),
+      time: "14:15",
+      createdAt: T,
+      updatedAt: T,
+    });
+    expect(alarmToRow(once).label).toBeNull();
+    expect(alarmFromRow(alarmToRow(once))).toEqual(once);
   });
 
   it("note with and without a title, pinned stored as 0/1", () => {

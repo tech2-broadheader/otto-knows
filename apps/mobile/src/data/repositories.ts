@@ -22,6 +22,7 @@ import {
   incomeSchema,
   medicationSchema,
   noteSchema,
+  alarmSchema,
   reminderSchema,
   routineSchema,
   routineAnchorSchema,
@@ -29,6 +30,7 @@ import {
   userSettingsSchema,
   transactionSchema,
   type Account,
+  type Alarm,
   type AuditEntry,
   type Appointment,
   type Bill,
@@ -74,6 +76,8 @@ import {
   medicationFromRow,
   medicationToRow,
   noteFromRow,
+  alarmFromRow,
+  alarmToRow,
   noteToRow,
   reminderFromRow,
   reminderToRow,
@@ -262,6 +266,49 @@ export const appointmentRepository = {
     getDatabase()
       .delete(tables.appointments)
       .where(and(eq(tables.appointments.id, id), eq(tables.appointments.userId, userId)))
+      .run();
+  },
+};
+
+/**
+ * Alarms repository (story 12.3). Non-sensitive tier like reminders; the app
+ * mirrors every change to the Android alarm module (lib/alarms.ts).
+ */
+export const alarmRepository = {
+  async create(input: Alarm): Promise<Alarm> {
+    const entity = alarmSchema.parse(input);
+    getDatabase().insert(tables.alarms).values(alarmToRow(entity)).run();
+    return entity;
+  },
+  async get(userId: string, id: string): Promise<Alarm | undefined> {
+    const row = getDatabase()
+      .select()
+      .from(tables.alarms)
+      .where(and(eq(tables.alarms.id, id), eq(tables.alarms.userId, userId)))
+      .get();
+    return row ? alarmSchema.parse(alarmFromRow(row)) : undefined;
+  },
+  async list(userId: string): Promise<Alarm[]> {
+    const rows = getDatabase()
+      .select()
+      .from(tables.alarms)
+      .where(eq(tables.alarms.userId, userId))
+      .all();
+    return rows.map((r) => alarmSchema.parse(alarmFromRow(r)));
+  },
+  async update(input: Alarm): Promise<Alarm> {
+    const entity = alarmSchema.parse(input);
+    getDatabase()
+      .update(tables.alarms)
+      .set(alarmToRow(entity))
+      .where(and(eq(tables.alarms.id, entity.id), eq(tables.alarms.userId, entity.userId)))
+      .run();
+    return entity;
+  },
+  async delete(userId: string, id: string): Promise<void> {
+    getDatabase()
+      .delete(tables.alarms)
+      .where(and(eq(tables.alarms.id, id), eq(tables.alarms.userId, userId)))
       .run();
   },
 };

@@ -71,8 +71,8 @@ development_status:
   # --- Daily tasks (planned 2026-10-08; see sprint-change-proposal-2026-10-08.md) ---
   epic-12: in-progress
   12-1-notes: review                                  # logic + UI done; on-device check pending
-  12-2-alarms-spike: review                    # research done; ADR-005 recommendation awaits owner approval
-  12-3-alarms: backlog                         # after 12.2 + GATE-4 + dep approval
+  12-2-alarms-spike: done                      # ADR-005 accepted by owner 2026-10-08
+  12-3-alarms: review                          # in-repo Android module + screens built; module compiles; on-device check pending
   12-4-appointments: in-progress                      # Otto appointments + UI done; device/Google need approvals
   12-5-meetings-invites: backlog               # GATE-5
   epic-12-retrospective: optional

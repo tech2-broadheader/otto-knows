@@ -213,6 +213,32 @@ export function validateAppointmentForm(
   };
 }
 
+// ─────────── Alarm (story 12.3) ───────────
+
+export type AlarmFormInput = { hour: string; minute: string; label: string };
+export type AlarmFormValue = { time: string; label: string | undefined };
+
+const TWO_DIGITS = /^\d{1,2}$/;
+
+export function validateAlarmForm(input: AlarmFormInput): FormResult<AlarmFormValue> {
+  const hour = input.hour.trim();
+  const minute = input.minute.trim();
+  if (!TWO_DIGITS.test(hour) || Number(hour) > 23) {
+    return { ok: false, error: "Enter an hour from 0 to 23." };
+  }
+  if (!TWO_DIGITS.test(minute) || Number(minute) > 59) {
+    return { ok: false, error: "Enter minutes from 0 to 59." };
+  }
+  const label = input.label.trim();
+  return {
+    ok: true,
+    value: {
+      time: `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`,
+      label: label === "" ? undefined : label,
+    },
+  };
+}
+
 // ─────────── Quick date choices ───────────
 
 export type DateChoice = "yesterday" | "today" | "tomorrow";

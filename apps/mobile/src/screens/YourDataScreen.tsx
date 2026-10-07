@@ -23,7 +23,7 @@ const INCLUDED = [
   "Bills & income",
   "Budgets",
   "Reminders & notes",
-  "Appointments",
+  "Appointments & alarms",
   "Medications",
   "Routine",
   "Consents & access log",

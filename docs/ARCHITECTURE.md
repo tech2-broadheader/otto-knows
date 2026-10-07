@@ -112,7 +112,7 @@ Overview (the contract is the Zod schema, not this table):
 | ADR-002 | Local-first SQLite for free tier; cloud Supabase only for Pro sync/LLM | Accepted | 2026-06-14 |
 | ADR-003 | Manual finance entry is the launch baseline; SMS parsing gated on Play policy | Accepted | 2026-06-14 |
 | ADR-004 | Derived wallet balances + versioned on-device migrations | Accepted | 2026-10-07 |
-| ADR-005 | Alarms via an in-repo Expo module (AlarmManager + full-screen notification), SCHEDULE_EXACT_ALARM path — see spike 12.2 | Proposed (awaiting owner) | 2026-10-08 |
+| ADR-005 | Alarms via an in-repo Expo module (AlarmManager + full-screen notification), SCHEDULE_EXACT_ALARM path — see spike 12.2 | Accepted (owner, 2026-10-08) | 2026-10-08 |
 | ADR-006 | Billing: RevenueCat verifies store receipts; server trusts only its webhook | Proposed | 2026-10-08 |
 | ADR-007 | One home currency per user; locale/timezone-driven formatting via Intl; translation-ready string catalog | Accepted | 2026-10-08 |
 
@@ -139,6 +139,12 @@ Overview (the contract is the Zod schema, not this table):
 - **Decision:** (1) Wallet balances are computed (opening balance + typed transactions) in `/packages/core`, never stored as a mutable total. (2) The mobile SQLite schema moves to versioned migrations tracked by `PRAGMA user_version`; each step runs in a transaction, and shipped steps are never edited.
 - **Status:** Accepted.
 - **Consequences:** No balance drift or double-counting on edit/delete. Small compute cost (decrypt + sum on device), acceptable at personal-finance volumes; revisit with cached monthly snapshots if needed. Every future local schema change ships as a new migration step with an upgrade-path test.
+
+### ADR-005 — Alarms through an in-repo Expo module
+- **Context:** Alarms must ring with sound and a full-screen screen, survive reboot and app kill, and pass Play review. Exact alarms are user-granted on Android 14+, and `USE_EXACT_ALARM` is reserved for alarm-clock apps (spike 12.2, GATE-4 verified 2026-10-08). The third-party modules are unmaintained or only send notifications.
+- **Decision:** A small Kotlin module in `apps/mobile/modules/otto-alarm` (Expo Modules API, no npm dependency). It arms `AlarmManager.setAlarmClock` when "Alarms & reminders" is granted, else an inexact `setAndAllowWhileIdle`. It rings through an insistent alarm notification (alarm sound, `USAGE_ALARM`) whose full-screen intent opens a native ringing screen with Snooze / Dismiss. It keeps what is armed in its own store so a boot / update / clock / permission-change receiver can re-arm without JavaScript. Otto's SQLite `alarms` table is the source of truth; the app reconciles the two at start-up. Permissions: `SCHEDULE_EXACT_ALARM` (not `USE_EXACT_ALARM`), `USE_FULL_SCREEN_INTENT`, `RECEIVE_BOOT_COMPLETED`, `POST_NOTIFICATIONS`, `VIBRATE`.
+- **Status:** Accepted (product owner, 2026-10-08).
+- **Consequences:** No dependency risk and a small, owned surface. Android only: on iOS and in Expo Go alarms are saved but cannot ring, and the UI says so. Needs a dev or production build (EAS) and an on-device check; Play policy is re-checked at release (GATE-4).
 
 ### ADR-007 — Home currency, locale and timezone
 - **Context:** Otto launches in PH, Southeast Asia, US/Canada and UK/Europe (2026-10-08). The code assumed PHP, `en-PH` and Asia/Manila.

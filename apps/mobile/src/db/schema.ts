@@ -147,6 +147,20 @@ export const notes = sqliteTable("notes", {
   updatedAt: text("updated_at").notNull(),
 });
 
+/** Alarms (story 12.3) — user-created; not sensitive-tier. repeat_days is a JSON array. */
+export const alarms = sqliteTable("alarms", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  time: text("time").notNull(),
+  repeatDays: text("repeat_days").notNull(),
+  label: text("label"),
+  enabled: integer("enabled").notNull(),
+  vibrate: integer("vibrate").notNull(),
+  snoozeMinutes: integer("snooze_minutes").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 /** Appointments (story 12.4) — user-created; not sensitive-tier (like reminders). */
 export const appointments = sqliteTable("appointments", {
   id: text("id").primaryKey(),
@@ -247,6 +261,7 @@ export const tables = {
   accounts,
   notes,
   appointments,
+  alarms,
   userSettings,
   budgetCategories,
   calendarEvents,

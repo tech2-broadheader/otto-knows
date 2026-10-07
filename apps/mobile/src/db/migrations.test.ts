@@ -361,3 +361,19 @@ describe("step 7 — income pay days (story 13.5)", () => {
     expect(columns).toContain("pay_days");
   });
 });
+
+describe("step 8 — alarms (story 12.3)", () => {
+  it("adds an empty alarms table without touching earlier data", () => {
+    const db = new DatabaseSync(":memory:");
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 7)).ok).toBe(true);
+    const before = db.prepare("SELECT * FROM accounts").all();
+
+    expect(runMigrations(createNodeSqliteExecutor(db), MIGRATIONS.slice(0, 8))).toMatchObject({
+      ok: true,
+      toVersion: 8,
+    });
+
+    expect(db.prepare("SELECT COUNT(*) AS n FROM alarms").get()).toEqual({ n: 0 });
+    expect(db.prepare("SELECT * FROM accounts").all()).toEqual(before);
+  });
+});

@@ -4,6 +4,7 @@
 // (wipeLocalData), which clears every table and the encryption key.
 import type {
   Account,
+  Alarm,
   Appointment,
   AuditEntry,
   Bill,
@@ -18,6 +19,7 @@ import type {
   UserSettings,
 } from "@otto/schemas";
 import {
+  alarmRepository,
   appointmentRepository,
   auditRepository,
   budgetCategoryRepository,
@@ -46,6 +48,7 @@ export interface ExportBundle {
   reminders: Reminder[];
   notes: Note[];
   appointments: Appointment[];
+  alarms: Alarm[];
   medications: Medication[];
   consents: Consent[];
   auditLog: AuditEntry[];
@@ -64,6 +67,7 @@ export async function exportMyData(userId: string, deps: RepositoryDeps): Promis
     reminders: await reminderRepository.list(userId),
     notes: await noteRepository.list(userId),
     appointments: await appointmentRepository.list(userId),
+    alarms: await alarmRepository.list(userId),
     medications: await makeMedicationRepository(deps).list(userId),
     consents: await consentRepository.list(userId),
   };

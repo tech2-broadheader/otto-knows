@@ -12,6 +12,7 @@
 // which is exactly what the unit tests assert.
 import type {
   Account,
+  Alarm,
   Appointment,
   Bill,
   BudgetCategory,
@@ -599,6 +600,49 @@ export function appointmentFromRow(r: AppointmentRow): Appointment {
     remindMinutesBefore: optional(r.remindMinutesBefore),
     destination: r.destination as Appointment["destination"],
     externalId: optional(r.externalId),
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
+export interface AlarmRow {
+  id: string;
+  userId: string;
+  time: string;
+  repeatDays: string;
+  label: string | null;
+  enabled: number;
+  vibrate: number;
+  snoozeMinutes: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function alarmToRow(a: Alarm): AlarmRow {
+  return {
+    id: a.id,
+    userId: a.userId,
+    time: a.time,
+    repeatDays: JSON.stringify(a.repeatDays),
+    label: nullable(a.label),
+    enabled: toBit(a.enabled),
+    vibrate: toBit(a.vibrate),
+    snoozeMinutes: a.snoozeMinutes,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  };
+}
+
+export function alarmFromRow(r: AlarmRow): Alarm {
+  return {
+    id: r.id,
+    userId: r.userId,
+    time: r.time,
+    repeatDays: JSON.parse(r.repeatDays) as Alarm["repeatDays"],
+    label: optional(r.label),
+    enabled: fromBit(r.enabled),
+    vibrate: fromBit(r.vibrate),
+    snoozeMinutes: r.snoozeMinutes,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };

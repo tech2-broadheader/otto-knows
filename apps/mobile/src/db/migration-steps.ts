@@ -273,6 +273,29 @@ const INCOME_PAY_DAYS: Migration = {
   statements: ["ALTER TABLE income ADD COLUMN pay_days TEXT;"],
 };
 
+/**
+ * Step 8 — alarms (story 12.3, ADR-005). Not sensitive-tier; the Android alarm
+ * module keeps its own copy of what is armed so it can re-arm after a reboot.
+ */
+const ALARMS: Migration = {
+  version: 8,
+  name: "alarms",
+  statements: [
+    `CREATE TABLE alarms (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      time TEXT NOT NULL,
+      repeat_days TEXT NOT NULL DEFAULT '[]',
+      label TEXT,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      vibrate INTEGER NOT NULL DEFAULT 1,
+      snooze_minutes INTEGER NOT NULL DEFAULT 5,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+  ],
+};
+
 export const MIGRATIONS: readonly Migration[] = [
   BASELINE,
   ACCOUNTS,
@@ -281,6 +304,7 @@ export const MIGRATIONS: readonly Migration[] = [
   APPOINTMENTS,
   USER_SETTINGS,
   INCOME_PAY_DAYS,
+  ALARMS,
 ];
 
 /** Derived from the list — never hand-maintained. */
@@ -304,4 +328,5 @@ export const ALL_TABLE_NAMES: readonly string[] = [
   "notes",
   "appointments",
   "user_settings",
+  "alarms",
 ];

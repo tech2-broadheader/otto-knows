@@ -1,6 +1,6 @@
 # Story 12.2: Alarms spike (GATE-4)
 
-Status: review — research done 2026-10-08; recommendation awaits product-owner approval (new native module) before 12.3
+Status: done — ADR-005 approved by the product owner on 2026-10-08 ("go with alarms")
 
 ## Question
 

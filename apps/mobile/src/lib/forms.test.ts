@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   dateForChoice,
+  validateAlarmForm,
   validateAppointmentForm,
   validateIncomeForm,
   validateTransactionForm,
@@ -200,5 +201,28 @@ describe("dateForChoice", () => {
     expect(dateForChoice("today", "2026-10-01")).toBe("2026-10-01");
     expect(dateForChoice("yesterday", "2026-10-01")).toBe("2026-09-30");
     expect(dateForChoice("tomorrow", "2026-12-31")).toBe("2027-01-01");
+  });
+});
+
+describe("validateAlarmForm", () => {
+  it("pads the hour and minute and trims the label", () => {
+    expect(validateAlarmForm({ hour: "6", minute: "5", label: "  Wake up " })).toEqual({
+      ok: true,
+      value: { time: "06:05", label: "Wake up" },
+    });
+  });
+
+  it("treats a blank label as none", () => {
+    expect(validateAlarmForm({ hour: "23", minute: "59", label: " " })).toEqual({
+      ok: true,
+      value: { time: "23:59", label: undefined },
+    });
+  });
+
+  it("rejects an hour or minute out of range, or not a number", () => {
+    expect(validateAlarmForm({ hour: "24", minute: "00", label: "" }).ok).toBe(false);
+    expect(validateAlarmForm({ hour: "07", minute: "60", label: "" }).ok).toBe(false);
+    expect(validateAlarmForm({ hour: "", minute: "30", label: "" }).ok).toBe(false);
+    expect(validateAlarmForm({ hour: "7a", minute: "30", label: "" }).ok).toBe(false);
   });
 });

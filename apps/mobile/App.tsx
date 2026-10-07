@@ -62,6 +62,8 @@ import { WalletFormScreen } from "./src/screens/WalletFormScreen";
 import { MonthlyReportScreen } from "./src/screens/MonthlyReportScreen";
 import { NoteEditorScreen } from "./src/screens/NoteEditorScreen";
 import { AppointmentFormScreen } from "./src/screens/AppointmentFormScreen";
+import { AlarmFormScreen } from "./src/screens/AlarmFormScreen";
+import { reconcileAlarmsWithPhone } from "./src/lib/alarms";
 
 type RootStackParamList = {
   Onboarding: undefined;
@@ -87,6 +89,7 @@ type RootStackParamList = {
   MonthlyReport: { month?: string } | undefined;
   NoteEditor: { noteId?: string } | undefined;
   AppointmentForm: undefined;
+  AlarmForm: { alarmId?: string } | undefined;
   // Optional sign-in (ADR-002). Modal sibling of Main/Upgrade so any screen can
   // route an unauthenticated user here before a Pro action.
   Login: undefined;
@@ -200,6 +203,8 @@ export default function App(): React.JSX.Element {
       // on boot. Diffed against what's already scheduled, so no double-fire; and
       // it degrades gracefully if notification permission is denied.
       void rescheduleDay(createRepositoryDeps());
+      // Alarms (story 12.3): re-arm repeats the phone lost, switch off one-offs that rang.
+      void reconcileAlarmsWithPhone(LOCAL_USER_ID).catch(() => undefined);
     }
     void boot();
     return () => {
@@ -263,6 +268,7 @@ export default function App(): React.JSX.Element {
                       <RootStack.Screen name="MonthlyReport" component={MonthlyReportScreen} />
                       <RootStack.Screen name="NoteEditor" component={NoteEditorScreen} />
                       <RootStack.Screen name="AppointmentForm" component={AppointmentFormScreen} />
+                      <RootStack.Screen name="AlarmForm" component={AlarmFormScreen} />
                     </>
                   )}
                 </RootStack.Navigator>

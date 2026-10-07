@@ -14,6 +14,7 @@ const EMPTY: ExportBundle = {
   reminders: [],
   notes: [],
   appointments: [],
+  alarms: [],
   medications: [],
   consents: [],
   auditLog: [],

@@ -58,10 +58,10 @@ development_status:
   # --- Budgeting+ (product-owner priority 2026-10-07; see sprint-change-proposal-2026-10-07.md) ---
   epic-11: in-progress
   11-1-versioned-local-migrations: in-progress
-  11-2-wallets-accounts: backlog                # needs Claude Design pass
-  11-3-income-transfer-transactions: backlog    # needs Claude Design pass
-  11-4-safe-to-spend: backlog                   # needs Claude Design pass
-  11-5-monthly-report: backlog                  # needs Claude Design pass
+  11-2-wallets-accounts: backlog                # story file drafted; logic tasks can start after 11.1, UI blocked on Claude Design
+  11-3-income-transfer-transactions: backlog    # story file drafted; after 11.2; UI blocked on Claude Design
+  11-4-safe-to-spend: backlog                   # story file drafted; after 11.3; also fixes stale nextPayDate; UI blocked on Claude Design
+  11-5-monthly-report: backlog                  # story file drafted; after 11.3; UI blocked on Claude Design
   epic-11-retrospective: optional
 
 # BLOCKERS / GATES (clear before the related item -> ready-for-dev):

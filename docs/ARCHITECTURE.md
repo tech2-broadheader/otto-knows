@@ -52,7 +52,7 @@ User --natural language--> LLM Brain
 |--------|----------------|--------------|
 | context-graph | Unified model across all sources | ContextItem, Source |
 | routine | The lens: anchors, scheduling substrate, deviation radar | Routine, RoutineAnchor |
-| calendar | Read calendar/events; write blocks (confirmed) | CalendarEvent |
+| calendar | Read calendar/events; create events and meetings (confirmed) | CalendarEvent |
 | reminders | Routine-timed reminders, meds, bills | Reminder, Medication, Bill |
 | finance | Manual entry, wallets, budget, safe-to-spend, monthly report | Account, Transaction (expense / income / transfer), BudgetCategory, Income |
 | health | Wearable data (gated module) | HealthMetric |
@@ -112,6 +112,8 @@ Overview (the contract is the Zod schema, not this table):
 | ADR-002 | Local-first SQLite for free tier; cloud Supabase only for Pro sync/LLM | Accepted | 2026-06-14 |
 | ADR-003 | Manual finance entry is the launch baseline; SMS parsing gated on Play policy | Accepted | 2026-06-14 |
 | ADR-004 | Derived wallet balances + versioned on-device migrations | Accepted | 2026-10-07 |
+| ADR-005 | Alarm mechanism (native module) — decided by spike 12.2 | Proposed | 2026-10-08 |
+| ADR-006 | Billing: RevenueCat verifies store receipts; server trusts only its webhook | Proposed | 2026-10-08 |
 
 ### ADR-001 — React Native + Expo + Next.js, unified by TypeScript + Zod
 - **Context:** The spec (§13) suggests Flutter (Android-first mobile). The project-starter's `CLAUDE.md` defaults to a Next.js-only web stack. The owner asked to standardize on React / React Native to keep web and mobile "inline" (one ecosystem), and delegated the final call.

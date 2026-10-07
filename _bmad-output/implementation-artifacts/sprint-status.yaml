@@ -34,6 +34,7 @@ development_status:
   3-1-google-calendar-tasks-read: done        # web proxy + on-device OAuth/read/store (needs real Google creds + device to exercise); design pass pending
   3-2-manual-finance-entry-budget: done       # finance entry + budget UI; raw, design pass pending
   3-3-context-graph-unification: done
+  3-4-encrypted-token-storage: backlog         # added 2026-10-08; replaces in-memory Google token store
   epic-3-retrospective: optional
 
   epic-4: done
@@ -51,6 +52,9 @@ development_status:
 
   # --- Monetization (spans) ---
   epic-9: in-progress                       # real Supabase auth + DB-backed entitlement (free/pro/lifetime) + mobile optional login done; remaining: billing that WRITES entitlement (store IAP / RevenueCat) + OD-5 pricing
+  9-4-store-billing-revenuecat: backlog        # needs OD-5 + Play Console/RevenueCat accounts + dep approval
+  9-5-server-entitlement-webhook: backlog
+  9-6-pricing-paywall: backlog                 # OD-5
 
   # --- Phase 5: continuity & polish ---
   epic-10: backlog
@@ -64,8 +68,19 @@ development_status:
   11-5-monthly-report: backlog                  # story file drafted; after 11.3; UI blocked on Claude Design
   epic-11-retrospective: optional
 
+  # --- Daily tasks (planned 2026-10-08; see sprint-change-proposal-2026-10-08.md) ---
+  epic-12: backlog
+  12-1-notes: backlog                          # no new deps; needs Claude Design
+  12-2-alarms-spike: backlog                   # GATE-4 policy check
+  12-3-alarms: backlog                         # after 12.2 + GATE-4 + dep approval
+  12-4-appointments: backlog                   # needs 3.4 (Google path) + expo-calendar approval
+  12-5-meetings-invites: backlog               # GATE-5
+  epic-12-retrospective: optional
+
 # BLOCKERS / GATES (clear before the related item -> ready-for-dev):
 #   GATE-1  Verify Google Play SMS policy   -> any FR-C5 SMS work
 #   GATE-2  Verify Health Connect/HealthKit -> 8-1
 #   GATE-3  DPA consent + encryption review -> 1-4
+#   GATE-4  Verify Play exact-alarm / full-screen-intent policy -> 12-3
+#   GATE-5  Google OAuth verification (calendar.events) -> 12-5
 #   OD-1 platform · OD-2 conv depth (E5) · OD-3 finance capture (FR-C5) · OD-4 name · OD-5 pricing (E9)

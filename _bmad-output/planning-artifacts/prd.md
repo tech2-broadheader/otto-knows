@@ -80,6 +80,13 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **FR-F3** Safe-to-spend until next payday, after upcoming bills and card debt, with a per-day figure. [Free]
 - **FR-F4** Monthly report: income vs spending, by category, vs previous month. [Free]
 
+### 5.10 Daily tasks (added 2026-10-08)
+- **FR-D1** Notes: create/edit/pin/search; convert to reminder. [Free]
+- **FR-D2** Alarms: ringing alarms with snooze/repeat, policy-compliant. [Free] (GATE-4)
+- **FR-D3** Appointments: create to Otto / device / Google calendar — confirmed. [Free]
+- **FR-D4** Meetings: Google Calendar invites to attendees — confirmed. [Free, needs Google] (GATE-5)
+- **FR-D5** Quick-add understands notes, alarms, appointments. [Free quota / Pro]
+
 ## 6. Non-functional requirements
 - **NFR-1 Privacy (DPA):** granular per-source consent before connecting; explicit disclosure; export & delete; no ad use of sensitive data.
 - **NFR-2 Security:** encryption at rest for finance/health; server-side secrets; LLM keys never on device; rate-limited LLM routes; **audit logging on sensitive-data access (Tier 3)**.
@@ -94,6 +101,8 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **GATE-1** Verify current Google Play SMS policy before any SMS-parsing work (FR-C5).
 - **GATE-2** Verify current Health Connect / HealthKit health-data policy before FR-C6 / FR-T2.
 - **GATE-3** DPA consent + encryption design reviewed before finance/health data is stored.
+- **GATE-4** Verify current Google Play exact-alarm / full-screen-intent policy before FR-D2 (story 12.3).
+- **GATE-5** Google OAuth verification for the sensitive calendar.events scope before FR-D4 ships.
 
 ## 8. Epics (see `epics-and-stories.md`)
 - **E1** Foundation & data model (monorepo, shared Zod contracts, local store, consent).
@@ -107,6 +116,7 @@ Silent write-back · personalized financial/medical advice · ad monetization ·
 - **E9** Monetization & entitlements.
 - **E10** Continuity: backup, sync, export, widgets, themes [Pro].
 - **E11** Budgeting+: wallets, typed transactions, safe-to-spend, monthly report [Free] — current priority.
+- **E12** Daily tasks: notes, alarms, appointments, meetings [Free] — after E11 (see `sprint-change-proposal-2026-10-08.md`).
 
 ## 9. Release mapping
 M3 (v0.5.0) targets E1–E4 (Phase 1 free organizer core). E5–E7 → Phase 2–3. E8 → Phase 4. E10 → Phase 5. E9 spans (gates Pro features). See `PROJECT_RECORD.md §2`.

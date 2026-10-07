@@ -3,7 +3,7 @@ import { parseConfig } from "./config";
 
 const validEnv = {
   ANTHROPIC_API_KEY: "sk-ant-test",
-  LLM_MODEL: "claude-opus-4-8",
+  LLM_MODEL: "claude-opus-5-5",
   SUPABASE_SERVICE_ROLE_KEY: "service-role",
   DATABASE_URL: "postgres://localhost:5432/otto",
   GOOGLE_OAUTH_CLIENT_ID: "client-id",
@@ -29,7 +29,7 @@ describe("parseConfig() — valid", () => {
       GOOGLE_OAUTH_CLIENT_ID: "id",
       GOOGLE_OAUTH_CLIENT_SECRET: "secret",
     });
-    expect(config.server.LLM_MODEL).toBe("claude-opus-4-8");
+    expect(config.server.LLM_MODEL).toBe("claude-opus-5-5");
     expect(config.public.NEXT_PUBLIC_APP_URL).toBe("http://localhost:3000");
   });
 

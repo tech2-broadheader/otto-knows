@@ -33,7 +33,7 @@ const serverEnvSchema = z.object({
   // (server/llm/client.ts) reads these directly, not through this config.
   LLM_PROVIDER: z.enum(["anthropic", "gemini"]).optional(),
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
-  LLM_MODEL: z.string().min(1).default("claude-opus-4-8"),
+  LLM_MODEL: z.string().min(1).default("claude-opus-5-5"),
   GEMINI_API_KEY: z.string().min(1).optional(),
   GEMINI_MODEL: z.string().min(1).default("gemini-2.5-flash"),
 

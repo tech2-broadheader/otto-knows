@@ -28,7 +28,7 @@
 ```
 LLM_PROVIDER=anthropic
 ANTHROPIC_API_KEY=...
-LLM_MODEL=claude-opus-4-8   # or claude-haiku-4-5 (~5x cheaper), claude-sonnet-4-6
+LLM_MODEL=claude-opus-5-5   # or claude-haiku-4-5 (cheapest), claude-sonnet-5-5
 ```
 Cost lever: Opus is most capable; Haiku/Sonnet cut per-user cost a lot. The API does not train on your inputs.
 

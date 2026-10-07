@@ -52,7 +52,7 @@ export interface LlmClient {
   generate(request: LlmGenerateRequest): Promise<LlmResult>;
 }
 
-/** Anthropic-backed implementation. Defaults to claude-opus-4-8 (config). */
+/** Anthropic-backed implementation. Defaults to claude-opus-5-5 (config). */
 export class AnthropicLlmClient implements LlmClient {
   constructor(
     private readonly client: Anthropic,
@@ -144,7 +144,7 @@ function buildLlmClient(): LlmClient {
     return new GeminiLlmClient(new GoogleGenAI({ apiKey: geminiKey }), model);
   }
   if (anthropicKey && provider !== "gemini") {
-    const model = process.env.LLM_MODEL || "claude-opus-4-8";
+    const model = process.env.LLM_MODEL || "claude-opus-5-5";
     return new AnthropicLlmClient(new Anthropic({ apiKey: anthropicKey }), model);
   }
   return new NullLlmClient();

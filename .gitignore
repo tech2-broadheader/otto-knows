@@ -24,6 +24,7 @@ android/
 # ...but in-repo Expo modules keep their native source (ADR-005); only their build output is ignored
 !apps/mobile/modules/*/android/
 apps/mobile/modules/*/android/build/
+apps/mobile/modules/*/android/.gradle/
 web-build/
 
 # env files (keep .env.example tracked)

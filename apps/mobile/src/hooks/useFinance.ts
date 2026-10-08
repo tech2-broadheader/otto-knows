@@ -26,6 +26,7 @@ import {
   computeBudgetSummary,
   computeMonthlyReport,
   computeSafeToSpend,
+  markBillPaid,
   pickDefaultAccountId,
   summarizeWallets,
   type BudgetSummary,
@@ -92,6 +93,12 @@ export type FinanceState = {
     amountMinor: number;
     dueDate: string;
   }) => Promise<Bill | "at-cap">;
+  /**
+   * Pay a bill (story 11.6): with a wallet, log the payment as an expense
+   * first; then roll a repeating bill to its next due date (a one-time bill is
+   * marked paid). Without a wallet ("already logged it"), only the bill changes.
+   */
+  payBill: (billId: string, accountId: string | undefined) => Promise<Bill>;
   addIncome: (input: {
     source: string;
     amountMinor: number;
@@ -254,6 +261,31 @@ export function useFinance(deps: RepositoryDeps, options: { isPro?: boolean } = 
     [defaultAccountId, money],
   );
 
+  const payBill = useCallback(
+    async (billId: string, accountId: string | undefined) => {
+      const bill = bills.find((b) => b.id === billId);
+      if (!bill) throw new Error(t("money.payBill.gone"));
+      if (accountId) {
+        await txRepo.create(
+          toTransaction(
+            newUuid(),
+            {
+              type: "expense",
+              amountMinor: bill.amount.amountMinor,
+              accountId,
+              description: bill.name,
+            },
+            nowIso(),
+          ),
+        );
+      }
+      const updated = await billRepo.update(markBillPaid(bill, nowIso()));
+      await reload();
+      return updated;
+    },
+    [billRepo, bills, reload, toTransaction, txRepo],
+  );
+
   const addTransaction = useCallback(
     async (input: TransactionInput) => {
       const created = await txRepo.create(toTransaction(newUuid(), input, nowIso()));
@@ -392,6 +424,7 @@ export function useFinance(deps: RepositoryDeps, options: { isPro?: boolean } = 
     defaultAccountId,
     monthlyReport,
     addBill,
+    payBill,
     addIncome,
     addTransaction,
     updateTransaction,

@@ -202,6 +202,11 @@ Goal: know where your money is, what came in, and how much you can safely spend 
 ## E12 — Daily tasks (Free core)
 Goal: the small things in a day — notes, alarms, appointments, meetings — next to reminders.
 
+### Story 11.6 — Pay a bill (added 2026-10-08, product-owner decision)
+- **AC1** An unpaid bill offers "Pay": Otto proposes logging the payment as an expense from a wallet the user picks (last used pre-selected); nothing is written until the user confirms (propose-and-confirm).
+- **AC2** On confirm, a repeating bill rolls to its next due date, unpaid again (monthly keeps its day; the 31st falls on the month's last day and returns); a one-time bill is marked paid.
+- **AC3** "Already logged it" rolls the bill forward without logging a second expense.
+
 ### Story 12.1 — Notes
 - **AC1** Create, edit, delete, pin and search plain-text notes (title optional, body ≤ 10k chars).
 - **AC2** Notes are stored locally (new migration step) and listed newest-first, pinned on top.

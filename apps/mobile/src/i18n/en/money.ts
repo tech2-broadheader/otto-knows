@@ -101,6 +101,16 @@ export const money = {
     date: "Date",
     delete: "Delete transaction",
   },
+  payBill: {
+    pay: "Pay",
+    payA11y: "Pay {name}",
+    title: "Pay {name} — {amount}",
+    rollsTo: "Logs it as spending, then the bill moves to {date}.",
+    once: "Logs it as spending and marks this one-time bill paid.",
+    alreadyLogged: "Already logged it — just mark paid",
+    gone: "That bill no longer exists.",
+    error: "Couldn't record that payment. Please try again.",
+  },
   wallets: {
     gone: "That wallet no longer exists.",
     title: "Wallets",

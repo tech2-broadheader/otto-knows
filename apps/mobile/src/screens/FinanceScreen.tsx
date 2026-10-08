@@ -12,6 +12,8 @@ import { useUpgradeNavigation } from "../hooks/useUpgradeNavigation";
 import { useFinance } from "../hooks/useFinance";
 import { AsyncBoundary } from "../components/AsyncBoundary";
 import { FormError, IconTile, SafeToSpendCard, TxRow, WalletChip } from "../components/money-ui";
+import { ExpenseWalletPicker } from "../components/ExpenseWalletPicker";
+import { nextBillDueDate } from "@otto/core";
 import {
   AddButton,
   AppHeader,
@@ -23,6 +25,7 @@ import {
   Pill,
   PrimaryButton,
   ProGate,
+  ProposalCard,
   Ring,
   Screen,
   SectionLabel,
@@ -71,6 +74,8 @@ export function FinanceScreen(): React.JSX.Element {
     billsAtCap,
     categoriesAtCap,
     addBill,
+    payBill,
+    defaultAccountId,
     addIncome,
     addCategory,
     reload,
@@ -84,6 +89,30 @@ export function FinanceScreen(): React.JSX.Element {
   );
 
   const [manageOpen, setManageOpen] = useState(false);
+  // Paying a bill (story 11.6): which bill's proposal is open, and its wallet.
+  const [payingId, setPayingId] = useState<string | undefined>();
+  const [payWallet, setPayWallet] = useState<string | undefined>();
+  const [payBusy, setPayBusy] = useState(false);
+  const [payError, setPayError] = useState<string | undefined>();
+  const activeWallets = wallets.perAccount.filter((w) => !w.archived);
+
+  const openPay = (billId: string): void => {
+    setPayingId(billId);
+    setPayWallet(defaultAccountId);
+    setPayError(undefined);
+  };
+
+  const confirmPay = async (billId: string, accountId: string | undefined): Promise<void> => {
+    setPayBusy(true);
+    try {
+      await payBill(billId, accountId);
+      setPayingId(undefined);
+    } catch {
+      setPayError(t("money.payBill.error"));
+    } finally {
+      setPayBusy(false);
+    }
+  };
   const [formError, setFormError] = useState<string | undefined>();
   const [billName, setBillName] = useState("");
   const [billAmount, setBillAmount] = useState("");
@@ -332,34 +361,87 @@ export function FinanceScreen(): React.JSX.Element {
                   <View
                     key={bill.id}
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
                       paddingVertical: 12,
                       borderBottomWidth: index < bills.length - 1 ? 1 : 0,
                       borderBottomColor: OC.line,
                     }}
                   >
-                    <IconTile icon="bell" color={bill.isPaid ? OC.green : OC.sky} size={36} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
-                        {bill.name}
-                      </Text>
-                      <Text style={{ fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
-                        {t("money.home.due", { date: money.shortDate(bill.dueDate) })}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <IconTile icon="bell" color={bill.isPaid ? OC.green : OC.sky} size={36} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
+                          {bill.name}
+                        </Text>
+                        <Text style={{ fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
+                          {t("money.home.due", { date: money.shortDate(bill.dueDate) })}
+                        </Text>
+                      </View>
+                      {bill.isPaid ? (
+                        <Pill tone="green">{t("money.home.paid")}</Pill>
+                      ) : payingId !== bill.id ? (
+                        <Pressable
+                          onPress={() => openPay(bill.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel={t("money.payBill.payA11y", { name: bill.name })}
+                          hitSlop={6}
+                        >
+                          <Pill tone="mint">{t("money.payBill.pay")}</Pill>
+                        </Pressable>
+                      ) : null}
+                      <Text
+                        style={{
+                          fontFamily: FONT.bodyX,
+                          fontSize: 14.5,
+                          color: OC.ink,
+                          fontVariant: ["tabular-nums"],
+                        }}
+                      >
+                        {money.format(bill.amount.amountMinor)}
                       </Text>
                     </View>
-                    {bill.isPaid ? <Pill tone="green">{t("money.home.paid")}</Pill> : null}
-                    <Text
-                      style={{
-                        fontFamily: FONT.bodyX,
-                        fontSize: 14.5,
-                        color: OC.ink,
-                        fontVariant: ["tabular-nums"],
-                      }}
-                    >
-                      {money.format(bill.amount.amountMinor)}
-                    </Text>
+                    {payingId === bill.id ? (
+                      <View style={{ marginTop: 12 }}>
+                        <FormError message={payError} />
+                        <ProposalCard
+                          icon="wallet"
+                          tone="amber"
+                          title={t("money.payBill.title", {
+                            name: bill.name,
+                            amount: money.format(bill.amount.amountMinor),
+                          })}
+                          detail={(() => {
+                            const next = nextBillDueDate(bill);
+                            return next
+                              ? t("money.payBill.rollsTo", { date: money.shortDate(next) })
+                              : t("money.payBill.once");
+                          })()}
+                          onAccept={payBusy ? undefined : () => void confirmPay(bill.id, payWallet)}
+                          onDismiss={payBusy ? undefined : () => setPayingId(undefined)}
+                        >
+                          <ExpenseWalletPicker
+                            wallets={activeWallets}
+                            amountMinor={bill.amount.amountMinor}
+                            value={payWallet}
+                            isLastUsed={payWallet === defaultAccountId}
+                            onChange={setPayWallet}
+                          />
+                          <Pressable
+                            onPress={
+                              payBusy ? undefined : () => void confirmPay(bill.id, undefined)
+                            }
+                            accessibilityRole="button"
+                            hitSlop={6}
+                            style={({ pressed }) => ({ marginTop: 12, opacity: pressed ? 0.6 : 1 })}
+                          >
+                            <Text
+                              style={{ fontFamily: FONT.bodyBold, fontSize: 13, color: OC.green }}
+                            >
+                              {t("money.payBill.alreadyLogged")}
+                            </Text>
+                          </Pressable>
+                        </ProposalCard>
+                      </View>
+                    ) : null}
                   </View>
                 ))
               )}

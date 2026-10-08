@@ -66,6 +66,7 @@ development_status:
   11-3-income-transfer-transactions: review           # logic + UI done incl. Quick Add "Paid from" picker (AC5); on-device check pending
   11-4-safe-to-spend: review                          # logic + UI done; on-device check pending
   11-5-monthly-report: review                         # logic + UI done; on-device check pending
+  11-6-pay-bill-rollover: review                      # owner chose log expense + roll over (2026-10-08); on-device check pending
   epic-11-retrospective: optional
 
   # --- Daily tasks (planned 2026-10-08; see sprint-change-proposal-2026-10-08.md) ---

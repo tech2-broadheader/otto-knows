@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { LlmClient, LlmResult } from "./client";
-import { PROPOSAL_TOOLS, toolCallToProposal } from "./tools";
+import { proposalTools, toolCallToProposal } from "./tools";
+import { quickAddSystem } from "./prompts";
 import { generateBriefing } from "./brief";
 import { generateQuickAdd } from "./quick-add";
 
@@ -29,12 +30,15 @@ describe("toolCallToProposal", () => {
     const proposal = toolCallToProposal(
       { name: "add_note", input: { rationale: "So you won't forget.", body: "Buy gift for Ana" } },
       counter(),
+      "PHP",
     );
     expect(proposal?.action).toEqual({ type: "add_note", note: { body: "Buy gift for Ana" } });
   });
 
   it("rejects an add_note call with an empty body", () => {
-    expect(toolCallToProposal({ name: "add_note", input: { body: "" } }, counter())).toBeNull();
+    expect(
+      toolCallToProposal({ name: "add_note", input: { body: "" } }, counter(), "PHP"),
+    ).toBeNull();
   });
 
   it("maps a create_event call to an appointment proposal (story 12.4)", () => {
@@ -50,6 +54,7 @@ describe("toolCallToProposal", () => {
         },
       },
       counter(),
+      "PHP",
     );
     expect(proposal?.action.type).toBe("create_event");
   });
@@ -59,12 +64,12 @@ describe("toolCallToProposal", () => {
       name: "create_event",
       input: { title: "Dentist", startAt: "2026-10-13T15:00:00+08:00" },
     };
-    expect(toolCallToProposal(call, counter())).toBeNull();
+    expect(toolCallToProposal(call, counter(), "PHP")).toBeNull();
   });
 
   it("offers the add_note tool to the model", () => {
-    expect(PROPOSAL_TOOLS.map((t) => t.name)).toContain("add_note");
-    expect(PROPOSAL_TOOLS.map((t) => t.name)).toContain("create_event");
+    expect(proposalTools("PHP").map((t) => t.name)).toContain("add_note");
+    expect(proposalTools("PHP").map((t) => t.name)).toContain("create_event");
   });
 
   it("maps a valid create_reminder call to a proposal", () => {
@@ -78,6 +83,7 @@ describe("toolCallToProposal", () => {
         },
       },
       counter(),
+      "PHP",
     );
     expect(proposal?.action.type).toBe("create_reminder");
     expect(proposal?.rationale).toBe("It's due tonight.");
@@ -85,10 +91,10 @@ describe("toolCallToProposal", () => {
   });
 
   it("returns null for an unknown tool and for invalid input", () => {
-    expect(toolCallToProposal({ name: "nuke", input: {} }, counter())).toBeNull();
+    expect(toolCallToProposal({ name: "nuke", input: {} }, counter(), "PHP")).toBeNull();
     // add_bill missing required fields → fails the draft schema
     expect(
-      toolCallToProposal({ name: "add_bill", input: { rationale: "x" } }, counter()),
+      toolCallToProposal({ name: "add_bill", input: { rationale: "x" } }, counter(), "PHP"),
     ).toBeNull();
   });
 });
@@ -155,5 +161,78 @@ describe("generateQuickAdd", () => {
   it("returns no proposals on refusal", async () => {
     const res = await generateQuickAdd(stub({ refused: true }), { text: "..." }, clock.now);
     expect(res.proposals).toEqual([]);
+  });
+});
+
+describe("the user's timezone and currency (story 13.2)", () => {
+  type Request = Parameters<LlmClient["generate"]>[0];
+  function capturing(result: Partial<LlmResult>): { llm: LlmClient; seen: Request[] } {
+    const seen: Request[] = [];
+    const base = stub(result);
+    return {
+      seen,
+      llm: {
+        async generate(request) {
+          seen.push(request);
+          return base.generate(request);
+        },
+      },
+    };
+  }
+  const expense = {
+    name: "log_expense",
+    input: {
+      rationale: "From your note.",
+      amount: { amountMinor: 1250 },
+      description: "Lunch",
+      occurredAt: "2026-06-15T12:30:00-04:00",
+    },
+  };
+  const newYork = { timezone: "America/New_York", currency: "USD", locale: "en-US" } as const;
+
+  it("quick-add tells the model the user's zone, offset and currency, and only offers that currency", async () => {
+    const { llm, seen } = capturing({ toolCalls: [expense] });
+    const res = await generateQuickAdd(llm, { text: "lunch 12.50", user: newYork }, clock.now);
+    const request = seen[0]!;
+    expect(request.system).toContain("America/New_York");
+    expect(request.system).not.toContain("Manila");
+    expect(request.system).toContain("USD");
+    expect(request.userText).toContain("-04:00");
+    expect(JSON.stringify(request.tools)).toContain('"enum":["USD"]');
+    const action = res.proposals[0]?.action;
+    expect(action?.type === "log_expense" && action.expense.amount.currency).toBe("USD");
+  });
+
+  it("keeps Manila and pesos for requests from older apps", async () => {
+    const { llm, seen } = capturing({ toolCalls: [expense] });
+    const res = await generateQuickAdd(llm, { text: "lunch 12.50" }, clock.now);
+    expect(seen[0]!.system).toContain("Asia/Manila");
+    const action = res.proposals[0]?.action;
+    expect(action?.type === "log_expense" && action.expense.amount.currency).toBe("PHP");
+  });
+
+  it("the briefing uses the user's zone and currency too", async () => {
+    const { llm, seen } = capturing({ text: "Morning.", toolCalls: [expense] });
+    const res = await generateBriefing(
+      llm,
+      "00000000-0000-4000-8000-0000000000de",
+      {
+        slot: "morning",
+        contextItems: [],
+        user: { timezone: "Europe/London", currency: "GBP", locale: "en-GB" },
+      },
+      clock,
+    );
+    expect(seen[0]!.system).toContain("Europe/London");
+    expect(seen[0]!.system).not.toContain("+08:00");
+    const action = res.proposals[0]?.action;
+    expect(action?.type === "log_expense" && action.expense.amount.currency).toBe("GBP");
+  });
+
+  it("explains minor units per currency, including ones without decimals", () => {
+    const vnd = quickAddSystem({ timezone: "Asia/Ho_Chi_Minh", offset: "+07:00", currency: "VND" });
+    expect(vnd).toContain("50000 VND → amountMinor 50000");
+    const usd = quickAddSystem({ timezone: "America/New_York", offset: "-04:00", currency: "USD" });
+    expect(usd).toContain("100 USD → amountMinor 10000");
   });
 });

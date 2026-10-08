@@ -1,4 +1,5 @@
 import { googleEventsListSchema } from "@otto/core";
+import { DEFAULT_TIMEZONE, localClock } from "./llm/time";
 
 /**
  * Google Calendar connector (SERVER-ONLY) — Story 3.1 backend.
@@ -19,8 +20,31 @@ export {
 
 const CALENDAR_EVENTS_ENDPOINT = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
 
-/** Default PH timezone — Otto is PH-first (CLAUDE.md §0). */
-const DEFAULT_TIMEZONE = "Asia/Manila";
+function offsetMinutes(offset: string): number {
+  const sign = offset.startsWith("-") ? -1 : 1;
+  const [h, m] = offset.slice(1).split(":").map(Number);
+  return sign * ((h ?? 0) * 60 + (m ?? 0));
+}
+
+/** The UTC offset in force at local midnight of `date` in `timezone`. */
+function midnightOffset(date: string, timezone: string): string {
+  const utcMidnight = Date.parse(`${date}T00:00:00Z`);
+  const guess = localClock(new Date(utcMidnight).toISOString(), timezone).offset;
+  const instant = utcMidnight - offsetMinutes(guess) * 60_000;
+  return localClock(new Date(instant).toISOString(), timezone).offset;
+}
+
+/**
+ * The user's local day as an events.list window: midnight to the next midnight
+ * (exclusive), each with its own UTC offset, as Google's API expects (story 13.2).
+ */
+export function dayWindow(date: string, timezone: string): { timeMin: string; timeMax: string } {
+  const next = new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  return {
+    timeMin: `${date}T00:00:00${midnightOffset(date, timezone)}`,
+    timeMax: `${next}T00:00:00${midnightOffset(next, timezone)}`,
+  };
+}
 
 /**
  * Reads calendar events for a given day on behalf of a user, using a bearer
@@ -30,7 +54,8 @@ export interface GoogleCalendarClient {
   /**
    * @param accessToken - the user's Google OAuth access token (read-only scope).
    * @param date - the day to fetch, YYYY-MM-DD (interpreted in `timezone`).
-   * @param timezone - IANA timezone bounding the day window (defaults to Asia/Manila).
+   * @param timezone - the user's IANA timezone bounding the day window
+   *   (Asia/Manila for older apps that send none).
    * @returns the RAW Google event objects (unvalidated) for that day.
    */
   listEventsForDay(accessToken: string, date: string, timezone?: string): Promise<unknown[]>;
@@ -47,9 +72,10 @@ export class FetchGoogleCalendarClient implements GoogleCalendarClient {
     date: string,
     timezone: string = DEFAULT_TIMEZONE,
   ): Promise<unknown[]> {
+    const { timeMin, timeMax } = dayWindow(date, timezone);
     const params = new URLSearchParams({
-      timeMin: `${date}T00:00:00`,
-      timeMax: `${date}T23:59:59`,
+      timeMin,
+      timeMax,
       timeZone: timezone,
       singleEvents: "true",
       orderBy: "startTime",

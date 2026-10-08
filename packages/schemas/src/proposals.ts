@@ -14,6 +14,7 @@ import {
 import { NOTE_BODY_MAX, NOTE_TITLE_MAX } from "./notes";
 import { eventDraftSchema } from "./appointments";
 import { routineAnchorKindSchema } from "./routine";
+import { aiUserContextSchema } from "./locale";
 
 export const reminderDraftSchema = z.object({
   title: z.string().min(1).max(140),
@@ -94,6 +95,8 @@ export type Proposal = z.infer<typeof proposalSchema>;
 // --- Quick-add (natural language → proposals) ---
 export const quickAddRequestSchema = z.object({
   text: z.string().min(1).max(1000),
+  /** The user's timezone, currency and locale (story 13.2); absent from older apps. */
+  user: aiUserContextSchema.optional(),
 });
 export type QuickAddRequest = z.infer<typeof quickAddRequestSchema>;
 

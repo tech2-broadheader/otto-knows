@@ -64,6 +64,28 @@ describe("serializeContextForLlm", () => {
     expect(text).toContain("timezone: Asia/Manila");
   });
 
+  it("writes income in its own currency with the right decimals (story 13.2)", () => {
+    const text = serializeContextForLlm({
+      date: "2026-06-14",
+      items: [],
+      income: [
+        {
+          source: "Salary",
+          amount: { amountMinor: 250000, currency: "USD" },
+          nextPayDate: "2026-06-15",
+        },
+        {
+          source: "Freelance",
+          amount: { amountMinor: 5000000, currency: "VND" },
+          nextPayDate: "2026-06-20",
+        },
+      ],
+    });
+    expect(text).toContain("Salary: 2500.00 USD, next pay 2026-06-15");
+    expect(text).toContain("Freelance: 5000000 VND, next pay 2026-06-20");
+    expect(text).not.toContain("₱");
+  });
+
   it("handles an empty day", () => {
     expect(serializeContextForLlm({ date: "2026-06-14", items: [] })).toContain(
       "(nothing scheduled)",

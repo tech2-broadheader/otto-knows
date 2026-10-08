@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { proposalSchema, proposalActionSchema, quickAddRequestSchema } from "./index";
+import {
+  aiUserContextSchema,
+  proposalSchema,
+  proposalActionSchema,
+  quickAddRequestSchema,
+} from "./index";
 
 const UUID = "11111111-1111-4111-8111-111111111111";
 
@@ -56,5 +61,20 @@ describe("quick-add request", () => {
     expect(quickAddRequestSchema.safeParse({ text: "" }).success).toBe(false);
     expect(quickAddRequestSchema.safeParse({ text: "buy meds at 8pm" }).success).toBe(true);
     expect(quickAddRequestSchema.safeParse({ text: "x".repeat(1001) }).success).toBe(false);
+  });
+});
+
+describe("AI requests carry the user's timezone and currency (story 13.2)", () => {
+  const user = { timezone: "America/New_York", currency: "USD", locale: "en-US" };
+
+  it("accepts the user block and still accepts requests without it (older apps)", () => {
+    expect(quickAddRequestSchema.safeParse({ text: "lunch 12", user }).success).toBe(true);
+    expect(quickAddRequestSchema.safeParse({ text: "lunch 12" }).success).toBe(true);
+  });
+
+  it("requires a supported currency and a well-formed timezone", () => {
+    expect(aiUserContextSchema.safeParse({ ...user, currency: "JPY" }).success).toBe(false);
+    expect(aiUserContextSchema.safeParse({ ...user, timezone: "not a zone" }).success).toBe(false);
+    expect(aiUserContextSchema.safeParse({ ...user }).success).toBe(true);
   });
 });

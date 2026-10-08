@@ -111,7 +111,19 @@ describe("postEnvelope — failure envelopes", () => {
   });
 });
 
+const USER = { timezone: "Europe/Berlin", currency: "EUR", locale: "de-DE" } as const;
+
 describe("quickAdd", () => {
+  it("sends the user's timezone, currency and locale with the text (story 13.2)", async () => {
+    let sent: unknown;
+    const capture = (async (_url: string, init?: RequestInit) => {
+      sent = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({ data: { proposals: [] } }), { status: 200 });
+    }) as unknown as typeof fetch;
+    await quickAdd("Mittagessen 12", USER, capture);
+    expect(sent).toEqual({ text: "Mittagessen 12", user: USER });
+  });
+
   it("returns the validated proposals on success", async () => {
     const proposal = {
       id: "00000000-0000-4000-8000-000000000001",
@@ -124,6 +136,7 @@ describe("quickAdd", () => {
     };
     const result = await quickAdd(
       "pay meralco",
+      USER,
       jsonFetch(200, { data: { proposals: [proposal] } }),
     );
     expect(result.ok).toBe(true);
@@ -134,7 +147,7 @@ describe("quickAdd", () => {
   });
 
   it("defaults to an empty proposal list when the payload omits it", async () => {
-    const result = await quickAdd("hi", jsonFetch(200, { data: {} }));
+    const result = await quickAdd("hi", USER, jsonFetch(200, { data: {} }));
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data).toEqual([]);
   });
@@ -142,6 +155,7 @@ describe("quickAdd", () => {
   it("reports MALFORMED when proposals fail schema validation", async () => {
     const result = await quickAdd(
       "x",
+      USER,
       jsonFetch(200, { data: { proposals: [{ id: "not-a-uuid" }] } }),
     );
     expect(result.ok).toBe(false);
@@ -151,6 +165,7 @@ describe("quickAdd", () => {
   it("passes through a quota-exceeded 403", async () => {
     const result = await quickAdd(
       "x",
+      USER,
       jsonFetch(403, { error: { code: "FORBIDDEN", message: "Used today's free quick-adds." } }),
     );
     expect(result.ok).toBe(false);

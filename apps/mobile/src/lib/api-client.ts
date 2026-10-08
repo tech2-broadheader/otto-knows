@@ -13,6 +13,7 @@ import {
   optimizeResponseSchema,
   quickAddResponseSchema,
   tipsResponseSchema,
+  type AiUserContext,
   type BriefingSlot,
   type ContextItem,
   type Income,
@@ -48,6 +49,8 @@ export type BriefRequestBody = {
   contextItems: ContextItem[];
   routine?: Routine;
   incomes?: Income[];
+  /** The user's timezone, currency and locale (story 13.2). */
+  user?: AiUserContext;
 };
 
 /** Shape of a successful brief response (`{ briefing, proposals }`). */
@@ -165,15 +168,17 @@ function isDataEnvelope(value: unknown): value is { data: unknown } {
 }
 
 /**
- * Natural-language quick-add: POST `{ text }` → validated `Proposal[]`. The
+ * Natural-language quick-add: POST `{ text, user }` → validated `Proposal[]`.
+ * `user` lets Otto read times and money the user's way (story 13.2). The
  * proposals are parsed through the shared schema so the UI only ever sees
  * well-formed actions.
  */
 export async function quickAdd(
   text: string,
+  user: AiUserContext,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ApiResult<Proposal[]>> {
-  const result = await postEnvelope<unknown>("/api/llm/quick-add", { text }, fetchImpl);
+  const result = await postEnvelope<unknown>("/api/llm/quick-add", { text, user }, fetchImpl);
   if (!result.ok) return result;
   const parsed = quickAddResponseSchema.safeParse(result.data);
   if (!parsed.success) {

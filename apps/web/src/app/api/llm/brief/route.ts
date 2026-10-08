@@ -3,6 +3,7 @@ import { getAuthContext, isProEntitled } from "@/server/auth";
 import { briefRequestSchema, generateBriefing } from "@/server/llm/brief";
 import { getLlmClient } from "@/server/llm/client";
 import { checkRateLimit, recordUsage } from "@/server/llm/meter";
+import { localClock, resolveTimezone } from "@/server/llm/time";
 
 /**
  * POST /api/llm/brief — proactive daily briefing via the LLM proxy (Pro-only).
@@ -26,7 +27,10 @@ export async function POST(request: Request) {
   }
 
   const nowIso = new Date().toISOString();
-  const clock = { now: nowIso, date: nowIso.slice(0, 10) };
+  // "Today" is the user's local date, not UTC's (story 13.2): early morning in
+  // Manila is still yesterday in UTC.
+  const timezone = resolveTimezone(parsed.data.user?.timezone);
+  const clock = { now: nowIso, date: localClock(nowIso, timezone).date };
 
   try {
     const result = await generateBriefing(getLlmClient(), auth.context.userId, parsed.data, clock);

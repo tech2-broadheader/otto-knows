@@ -1,34 +1,89 @@
 /**
- * Time context for the LLM. Otto's users are in the Philippines, which is
- * UTC+08:00 year-round (no DST). We hand the model the current time in Manila
- * local time WITH an explicit +08:00 offset so it anchors relative times
- * ("tonight", "8pm") correctly and emits offset-aware ISO datetimes instead of
- * UTC "Z" (which would fire reminders 8 hours early). Centralised so the brief
- * and quick-add paths stay consistent.
+ * Time context for the LLM, in the user's own timezone (story 13.2). We hand the
+ * model the current wall-clock time WITH its UTC offset and weekday so it
+ * anchors relative times ("tonight", "Friday") correctly and writes
+ * offset-aware ISO datetimes instead of UTC "Z" (which would fire reminders at
+ * the wrong hour). Requests from older apps carry no timezone and get
+ * Asia/Manila, Otto's first market. Centralised so brief and quick-add agree.
  */
 
-export const APP_TIMEZONE = "Asia/Manila";
+import type { AiUserContext, CurrencyCode } from "@otto/schemas";
+import type { PromptLocale } from "./prompts";
 
-const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000;
+export const DEFAULT_TIMEZONE = "Asia/Manila";
+const DEFAULT_CURRENCY: CurrencyCode = "PHP";
 
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export type LocalClock = {
+  /** YYYY-MM-DD */
+  date: string;
+  /** HH:mm:ss (24h) */
+  time: string;
+  weekday: string;
+  /** "+08:00" / "-04:00" / "+00:00" */
+  offset: string;
+};
+
+/** A real IANA zone as given, else the default (never throws on bad input). */
+export function resolveTimezone(timezone: string | undefined): string {
+  if (!timezone) return DEFAULT_TIMEZONE;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+    return timezone;
+  } catch {
+    return DEFAULT_TIMEZONE;
+  }
+}
+
+/** Read an instant as wall-clock date, time, weekday and offset in `timezone`. */
+export function localClock(iso: string, timezone: string): LocalClock {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+      weekday: "long",
+      timeZoneName: "longOffset",
+    })
+      .formatToParts(new Date(iso))
+      .map((p) => [p.type, p.value]),
+  );
+  // longOffset reads "GMT+08:00", or plain "GMT" at UTC+0.
+  const offset = (parts.timeZoneName ?? "GMT").replace("GMT", "") || "+00:00";
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}:${parts.second}`,
+    weekday: parts.weekday ?? "",
+    offset,
+  };
+}
 
 /**
- * Render an instant as a "Current time:" line in Manila local time with the
- * +08:00 offset AND the weekday name, e.g.
- * "Current time: 2026-06-16T11:00:00.000+08:00 (Tuesday, Asia/Manila, UTC+08:00)".
- * The weekday is included so the model resolves "Friday"/"next Tuesday" against
- * the right date instead of miscounting.
+ * The zone, its offset at `nowIso` and the currency to prompt with. Older apps
+ * send no user block and get Asia/Manila and PHP, as before.
  */
-export function currentTimeContext(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return `Current time: ${iso} (timezone ${APP_TIMEZONE}, UTC+08:00)`;
+export function promptLocale(user: AiUserContext | undefined, nowIso: string): PromptLocale {
+  const timezone = resolveTimezone(user?.timezone);
+  return {
+    timezone,
+    offset: localClock(nowIso, timezone).offset,
+    currency: user?.currency ?? DEFAULT_CURRENCY,
+  };
+}
+
+/**
+ * A "Current time:" line in the user's local time, e.g.
+ * "Current time: 2026-06-15T23:00:00-04:00 (Monday, America/New_York, UTC-04:00)".
+ * The weekday helps the model resolve "Friday"/"next Tuesday" correctly.
+ */
+export function currentTimeContext(iso: string, timezone: string = DEFAULT_TIMEZONE): string {
+  if (Number.isNaN(new Date(iso).getTime())) {
+    return `Current time: ${iso} (timezone ${timezone})`;
   }
-  // Shift into Manila wall-clock; the shifted instant's UTC fields then read as
-  // Manila local date/time/weekday.
-  const shifted = new Date(d.getTime() + MANILA_OFFSET_MS);
-  const local = shifted.toISOString().replace("Z", "+08:00");
-  const weekday = WEEKDAYS[shifted.getUTCDay()];
-  return `Current time: ${local} (${weekday}, ${APP_TIMEZONE}, UTC+08:00)`;
+  const clock = localClock(iso, timezone);
+  return `Current time: ${clock.date}T${clock.time}${clock.offset} (${clock.weekday}, ${timezone}, UTC${clock.offset})`;
 }

@@ -1,14 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { dateSchema } from "@otto/schemas";
+import { dateSchema, ianaTimezoneSchema } from "@otto/schemas";
 import { fail, ok, validateBody } from "@/lib/api";
 import { getAuthContext } from "@/server/auth";
 import { defaultGoogleCalendarClient, toCalendarEvents } from "@/server/google-calendar";
 import { mergeRefreshedToken, needsRefresh, refreshAccessToken } from "@/server/google-oauth";
 import { getTokenStore } from "@/server/token-store";
+import { resolveTimezone } from "@/server/llm/time";
 
 /**
- * GET /api/connectors/google/calendar?date=YYYY-MM-DD — read one day's events.
+ * GET /api/connectors/google/calendar?date=YYYY-MM-DD&timezone=Area/City — read
+ * one day's events in the user's timezone (story 13.2; Asia/Manila if absent).
  *
  * Thin handler (CLAUDE.md §6 / CODING_CONVENTIONS §7): validate the query →
  * auth check → load the stored token → call the client → normalize → envelope.
@@ -21,12 +23,14 @@ import { getTokenStore } from "@/server/token-store";
 
 const calendarQuerySchema = z.object({
   date: dateSchema,
+  timezone: ianaTimezoneSchema.optional(),
 });
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const query = validateBody(calendarQuerySchema, {
     date: url.searchParams.get("date") ?? undefined,
+    timezone: url.searchParams.get("timezone") ?? undefined,
   });
   if (!query.ok) {
     return query.response;
@@ -67,6 +71,7 @@ export async function GET(request: Request) {
     rawEvents = await defaultGoogleCalendarClient.listEventsForDay(
       token.accessToken,
       query.data.date,
+      resolveTimezone(query.data.timezone),
     );
   } catch {
     // Transport/HTTP failure (incl. expired token). Generic message; no leakage.

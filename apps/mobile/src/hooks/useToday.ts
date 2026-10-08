@@ -34,7 +34,7 @@ import {
   type RepositoryDeps,
 } from "../data";
 import { LOCAL_USER_ID } from "../lib/constants";
-import { useSettings } from "../lib/settings-context";
+import { useAiUserContext, useSettings } from "../lib/settings-context";
 import { newUuid } from "../lib/id";
 import { briefingSlotForHour, localUtcOffset, nowIso, todayDate } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
@@ -55,6 +55,7 @@ export type TodayState = {
 export function useToday(deps: RepositoryDeps): TodayState {
   const { isPro } = useAuth();
   const { locale } = useSettings();
+  const user = useAiUserContext();
   const [state, setState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | undefined>();
   const [briefing, setBriefing] = useState<Briefing | undefined>();
@@ -143,6 +144,7 @@ export function useToday(deps: RepositoryDeps): TodayState {
           contextItems: dayItems,
           routine,
           incomes: income.length > 0 ? income : undefined,
+          user,
         });
         if (result.ok) {
           const parsedBrief = briefingSchema.safeParse(result.data.briefing);
@@ -162,7 +164,7 @@ export function useToday(deps: RepositoryDeps): TodayState {
       setError(caught instanceof Error ? caught.message : "Could not build your day.");
       setState("error");
     }
-  }, [deps, isPro, locale]);
+  }, [deps, isPro, locale, user]);
 
   useEffect(() => {
     void reload();

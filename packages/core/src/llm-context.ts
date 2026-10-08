@@ -1,10 +1,12 @@
 // Serialize the context graph + routine into a compact, deterministic text block
 // for the LLM prompt (Phase 2). Pure — keeps prompt assembly testable and keeps
 // the prompt cache-friendly (no nondeterministic ordering; CLAUDE.md §6).
-import type { ContextItem, Money, Routine } from "@otto/schemas";
+import { currencyMinorUnits, type ContextItem, type Money, type Routine } from "@otto/schemas";
 
-function formatPeso(money: Money): string {
-  return `${money.currency === "PHP" ? "₱" : ""}${(money.amountMinor / 100).toFixed(2)}`;
+/** "2500.00 USD" / "5000000 VND": plain and locale-free, so the model reads it exactly. */
+function formatAmount(money: Money): string {
+  const digits = currencyMinorUnits(money.currency);
+  return `${(money.amountMinor / 10 ** digits).toFixed(digits)} ${money.currency}`;
 }
 
 function timePart(iso: string): string {
@@ -38,7 +40,7 @@ export function serializeContextForLlm(input: SerializeContextInput): string {
   if (input.income?.length) {
     lines.push("Income:");
     for (const i of input.income) {
-      lines.push(`  - ${i.source}: ${formatPeso(i.amount)}, next pay ${i.nextPayDate}`);
+      lines.push(`  - ${i.source}: ${formatAmount(i.amount)}, next pay ${i.nextPayDate}`);
     }
   }
 

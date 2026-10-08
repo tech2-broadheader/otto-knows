@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import {
+  aiUserContextSchema,
   briefingSchema,
   briefingSlotSchema,
   contextItemSchema,
@@ -11,9 +12,9 @@ import {
 } from "@otto/schemas";
 import { composeBriefing, serializeContextForLlm } from "@otto/core";
 import type { LlmClient } from "./client";
-import { PROPOSAL_TOOLS, toolCallToProposal } from "./tools";
-import { BRIEF_SYSTEM } from "./prompts";
-import { currentTimeContext } from "./time";
+import { proposalTools, toolCallToProposal } from "./tools";
+import { briefSystem } from "./prompts";
+import { currentTimeContext, promptLocale } from "./time";
 
 /** Request contract for POST /api/llm/brief, composed from shared schemas. */
 export const briefRequestSchema = z.object({
@@ -23,6 +24,8 @@ export const briefRequestSchema = z.object({
   /** Optional richer context for better cross-domain reasoning. */
   routine: routineSchema.optional(),
   incomes: z.array(incomeSchema).max(20).optional(),
+  /** The user's timezone, currency and locale (story 13.2); absent from older apps. */
+  user: aiUserContextSchema.optional(),
 });
 export type BriefRequest = z.infer<typeof briefRequestSchema>;
 
@@ -63,10 +66,11 @@ export async function generateBriefing(
     })),
   });
 
+  const locale = promptLocale(request.user, clock.now);
   const result = await llm.generate({
-    system: BRIEF_SYSTEM,
-    userText: `${currentTimeContext(clock.now)}\n\n${context}\n\nWrite the ${request.slot} briefing for ${clock.date}.`,
-    tools: PROPOSAL_TOOLS,
+    system: briefSystem(locale),
+    userText: `${currentTimeContext(clock.now, locale.timezone)}\n\n${context}\n\nWrite the ${request.slot} briefing for ${clock.date}.`,
+    tools: proposalTools(locale.currency),
     thinking: true,
     effort: "medium",
     maxTokens: 2048,
@@ -87,7 +91,7 @@ export async function generateBriefing(
   }
 
   const proposals = result.toolCalls
-    .map((call) => toolCallToProposal(call, () => randomUUID()))
+    .map((call) => toolCallToProposal(call, () => randomUUID(), locale.currency))
     .filter((p): p is NonNullable<typeof p> => p !== null);
 
   const briefing: Briefing = briefingSchema.parse({

@@ -4,7 +4,7 @@
 // locale.
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { formatMoney, formatShortDate, suggestSettings } from "@otto/core";
-import type { UserSettings } from "@otto/schemas";
+import type { AiUserContext, UserSettings } from "@otto/schemas";
 import { LOCAL_USER_ID } from "./constants";
 import { readDeviceLocale } from "./device-locale";
 import { currencySymbol } from "./money";
@@ -40,6 +40,12 @@ export function SettingsProvider({
 /** Change the user's region / currency (Settings → Region & currency). */
 export function useUpdateSettings(): UpdateSettings {
   return useContext(UpdateSettingsContext);
+}
+
+/** What the AI needs to read times and money the user's way (story 13.2). */
+export function useAiUserContext(): AiUserContext {
+  const { timezone, currency, locale } = useSettings();
+  return useMemo(() => ({ timezone, currency, locale }), [timezone, currency, locale]);
 }
 
 /** The user's home currency, locale and timezone. */

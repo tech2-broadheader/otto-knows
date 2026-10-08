@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { calendarEventSchema } from "@otto/schemas";
-import { toCalendarEvents, type IdFactory } from "@/server/google-calendar";
+import { dayWindow, toCalendarEvents, type IdFactory } from "@/server/google-calendar";
 
 /**
  * Unit tests for the PURE `toCalendarEvents` normalizer (Story 3.1).
@@ -131,5 +131,25 @@ describe("toCalendarEvents() — skip policy (malformed / unusable)", () => {
     ];
     const events = toCalendarEvents(raw, USER_ID, idFactory, NOW);
     expect(events.map((event) => event.externalId)).toEqual(["good-1", "good-2"]);
+  });
+});
+
+describe("dayWindow (story 13.2)", () => {
+  it("bounds the user's local day with explicit offsets, end exclusive", () => {
+    expect(dayWindow("2026-06-15", "America/New_York")).toEqual({
+      timeMin: "2026-06-15T00:00:00-04:00",
+      timeMax: "2026-06-16T00:00:00-04:00",
+    });
+    expect(dayWindow("2026-12-31", "Asia/Manila")).toEqual({
+      timeMin: "2026-12-31T00:00:00+08:00",
+      timeMax: "2027-01-01T00:00:00+08:00",
+    });
+  });
+
+  it("follows a daylight-saving change across the day (London, 29 March 2026)", () => {
+    expect(dayWindow("2026-03-29", "Europe/London")).toEqual({
+      timeMin: "2026-03-29T00:00:00+00:00",
+      timeMax: "2026-03-30T00:00:00+01:00",
+    });
   });
 });

@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle } from "react-native-svg";
 import { Icon, type IconName } from "./Icon";
 import { OC, FONT, RADIUS, shadow, toneColor, tint, eyebrow, bodyFont } from "./theme";
+import { t } from "../i18n";
 
 /* eslint-disable @typescript-eslint/no-require-imports -- RN static assets */
 const CLAM = require("../../assets/otto-clam.png");
@@ -230,13 +231,13 @@ export function ProposalCard({
     return (
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: OC.mist, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16 }}>
         <Icon name="check" size={18} color={OC.green} />
-        <Text style={{ color: OC.green, fontFamily: FONT.bodyBold, fontSize: 14 }}>Added to your day.</Text>
+        <Text style={{ color: OC.green, fontFamily: FONT.bodyBold, fontSize: 14 }}>{t("common.proposal.accepted")}</Text>
       </View>
     );
   if (state === "dismissed")
     return (
       <View style={{ backgroundColor: OC.paper, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 16, borderWidth: 1, borderColor: OC.lineStrong, borderStyle: "dashed" }}>
-        <Text style={{ color: OC.ink400, fontFamily: FONT.bodySemi, fontSize: 14 }}>Dismissed — no changes made.</Text>
+        <Text style={{ color: OC.ink400, fontFamily: FONT.bodySemi, fontSize: 14 }}>{t("common.proposal.dismissed")}</Text>
       </View>
     );
   return (
@@ -246,7 +247,7 @@ export function ProposalCard({
           <Icon name={icon} size={20} color={accent} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[eyebrow, { fontSize: 10.5, marginBottom: 3 }]}>Otto proposes</Text>
+          <Text style={[eyebrow, { fontSize: 10.5, marginBottom: 3 }]}>{t("common.proposal.eyebrow")}</Text>
           <Display style={{ fontSize: 16.5, lineHeight: 20 }}>{title}</Display>
           {detail ? <Text style={{ fontSize: 13, color: OC.ink500, marginTop: 4, lineHeight: 19, fontFamily: FONT.body }}>{detail}</Text> : null}
         </View>
@@ -254,11 +255,11 @@ export function ProposalCard({
       {children ? <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>{children}</View> : null}
       <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: OC.line }}>
         <Pressable onPress={onDismiss} style={({ pressed }) => [{ flex: 1, paddingVertical: 13, alignItems: "center", borderRightWidth: 1, borderRightColor: OC.line, opacity: pressed ? 0.6 : 1 }]}>
-          <Text style={{ color: OC.ink500, fontFamily: FONT.bodyBold, fontSize: 14 }}>Not now</Text>
+          <Text style={{ color: OC.ink500, fontFamily: FONT.bodyBold, fontSize: 14 }}>{t("common.notNow")}</Text>
         </Pressable>
         <Pressable onPress={onAccept} style={({ pressed }) => [{ flex: 1.4, paddingVertical: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, opacity: pressed ? 0.6 : 1 }]}>
           <Icon name="check" size={17} color={OC.green} />
-          <Text style={{ color: OC.green, fontFamily: FONT.bodyX, fontSize: 14 }}>Yes, do it</Text>
+          <Text style={{ color: OC.green, fontFamily: FONT.bodyX, fontSize: 14 }}>{t("common.proposal.accept")}</Text>
         </Pressable>
       </View>
     </View>
@@ -380,11 +381,11 @@ export function AppHeader({
       </View>
       <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
         {isPro ? (
-          <Pill tone="pro">PRO</Pill>
+          <Pill tone="pro">{t("common.pro")}</Pill>
         ) : (
           <Pressable onPress={onUpgrade} style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: OC.forest, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6, opacity: pressed ? 0.85 : 1 }]}>
             <Icon name="sparkle" size={13} color={OC.emerald} />
-            <Text style={{ color: OC.mint, fontFamily: FONT.bodyX, fontSize: 12 }}>Upgrade</Text>
+            <Text style={{ color: OC.mint, fontFamily: FONT.bodyX, fontSize: 12 }}>{t("common.upgrade")}</Text>
           </Pressable>
         )}
         <Pressable onPress={onSettings} style={({ pressed }) => [{ width: 38, height: 38, borderRadius: 12, backgroundColor: OC.surface, borderWidth: 1, borderColor: OC.line, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1 }]}>
@@ -400,12 +401,12 @@ export function ProGate({ onUpgrade, children }: { onUpgrade?: () => void; child
   return (
     <LinearGradient colors={[OC.dark, OC.dark2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: RADIUS.card, padding: 18, overflow: "hidden" }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <Pill tone="pro">PRO</Pill>
+        <Pill tone="pro">{t("common.pro")}</Pill>
         <Icon name="sparkle" size={16} color={OC.emerald} />
       </View>
       {children}
       <Pressable onPress={onUpgrade} style={({ pressed }) => [{ marginTop: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: OC.emerald, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, opacity: pressed ? 0.9 : 1 }]}>
-        <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 14.5 }}>Unlock with Pro</Text>
+        <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 14.5 }}>{t("common.unlockWithPro")}</Text>
         <Icon name="arrowR" size={17} color="#fff" />
       </Pressable>
     </LinearGradient>
@@ -423,11 +424,11 @@ export function GradientCard({ children, style }: { children: ReactNode; style?:
 
 // ─────────── Bottom tab bar (Today · Reminders · + · Money · Health) ───────────
 const TAB_META: Record<string, { icon: IconName; label: string }> = {
-  Today: { icon: "sun", label: "Today" },
-  Reminders: { icon: "bell", label: "Reminders" },
+  Today: { icon: "sun", label: t("common.tabs.today") },
+  Reminders: { icon: "bell", label: t("common.tabs.reminders") },
   Add: { icon: "plus", label: "" },
-  Finance: { icon: "peso", label: "Money" },
-  Health: { icon: "pill", label: "Health" },
+  Finance: { icon: "peso", label: t("common.tabs.money") },
+  Health: { icon: "pill", label: t("common.tabs.health") },
 };
 export function OttoTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -637,16 +638,16 @@ export function ChoicePills({ options, value, onChange }: { options: Option[]; v
   );
 }
 
-export function SaveBar({ onCancel, onSave, label = "Save", disabled }: { onCancel: () => void; onSave: () => void; label?: string; disabled?: boolean }) {
+export function SaveBar({ onCancel, onSave, label = t("common.save"), disabled }: { onCancel: () => void; onSave: () => void; label?: string; disabled?: boolean }) {
   return (
     <View style={{ flexDirection: "row", gap: 10 }}>
-      <GhostButton label="Cancel" onPress={onCancel} style={{ flex: 1 }} />
+      <GhostButton label={t("common.cancel")} onPress={onCancel} style={{ flex: 1 }} />
       <PrimaryButton label={label} icon="check" onPress={onSave} disabled={disabled} style={{ flex: 1.6 }} />
     </View>
   );
 }
 
-export function FormSaved({ icon = "check", title, sub, onDone, doneLabel = "Done" }: { icon?: IconName; title: string; sub: string; onDone: () => void; doneLabel?: string }) {
+export function FormSaved({ icon = "check", title, sub, onDone, doneLabel = t("common.done") }: { icon?: IconName; title: string; sub: string; onDone: () => void; doneLabel?: string }) {
   return (
     <View style={{ alignItems: "center", paddingVertical: 34, paddingHorizontal: 8 }}>
       <View style={{ width: 66, height: 66, borderRadius: 20, backgroundColor: OC.mist, alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
@@ -678,7 +679,7 @@ export function TipCard({ icon, tone = "green", domain, title, body }: { icon: I
       </View>
       <View style={{ marginTop: 11, paddingTop: 10, borderTopWidth: 1, borderTopColor: OC.line, flexDirection: "row", alignItems: "center", gap: 6 }}>
         <Icon name="shield" size={13} color={OC.ink400} />
-        <Text style={{ fontSize: 11.5, color: OC.ink400, fontFamily: FONT.body }}>{domain === "health" ? "A gentle nudge — not medical advice." : "General guidance, not financial advice."}</Text>
+        <Text style={{ fontSize: 11.5, color: OC.ink400, fontFamily: FONT.body }}>{domain === "health" ? t("common.disclaimer.health") : t("common.disclaimer.finance")}</Text>
       </View>
     </Card>
   );

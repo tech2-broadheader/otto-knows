@@ -5,11 +5,16 @@
 // Empty states live in the design kit (EmptyState).
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { FONT, OC, RADIUS } from "../design/theme";
+import { t } from "../i18n";
 
 export type LoadState = "loading" | "error" | "ready";
 
 /** Centered spinner with an accessible label. */
-export function LoadingState({ label = "Loading" }: { label?: string }): React.JSX.Element {
+export function LoadingState({
+  label = t("account.async.loading"),
+}: {
+  label?: string;
+}): React.JSX.Element {
   return (
     <View
       style={{
@@ -52,7 +57,7 @@ export function ErrorState({
       <Text
         style={{ textAlign: "center", fontFamily: FONT.bodyBold, fontSize: 16, color: OC.coralInk }}
       >
-        Something went wrong
+        {t("account.async.errorTitle")}
       </Text>
       <Text
         style={{
@@ -70,7 +75,7 @@ export function ErrorState({
         <Pressable
           onPress={onRetry}
           accessibilityRole="button"
-          accessibilityLabel="Try again"
+          accessibilityLabel={t("common.retry")}
           style={({ pressed }) => [
             {
               marginTop: 16,
@@ -82,7 +87,9 @@ export function ErrorState({
             },
           ]}
         >
-          <Text style={{ fontFamily: FONT.bodyBold, fontSize: 15, color: "#fff" }}>Try again</Text>
+          <Text style={{ fontFamily: FONT.bodyBold, fontSize: 15, color: "#fff" }}>
+            {t("common.retry")}
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -108,6 +115,6 @@ export function AsyncBoundary({
 }): React.JSX.Element {
   if (state === "loading") return <LoadingState label={loadingLabel} />;
   if (state === "error")
-    return <ErrorState message={error ?? "Please try again."} onRetry={onRetry} />;
+    return <ErrorState message={error ?? t("account.async.fallback")} onRetry={onRetry} />;
   return <>{children}</>;
 }

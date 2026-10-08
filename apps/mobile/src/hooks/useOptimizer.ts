@@ -15,6 +15,7 @@ import { routineRepository } from "../data";
 import { LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
+import { t } from "../i18n";
 
 export type OptimizerStatus = "idle" | "proposing" | "proposed" | "error" | "applying" | "applied";
 
@@ -61,11 +62,14 @@ export function useOptimizer(): OptimizerState {
       try {
         current = await routineRepository.getForUser(LOCAL_USER_ID);
       } catch (caught) {
-        fail("INTERNAL", caught instanceof Error ? caught.message : "Could not load your routine.");
+        fail(
+          "INTERNAL",
+          caught instanceof Error ? caught.message : t("assistant.routine.loadError"),
+        );
         return;
       }
       if (!current) {
-        fail("VALIDATION", "Set up your routine first so Otto has a day to reshape.");
+        fail("VALIDATION", t("assistant.optimizer.errors.noRoutine"));
         return;
       }
 
@@ -89,7 +93,10 @@ export function useOptimizer(): OptimizerState {
       await applyOptimization(proposal, routine, recurrence, { newId: newUuid, now: nowIso() });
       setStatus("applied");
     } catch (caught) {
-      fail("INTERNAL", caught instanceof Error ? caught.message : "Couldn't apply that plan.");
+      fail(
+        "INTERNAL",
+        caught instanceof Error ? caught.message : t("assistant.optimizer.errors.applyFailed"),
+      );
     }
   }, [proposal, routine, recurrence, fail]);
 

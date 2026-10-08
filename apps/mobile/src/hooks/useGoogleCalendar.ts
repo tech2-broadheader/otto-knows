@@ -11,6 +11,7 @@ import {
   isGoogleCalendarConnected,
   syncTodayGoogleCalendar,
 } from "../connectors/google-calendar";
+import { t } from "../i18n";
 
 export type GoogleCalendarState = {
   /** True when EXPO_PUBLIC_GOOGLE_CLIENT_ID is set (flow can run). */
@@ -44,13 +45,13 @@ export function useGoogleCalendar(deps: RepositoryDeps): GoogleCalendarState {
     setMessage(undefined);
     const result = await connectGoogleCalendar();
     if (result.ok) {
-      setMessage("Connected. Tap “Sync today” to pull today’s events.");
+      setMessage(t("account.googleCalendar.connected"));
     } else if (result.reason === "not-configured") {
-      setMessage("Google Calendar isn’t set up in this build (missing client id).");
+      setMessage(t("account.googleCalendar.notConfigured"));
     } else if (result.reason === "cancelled") {
-      setMessage("Sign-in was cancelled.");
+      setMessage(t("account.googleCalendar.cancelled"));
     } else {
-      setMessage("Couldn’t connect. Please try again.");
+      setMessage(t("account.googleCalendar.connectFailed"));
     }
     await refreshConnected();
     setBusy(false);
@@ -61,15 +62,15 @@ export function useGoogleCalendar(deps: RepositoryDeps): GoogleCalendarState {
     setMessage(undefined);
     const result = await syncTodayGoogleCalendar(deps, (userId) => consentRepository.list(userId));
     if (result.ok) {
-      setMessage(`Synced ${result.count} event${result.count === 1 ? "" : "s"} for today.`);
+      setMessage(t("account.googleCalendar.synced", { count: result.count }));
     } else if (result.reason === "consent-required") {
-      setMessage("Turn on the Calendar source above before syncing.");
+      setMessage(t("account.googleCalendar.consentRequired"));
     } else if (result.reason === "not-connected") {
-      setMessage("Connect your Google account first.");
+      setMessage(t("account.googleCalendar.notConnected"));
     } else if (result.reason === "not-configured") {
-      setMessage("Google Calendar isn’t set up in this build (missing client id).");
+      setMessage(t("account.googleCalendar.notConfigured"));
     } else {
-      setMessage("Couldn’t sync today’s events. Please try again.");
+      setMessage(t("account.googleCalendar.syncFailed"));
     }
     setBusy(false);
   }, [deps]);
@@ -77,7 +78,7 @@ export function useGoogleCalendar(deps: RepositoryDeps): GoogleCalendarState {
   const disconnect = useCallback(async () => {
     setBusy(true);
     await disconnectGoogleCalendar();
-    setMessage("Disconnected. Otto will stop pulling new calendar events.");
+    setMessage(t("account.googleCalendar.disconnected"));
     await refreshConnected();
     setBusy(false);
   }, [refreshConnected]);

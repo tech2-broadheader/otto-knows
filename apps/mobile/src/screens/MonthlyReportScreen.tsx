@@ -15,6 +15,7 @@ import { Icon } from "../design/Icon";
 import { FONT, OC, eyebrow } from "../design/theme";
 import { currentMonth } from "../lib/datetime";
 import { useMoney } from "../lib/settings-context";
+import { t } from "../i18n";
 
 type Params = { month?: string };
 
@@ -45,14 +46,15 @@ export function MonthlyReportScreen(): React.JSX.Element {
       ? Math.round((change / report.previous.spendingMinor) * 1000) / 10
       : null;
   const empty = report.incomeMinor === 0 && report.spendingMinor === 0;
+  const comparison = spendingComparison(change, changePct, money.format);
 
   return (
-    <OverlayScreen title="Monthly report" onBack={() => navigation.goBack()}>
+    <OverlayScreen title={t("money.report.title")} onBack={() => navigation.goBack()}>
       <AsyncBoundary
         state={finance.state}
         error={finance.error}
         onRetry={finance.reload}
-        loadingLabel="Building your report"
+        loadingLabel={t("money.report.loading")}
       >
         <View
           style={{
@@ -70,18 +72,18 @@ export function MonthlyReportScreen(): React.JSX.Element {
           <MonthButton
             direction="back"
             onPress={() => setMonth(previousMonth(month))}
-            label="Previous month"
+            label={t("money.report.previousMonth")}
           />
           <View style={{ alignItems: "center" }}>
             <Display style={{ fontSize: 17 }}>{monthLabel(month)}</Display>
             <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
-              vs {monthLabel(previousMonth(month))}
+              {t("money.report.vsMonth", { month: monthLabel(previousMonth(month)) })}
             </Text>
           </View>
           <MonthButton
             direction="forward"
             onPress={() => setMonth(nextMonth(month))}
-            label="Next month"
+            label={t("money.report.nextMonth")}
             disabled={month >= thisMonth}
           />
         </View>
@@ -89,17 +91,21 @@ export function MonthlyReportScreen(): React.JSX.Element {
         {empty ? (
           <EmptyState
             icon="trend"
-            title="Nothing this month"
-            body="Once you log income or spending for this month, your report shows up here."
+            title={t("money.report.emptyTitle")}
+            body={t("money.report.emptyBody")}
           />
         ) : (
           <>
             <View style={{ flexDirection: "row", gap: 8 }}>
-              <Tile label="Income" value={money.format(report.incomeMinor)} color={OC.green} />
-              <Tile label="Spending" value={money.format(report.spendingMinor)} />
+              <Tile
+                label={t("money.report.income")}
+                value={money.format(report.incomeMinor)}
+                color={OC.green}
+              />
+              <Tile label={t("money.report.spending")} value={money.format(report.spendingMinor)} />
               <View style={{ flex: 1, backgroundColor: OC.dark, borderRadius: 16, padding: 12 }}>
                 <Text style={{ fontFamily: FONT.bodyBold, fontSize: 11.5, color: OC.sage }}>
-                  Net
+                  {t("money.report.net")}
                 </Text>
                 <Text
                   style={{ fontFamily: FONT.display, fontSize: 16, color: "#fff", marginTop: 3 }}
@@ -121,21 +127,25 @@ export function MonthlyReportScreen(): React.JSX.Element {
                 marginHorizontal: 2,
               }}
             >
-              {change === null
-                ? "No earlier month to compare with yet."
-                : change === 0
-                  ? "Spending is the same as last month."
-                  : `Spending is ${money.format(Math.abs(change))} ${change > 0 ? "more" : "less"} than last month${changePct === null ? "" : ` (${change > 0 ? "+" : "−"}${Math.abs(changePct)}%)`}.`}{" "}
-              Transfers and card payments aren't counted.
+              {comparison} {t("money.report.transfersNotCounted")}
             </Text>
 
             <Card style={{ marginTop: 16, gap: 14 }}>
-              <Text style={eyebrow}>By category</Text>
+              <Text style={eyebrow}>{t("money.report.byCategory")}</Text>
               {report.categories.map((line, index) => (
                 <View
                   key={line.categoryId ?? "uncategorized"}
                   accessible
-                  accessibilityLabel={`${line.name}: ${money.format(line.spentMinor)}. ${changeText(line.changeMinor, line.changePct, line.previousMinor, money.format)}`}
+                  accessibilityLabel={t("money.report.categoryA11y", {
+                    name: line.name,
+                    amount: money.format(line.spentMinor),
+                    change: changeText(
+                      line.changeMinor,
+                      line.changePct,
+                      line.previousMinor,
+                      money.format,
+                    ),
+                  })}
                 >
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                     <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14, color: OC.ink }}>
@@ -188,7 +198,7 @@ export function MonthlyReportScreen(): React.JSX.Element {
             <View style={{ flexDirection: "row", gap: 6, alignItems: "center", marginTop: 14 }}>
               <Icon name="shield" size={13} color={OC.ink400} />
               <Text style={{ fontFamily: FONT.body, fontSize: 11.5, color: OC.ink400 }}>
-                Computed on your phone. Nothing leaves your device.
+                {t("money.report.onDevice")}
               </Text>
             </View>
           </>
@@ -198,17 +208,36 @@ export function MonthlyReportScreen(): React.JSX.Element {
   );
 }
 
+/** The sentence comparing this month's spending with last month's. */
+function spendingComparison(
+  change: number | null,
+  changePct: number | null,
+  format: (minor: number) => string,
+): string {
+  if (change === null) return t("money.report.noEarlierMonth");
+  if (change === 0) return t("money.report.sameSpending");
+  const amount = format(Math.abs(change));
+  if (changePct === null) {
+    return t(change > 0 ? "money.report.spendingMore" : "money.report.spendingLess", { amount });
+  }
+  return t(change > 0 ? "money.report.spendingMorePct" : "money.report.spendingLessPct", {
+    amount,
+    pct: Math.abs(changePct),
+  });
+}
+
 function changeText(
   changeMinor: number,
   changePct: number | null,
   previousMinor: number,
   format: (minor: number) => string,
 ): string {
-  if (previousMinor === 0) return "New this month";
-  if (changeMinor === 0) return "Same as last month";
+  if (previousMinor === 0) return t("money.report.newThisMonth");
+  if (changeMinor === 0) return t("money.report.sameAsLast");
   const sign = changeMinor > 0 ? "+" : "−";
-  const pct = changePct === null ? "" : ` (${sign}${Math.abs(changePct)}%)`;
-  return `${sign}${format(Math.abs(changeMinor))}${pct} vs last month`;
+  const amount = format(Math.abs(changeMinor));
+  if (changePct === null) return t("money.report.changeVsLast", { sign, amount });
+  return t("money.report.changeVsLastPct", { sign, amount, pct: Math.abs(changePct) });
 }
 
 function Tile({

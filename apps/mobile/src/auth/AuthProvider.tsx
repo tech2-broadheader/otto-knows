@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Session } from "@supabase/supabase-js";
 import { isAuthConfigured, supabase } from "./supabase";
 import { setAuthTokenProvider } from "../lib/api-client";
+import { t } from "../i18n";
 
 type Entitlement = "free" | "pro" | "lifetime";
 /** `needsConfirmation` is true when sign-up succeeded but the user must click an
@@ -26,7 +27,7 @@ export type AuthState = {
 
 const NOT_CONFIGURED: AuthAction = {
   ok: false,
-  message: "Sign-in isn't set up in this build yet.",
+  message: t("account.auth.notConfigured"),
 };
 
 const AuthContext = createContext<AuthState | null>(null);

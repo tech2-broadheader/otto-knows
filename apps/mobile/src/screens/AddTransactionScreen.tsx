@@ -17,19 +17,20 @@ import { todayDate } from "../lib/datetime";
 import { dateForChoice, validateTransactionForm } from "../lib/forms";
 import { formatMoneyInput } from "../lib/money";
 import { useMoney } from "../lib/settings-context";
+import { t } from "../i18n";
 
 type Params = { txId?: string; type?: TransactionType };
 
 const TYPE_OPTIONS = [
-  { k: "expense", l: "Expense" },
-  { k: "income", l: "Income" },
-  { k: "transfer", l: "Transfer" },
+  { k: "expense", l: t("money.addTransaction.types.expense") },
+  { k: "income", l: t("money.addTransaction.types.income") },
+  { k: "transfer", l: t("money.addTransaction.types.transfer") },
 ];
 
 const SAVE_LABEL: Record<TransactionType, string> = {
-  expense: "Add expense",
-  income: "Add income",
-  transfer: "Move money",
+  expense: t("money.addTransaction.save.expense"),
+  income: t("money.addTransaction.save.income"),
+  transfer: t("money.addTransaction.save.transfer"),
 };
 
 export function AddTransactionScreen(): React.JSX.Element {
@@ -78,7 +79,10 @@ export function AddTransactionScreen(): React.JSX.Element {
             finance.wallets.perAccount.find((b) => b.accountId === a.id)?.balanceMinor ?? 0;
           const label =
             a.type === "credit_card"
-              ? `${a.name} · owes ${money.format(Math.max(-balance, 0))}`
+              ? t("money.addTransaction.walletOwes", {
+                  name: a.name,
+                  amount: money.format(Math.max(-balance, 0)),
+                })
               : `${a.name} · ${money.format(balance)}`;
           return { k: a.id, l: label, tone: a.type === "credit_card" ? "coral" : "green" };
         }),
@@ -94,15 +98,15 @@ export function AddTransactionScreen(): React.JSX.Element {
   const categoryOptions = useMemo(
     () => [
       ...finance.categories.map((c) => ({ k: c.id, l: c.name, tone: "amber" })),
-      { k: "", l: "None", tone: "green" },
+      { k: "", l: t("money.addTransaction.noCategory"), tone: "green" },
     ],
     [finance.categories],
   );
 
   const today = todayDate();
   const dateOptions = [
-    { k: dateForChoice("today", today), l: "Today" },
-    { k: dateForChoice("yesterday", today), l: "Yesterday" },
+    { k: dateForChoice("today", today), l: t("money.addTransaction.today") },
+    { k: dateForChoice("yesterday", today), l: t("money.addTransaction.yesterday") },
   ];
 
   const save = async (): Promise<void> => {
@@ -118,7 +122,7 @@ export function AddTransactionScreen(): React.JSX.Element {
       else await finance.addTransaction(result.value);
       navigation.goBack();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Couldn't save that. Please try again.");
+      setError(caught instanceof Error ? caught.message : t("money.addTransaction.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -126,10 +130,10 @@ export function AddTransactionScreen(): React.JSX.Element {
 
   const confirmDelete = (): void => {
     if (!editing) return;
-    Alert.alert("Delete this transaction?", "Your wallet balances will update.", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("money.addTransaction.deleteTitle"), t("money.addTransaction.deleteBody"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: () => {
           void finance.deleteTransaction(editing.id).then(() => navigation.goBack());
@@ -140,11 +144,17 @@ export function AddTransactionScreen(): React.JSX.Element {
 
   return (
     <OverlayScreen
-      title={editing ? "Edit transaction" : "Add transaction"}
+      title={editing ? t("money.addTransaction.titleEdit") : t("money.addTransaction.titleAdd")}
       onBack={() => navigation.goBack()}
       footer={
         <SaveBar
-          label={saving ? "Saving…" : editing ? "Save changes" : SAVE_LABEL[type]}
+          label={
+            saving
+              ? t("money.saving")
+              : editing
+                ? t("money.addTransaction.saveChanges")
+                : SAVE_LABEL[type]
+          }
           disabled={saving}
           onCancel={() => navigation.goBack()}
           onSave={() => void save()}
@@ -160,7 +170,7 @@ export function AddTransactionScreen(): React.JSX.Element {
         />
       </View>
 
-      <Field label="Amount">
+      <Field label={t("money.addTransaction.amount")}>
         <TextField
           value={amountText}
           onChangeText={setAmountText}
@@ -171,12 +181,18 @@ export function AddTransactionScreen(): React.JSX.Element {
         />
       </Field>
 
-      <Field label={type === "income" ? "Into wallet" : "From wallet"}>
+      <Field
+        label={
+          type === "income"
+            ? t("money.addTransaction.intoWallet")
+            : t("money.addTransaction.fromWallet")
+        }
+      >
         <ChoicePills options={walletOptions} value={accountId ?? ""} onChange={setAccountId} />
       </Field>
 
       {type === "transfer" ? (
-        <Field label="To" hint="Paying a card? Pick it here">
+        <Field label={t("money.addTransaction.to")} hint={t("money.addTransaction.toHint")}>
           <ChoicePills
             options={destinationOptions}
             value={toAccountId ?? ""}
@@ -186,7 +202,7 @@ export function AddTransactionScreen(): React.JSX.Element {
       ) : null}
 
       {type === "expense" ? (
-        <Field label="Category">
+        <Field label={t("money.addTransaction.category")}>
           <ChoicePills
             options={categoryOptions}
             value={categoryId ?? ""}
@@ -195,21 +211,21 @@ export function AddTransactionScreen(): React.JSX.Element {
         </Field>
       ) : null}
 
-      <Field label="Note" hint="optional">
+      <Field label={t("money.addTransaction.note")} hint={t("money.optionalHint")}>
         <TextField
           value={note}
           onChangeText={setNote}
           placeholder={
             type === "income"
-              ? "e.g. Salary"
+              ? t("money.egSalary")
               : type === "transfer"
-                ? "e.g. Card payment"
-                : "e.g. Lunch"
+                ? t("money.addTransaction.notePlaceholder.transfer")
+                : t("money.addTransaction.notePlaceholder.expense")
           }
         />
       </Field>
 
-      <Field label="Date">
+      <Field label={t("money.addTransaction.date")}>
         <ChoicePills options={dateOptions} value={date} onChange={setDate} />
         <View style={{ marginTop: 8 }}>
           <TextField value={date} onChangeText={setDate} placeholder="2026-10-08" />
@@ -225,7 +241,7 @@ export function AddTransactionScreen(): React.JSX.Element {
           ]}
         >
           <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14, color: OC.coralInk }}>
-            Delete transaction
+            {t("money.addTransaction.delete")}
           </Text>
         </Pressable>
       ) : null}

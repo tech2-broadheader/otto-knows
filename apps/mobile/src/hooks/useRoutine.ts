@@ -13,14 +13,15 @@ import { LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
+import { t } from "../i18n";
 
 /** Seeded default anchors offered on first run (story 2.1 AC2). All editable. */
 const SEED_DEFAULTS: ReadonlyArray<{ label: string; kind: RoutineAnchorKind; time: string }> = [
-  { label: "Wake", kind: "wake", time: "06:30" },
-  { label: "Morning meds", kind: "meds", time: "07:00" },
-  { label: "Lunch", kind: "meal", time: "12:30" },
-  { label: "Wind-down", kind: "wind-down", time: "21:30" },
-  { label: "Sleep", kind: "sleep", time: "22:30" },
+  { label: t("assistant.routine.seed.wake"), kind: "wake", time: "06:30" },
+  { label: t("assistant.routine.seed.meds"), kind: "meds", time: "07:00" },
+  { label: t("assistant.routine.seed.lunch"), kind: "meal", time: "12:30" },
+  { label: t("assistant.routine.seed.windDown"), kind: "wind-down", time: "21:30" },
+  { label: t("assistant.routine.seed.sleep"), kind: "sleep", time: "22:30" },
 ];
 
 /** Local timezone name, e.g. "Asia/Manila". */
@@ -72,7 +73,7 @@ export function useRoutine(): RoutineState {
       setRoutine(loaded);
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load your routine.");
+      setError(caught instanceof Error ? caught.message : t("assistant.routine.loadError"));
       setState("error");
     }
   }, []);

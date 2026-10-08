@@ -13,17 +13,18 @@ import { useAlarms } from "../hooks/useAlarms";
 import { LOCAL_USER_ID } from "../lib/constants";
 import { todayDate } from "../lib/datetime";
 import { validateAlarmForm } from "../lib/forms";
+import { t } from "../i18n";
 
 type Params = { alarmId?: string };
 
 const DAYS: ReadonlyArray<{ day: DayOfWeek; letter: string; name: string }> = [
-  { day: "mon", letter: "M", name: "Monday" },
-  { day: "tue", letter: "T", name: "Tuesday" },
-  { day: "wed", letter: "W", name: "Wednesday" },
-  { day: "thu", letter: "T", name: "Thursday" },
-  { day: "fri", letter: "F", name: "Friday" },
-  { day: "sat", letter: "S", name: "Saturday" },
-  { day: "sun", letter: "S", name: "Sunday" },
+  { day: "mon", letter: t("tasks.alarmForm.dayLetters.mon"), name: t("tasks.alarmForm.days.mon") },
+  { day: "tue", letter: t("tasks.alarmForm.dayLetters.tue"), name: t("tasks.alarmForm.days.tue") },
+  { day: "wed", letter: t("tasks.alarmForm.dayLetters.wed"), name: t("tasks.alarmForm.days.wed") },
+  { day: "thu", letter: t("tasks.alarmForm.dayLetters.thu"), name: t("tasks.alarmForm.days.thu") },
+  { day: "fri", letter: t("tasks.alarmForm.dayLetters.fri"), name: t("tasks.alarmForm.days.fri") },
+  { day: "sat", letter: t("tasks.alarmForm.dayLetters.sat"), name: t("tasks.alarmForm.days.sat") },
+  { day: "sun", letter: t("tasks.alarmForm.dayLetters.sun"), name: t("tasks.alarmForm.days.sun") },
 ];
 
 const DEFAULT_HOUR = "06";
@@ -102,7 +103,7 @@ export function AlarmFormScreen(): React.JSX.Element {
       );
       navigation.goBack();
     } catch {
-      setError("Couldn't save the alarm. Please try again.");
+      setError(t("tasks.alarmForm.saveError"));
     } finally {
       setSaving(false);
     }
@@ -110,10 +111,10 @@ export function AlarmFormScreen(): React.JSX.Element {
 
   const confirmDelete = (): void => {
     if (!existing) return;
-    Alert.alert("Delete this alarm?", existing.label ?? existing.time, [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("tasks.alarmForm.deleteConfirm"), existing.label ?? existing.time, [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: () => void alarms.remove(existing.id).then(() => navigation.goBack()),
       },
@@ -122,11 +123,11 @@ export function AlarmFormScreen(): React.JSX.Element {
 
   return (
     <OverlayScreen
-      title={existing ? "Edit alarm" : "New alarm"}
+      title={existing ? t("tasks.alarmForm.editTitle") : t("tasks.alarmForm.newTitle")}
       onBack={() => navigation.goBack()}
       footer={
         <SaveBar
-          label={saving ? "Saving…" : "Save alarm"}
+          label={saving ? t("tasks.saving") : t("tasks.alarmForm.save")}
           onCancel={() => navigation.goBack()}
           onSave={() => void save()}
           disabled={saving}
@@ -147,16 +148,16 @@ export function AlarmFormScreen(): React.JSX.Element {
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <TimeBox value={hour} onChange={setHour} label="Hour" />
+          <TimeBox value={hour} onChange={setHour} label={t("tasks.alarmForm.hour")} />
           <Text style={{ fontFamily: FONT.display, fontSize: 56, color: OC.ink400 }}>:</Text>
-          <TimeBox value={minute} onChange={setMinute} label="Minute" />
+          <TimeBox value={minute} onChange={setMinute} label={t("tasks.alarmForm.minute")} />
         </View>
         <Text style={{ marginTop: 10, fontFamily: FONT.bodySemi, fontSize: 13, color: OC.ink500 }}>
-          {ringsIn ? `Rings in ${ringsIn}` : "Hours 0–23, minutes 0–59"}
+          {ringsIn ? t("tasks.alarmForm.ringsIn", { time: ringsIn }) : t("tasks.alarmForm.range")}
         </Text>
       </View>
 
-      <Field label="Repeat" hint={describeRepeat(repeatDays)}>
+      <Field label={t("tasks.alarmForm.repeat")} hint={describeRepeat(repeatDays)}>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           {DAYS.map(({ day, letter, name }) => {
             const on = repeatDays.includes(day);
@@ -188,12 +189,16 @@ export function AlarmFormScreen(): React.JSX.Element {
           })}
         </View>
         <Text style={{ marginTop: 7, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
-          No days picked = rings once
+          {t("tasks.alarmForm.ringsOnce")}
         </Text>
       </Field>
 
-      <Field label="Label" hint="Optional">
-        <TextField value={label} onChangeText={setLabel} placeholder="e.g. Wake up" />
+      <Field label={t("tasks.alarmForm.label")} hint={t("common.optional")}>
+        <TextField
+          value={label}
+          onChangeText={setLabel}
+          placeholder={t("tasks.alarmForm.labelPlaceholder")}
+        />
       </Field>
 
       <View
@@ -216,23 +221,28 @@ export function AlarmFormScreen(): React.JSX.Element {
           }}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14, color: OC.ink }}>Sound</Text>
+            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14, color: OC.ink }}>
+              {t("tasks.alarmForm.sound")}
+            </Text>
             <Text style={{ fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
-              Phone&apos;s default alarm
+              {t("tasks.alarmForm.soundDefault")}
             </Text>
           </View>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12 }}>
           <Text style={{ flex: 1, fontFamily: FONT.bodyBold, fontSize: 14, color: OC.ink }}>
-            Vibrate
+            {t("tasks.alarmForm.vibrate")}
           </Text>
           <OToggle on={vibrate} onToggle={() => setVibrate((v) => !v)} />
         </View>
       </View>
 
-      <Field label="Snooze">
+      <Field label={t("tasks.alarmForm.snooze")}>
         <ChoicePills
-          options={SNOOZE_MINUTES.map((m) => ({ k: String(m), l: `${m} min` }))}
+          options={SNOOZE_MINUTES.map((m) => ({
+            k: String(m),
+            l: t("tasks.alarmForm.snoozeMinutes", { minutes: m }),
+          }))}
           value={String(snoozeMinutes)}
           onChange={(k) => setSnoozeMinutes(Number(k))}
         />
@@ -249,7 +259,7 @@ export function AlarmFormScreen(): React.JSX.Element {
           })}
         >
           <Text style={{ fontFamily: FONT.bodyX, fontSize: 14, color: OC.coralInk }}>
-            Delete alarm
+            {t("tasks.alarmForm.delete")}
           </Text>
         </Pressable>
       ) : null}

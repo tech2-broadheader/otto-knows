@@ -12,6 +12,7 @@ import { Icon } from "../design/Icon";
 import { OC, FONT, RADIUS, shadow } from "../design/theme";
 import { useAuth } from "../auth/AuthProvider";
 import { validateCredentials } from "../lib/auth-input";
+import { t, tSlot } from "../i18n";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -44,10 +45,8 @@ export function LoginScreen({
   const [sentTo, setSentTo] = useState<string | undefined>();
 
   const isSignUp = mode === "sign-up";
-  const headline = isSignUp ? "Create your account" : "Sign in to Otto";
-  const sub = isSignUp
-    ? "Sync your day and unlock Otto Pro across devices."
-    : "Welcome back — pick up right where you left off.";
+  const headline = isSignUp ? t("account.login.signUpTitle") : t("account.login.signInTitle");
+  const sub = isSignUp ? t("account.login.signUpSub") : t("account.login.signInSub");
 
   const handleSubmit = async (): Promise<void> => {
     const problem = validateCredentials(email, password);
@@ -60,7 +59,7 @@ export function LoginScreen({
     const result = isSignUp ? await signUp(email.trim(), password) : await signIn(email.trim(), password);
     setBusy(false);
     if (!result.ok) {
-      setError(result.message ?? "Something went wrong. Please try again.");
+      setError(result.message ?? t("account.login.genericError"));
       return;
     }
     if (isSignUp && result.needsConfirmation) {
@@ -72,18 +71,22 @@ export function LoginScreen({
 
   // ── Confirmation-sent state ───────────────────────────────────────────────
   if (sentTo) {
+    // One message with an {email} slot; split around it so the address can be bold.
+    const [sentBefore, sentAfter] = tSlot("account.login.confirmationSent", "email");
     return (
       <View style={{ flex: 1, backgroundColor: OC.paper, paddingTop: insets.top + 8, paddingHorizontal: 22 }}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: insets.bottom + 40 }}>
           <View style={{ width: 72, height: 72, borderRadius: 22, backgroundColor: OC.mist, alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
             <Icon name="bell" size={34} color={OC.green} />
           </View>
-          <Display style={{ fontSize: 24, textAlign: "center" }}>Check your email</Display>
+          <Display style={{ fontSize: 24, textAlign: "center" }}>{t("account.login.checkEmail")}</Display>
           <Text style={{ fontFamily: FONT.body, fontSize: 14.5, color: OC.ink500, textAlign: "center", lineHeight: 21, marginTop: 10, maxWidth: 320 }}>
-            We sent a confirmation link to <Text style={{ fontFamily: FONT.bodyBold, color: OC.ink }}>{sentTo}</Text>. Tap it, then come back and sign in.
+            {sentBefore}
+            <Text style={{ fontFamily: FONT.bodyBold, color: OC.ink }}>{sentTo}</Text>
+            {sentAfter}
           </Text>
           <PrimaryButton
-            label="Back to sign in"
+            label={t("account.login.backToSignIn")}
             onPress={() => {
               setSentTo(undefined);
               setMode("sign-in");
@@ -102,7 +105,7 @@ export function LoginScreen({
         <Pressable
           onPress={() => onDone()}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t("common.close")}
           style={({ pressed }) => [{ width: 38, height: 38, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: OC.line, backgroundColor: OC.surface, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1 }]}
         >
           <Icon name="x" size={20} color={OC.ink700} />
@@ -122,21 +125,21 @@ export function LoginScreen({
         {!isConfigured ? (
           <View style={{ marginTop: 24 }}>
             <Notice tone="info">
-              Sign-in isn&apos;t set up in this build yet — Otto is running fully on your device. You can keep using everything for free.
+              {t("account.login.notConfigured")}
             </Notice>
-            <GhostButton label="Continue without signing in" onPress={() => onDone()} />
+            <GhostButton label={t("account.login.continueWithout")} onPress={() => onDone()} />
           </View>
         ) : (
           <View style={{ marginTop: 28 }}>
             {error ? <Notice tone="error">{error}</Notice> : null}
-            <Field label="Email">
-              <TextField value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+            <Field label={t("account.login.email")}>
+              <TextField value={email} onChangeText={setEmail} placeholder={t("account.login.emailPlaceholder")} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
             </Field>
-            <Field label="Password">
-              <TextField value={password} onChangeText={setPassword} placeholder="Your password" secure autoCapitalize="none" autoComplete="password" />
+            <Field label={t("account.login.password")}>
+              <TextField value={password} onChangeText={setPassword} placeholder={t("account.login.passwordPlaceholder")} secure autoCapitalize="none" autoComplete="password" />
             </Field>
             <PrimaryButton
-              label={busy ? "One moment…" : isSignUp ? "Create account" : "Sign in"}
+              label={busy ? t("account.login.busy") : isSignUp ? t("account.login.createAccount") : t("account.login.signIn")}
               onPress={() => void handleSubmit()}
               disabled={busy}
               style={{ marginTop: 4 }}
@@ -151,15 +154,15 @@ export function LoginScreen({
               style={{ marginTop: 16, alignItems: "center", paddingVertical: 8 }}
             >
               <Text style={{ fontFamily: FONT.bodySemi, fontSize: 13.5, color: OC.green }}>
-                {isSignUp ? "Have an account? Sign in" : "New here? Create an account"}
+                {isSignUp ? t("account.login.switchToSignIn") : t("account.login.switchToSignUp")}
               </Text>
             </Pressable>
           </View>
         )}
 
         <View style={{ marginTop: "auto", alignItems: "center", paddingTop: 16 }}>
-          <Pressable onPress={() => onDone()} accessibilityRole="button" accessibilityLabel="Maybe later" style={{ paddingVertical: 8 }}>
-            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 13, color: OC.ink400 }}>Maybe later</Text>
+          <Pressable onPress={() => onDone()} accessibilityRole="button" accessibilityLabel={t("account.login.maybeLater")} style={{ paddingVertical: 8 }}>
+            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 13, color: OC.ink400 }}>{t("account.login.maybeLater")}</Text>
           </Pressable>
         </View>
       </View>

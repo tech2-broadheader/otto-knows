@@ -16,31 +16,32 @@ import { deleteAccount } from "../lib/api-client";
 import { useAppReset } from "../lib/app-reset";
 import { LOCAL_USER_ID } from "../lib/constants";
 import { buildExportFile } from "../lib/data-export";
+import { t } from "../i18n";
 import appConfig from "../../app.json";
 
 const INCLUDED = [
-  "Wallets & transactions",
-  "Bills & income",
-  "Budgets",
-  "Reminders & notes",
-  "Appointments & alarms",
-  "Medications",
-  "Routine",
-  "Consents & access log",
+  t("account.yourData.included.wallets"),
+  t("account.yourData.included.bills"),
+  t("account.yourData.included.budgets"),
+  t("account.yourData.included.reminders"),
+  t("account.yourData.included.appointments"),
+  t("account.yourData.included.medications"),
+  t("account.yourData.included.routine"),
+  t("account.yourData.included.consents"),
 ] as const;
 
 type Pending = "erase" | "delete-account" | null;
 
 const CONFIRM: Record<Exclude<Pending, null>, { title: string; body: string; action: string }> = {
   erase: {
-    title: "Erase everything on this phone?",
-    body: "Wallets, transactions, reminders, notes and health entries are removed for good. Download a copy first if you might need it.",
-    action: "Erase",
+    title: t("account.yourData.erase.confirmTitle"),
+    body: t("account.yourData.erase.confirmBody"),
+    action: t("account.yourData.erase.confirmAction"),
   },
   "delete-account": {
-    title: "Delete your account?",
-    body: "Your Otto account, any Pro backup and everything on this phone are removed for good. This can't be undone.",
-    action: "Delete",
+    title: t("account.yourData.deleteAccount.confirmTitle"),
+    body: t("account.yourData.deleteAccount.confirmBody"),
+    action: t("account.yourData.deleteAccount.confirmAction"),
   },
 };
 
@@ -63,11 +64,14 @@ export function YourDataScreen({
       const bundle = await exportMyData(LOCAL_USER_ID, deps);
       const exportedAt = new Date().toISOString();
       await Share.share({
-        title: `Otto data ${exportedAt.slice(0, 10)}`,
+        title: t("account.yourData.download.shareTitle", { date: exportedAt.slice(0, 10) }),
         message: buildExportFile(bundle, { appVersion: appConfig.expo.version, exportedAt }),
       });
     } catch {
-      Alert.alert("Couldn't prepare your data", "Nothing was shared. Please try again.");
+      Alert.alert(
+        t("account.yourData.errors.exportTitle"),
+        t("account.yourData.errors.exportBody"),
+      );
     } finally {
       setExporting(false);
     }
@@ -83,8 +87,8 @@ export function YourDataScreen({
         const res = await deleteAccount();
         if (!res.ok) {
           Alert.alert(
-            "Couldn't delete your account",
-            `${res.message} Your data is unchanged — please try again.`,
+            t("account.yourData.errors.deleteTitle"),
+            t("account.yourData.errors.deleteBody", { reason: res.message }),
           );
           return;
         }
@@ -99,7 +103,7 @@ export function YourDataScreen({
   };
 
   return (
-    <OverlayScreen title="Your data" onBack={() => navigation.goBack()}>
+    <OverlayScreen title={t("account.yourData.title")} onBack={() => navigation.goBack()}>
       <Text
         style={{
           fontFamily: FONT.body,
@@ -109,7 +113,7 @@ export function YourDataScreen({
           marginBottom: 16,
         }}
       >
-        It&apos;s yours. Take a copy any time, or erase it from this phone.
+        {t("account.yourData.intro")}
       </Text>
 
       <Card>
@@ -117,14 +121,16 @@ export function YourDataScreen({
           <IconTile icon="download" color={OC.green} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: FONT.bodyX, fontSize: 15, color: OC.ink }}>
-              Download a copy
+              {t("account.yourData.download.title")}
             </Text>
             <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
-              Everything as JSON, to save or send
+              {t("account.yourData.download.subtitle")}
             </Text>
           </View>
         </View>
-        <Text style={[eyebrow, { marginTop: 14, marginBottom: 8 }]}>What&apos;s in it</Text>
+        <Text style={[eyebrow, { marginTop: 14, marginBottom: 8 }]}>
+          {t("account.yourData.download.whatsInIt")}
+        </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           {INCLUDED.map((item) => (
             <View
@@ -166,12 +172,15 @@ export function YourDataScreen({
               color: OC.amberInk,
             }}
           >
-            The copy isn&apos;t encrypted — it holds your money and health details. Keep it
-            somewhere private.
+            {t("account.yourData.download.warning")}
           </Text>
         </View>
         <PrimaryButton
-          label={exporting ? "Preparing…" : "Download my data"}
+          label={
+            exporting
+              ? t("account.yourData.download.preparing")
+              : t("account.yourData.download.button")
+          }
           onPress={() => void download()}
           disabled={exporting}
           style={{ marginTop: 14 }}
@@ -181,14 +190,14 @@ export function YourDataScreen({
       <Card pad={16} style={{ marginTop: 16, paddingVertical: 2 }}>
         <DangerRow
           icon="trash"
-          title="Erase data on this phone"
-          subtitle="Start fresh. Your account stays."
+          title={t("account.yourData.erase.title")}
+          subtitle={t("account.yourData.erase.subtitle")}
           onPress={() => setPending("erase")}
         />
         <DangerRow
           icon="user"
-          title="Delete my account"
-          subtitle="Account, Pro backup and this phone's data"
+          title={t("account.yourData.deleteAccount.title")}
+          subtitle={t("account.yourData.deleteAccount.subtitle")}
           titleColor={OC.coralInk}
           onPress={() => setPending("delete-account")}
           last
@@ -283,7 +292,7 @@ function ConfirmSheet({
     <Modal visible={pending !== null} transparent animationType="slide" onRequestClose={onCancel}>
       <Pressable
         onPress={working ? undefined : onCancel}
-        accessibilityLabel="Close"
+        accessibilityLabel={t("common.close")}
         style={{ flex: 1, backgroundColor: "rgba(8,36,26,0.42)" }}
       />
       {copy ? (
@@ -327,7 +336,7 @@ function ConfirmSheet({
               })}
             >
               <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink700 }}>
-                Keep my data
+                {t("account.yourData.keep")}
               </Text>
             </Pressable>
             <Pressable
@@ -344,7 +353,7 @@ function ConfirmSheet({
               })}
             >
               <Text style={{ fontFamily: FONT.bodyX, fontSize: 14.5, color: "#fff" }}>
-                {working ? "Working…" : copy.action}
+                {working ? t("account.yourData.working") : copy.action}
               </Text>
             </Pressable>
           </View>

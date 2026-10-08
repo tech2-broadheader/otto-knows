@@ -10,6 +10,7 @@ import { LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
+import { t } from "../i18n";
 
 export type AppointmentsState = {
   state: LoadState;
@@ -32,7 +33,7 @@ export function useAppointments(deps: RepositoryDeps): AppointmentsState {
       setAppointments(await appointmentRepository.list(LOCAL_USER_ID));
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load your appointments.");
+      setError(caught instanceof Error ? caught.message : t("tasks.appointments.loadError"));
       setState("error");
     }
   }, []);

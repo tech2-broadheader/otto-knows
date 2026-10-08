@@ -7,6 +7,7 @@ import type { AccountBalance } from "@otto/core";
 import { ChoicePills } from "../design/kit";
 import { FONT, OC } from "../design/theme";
 import { useMoney } from "../lib/settings-context";
+import { t } from "../i18n";
 
 export function ExpenseWalletPicker({
   wallets,
@@ -35,10 +36,12 @@ export function ExpenseWalletPicker({
           marginBottom: 8,
         }}
       >
-        <Text style={{ fontFamily: FONT.bodyX, fontSize: 13, color: OC.ink700 }}>Paid from</Text>
+        <Text style={{ fontFamily: FONT.bodyX, fontSize: 13, color: OC.ink700 }}>
+          {t("money.picker.paidFrom")}
+        </Text>
         {isLastUsed ? (
           <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink500 }}>
-            Last used
+            {t("money.picker.lastUsed")}
           </Text>
         ) : null}
       </View>
@@ -61,7 +64,9 @@ export function ExpenseWalletPicker({
             color: OC.ink500,
           }}
         >
-          {chosen.type === "credit_card" ? `${chosen.name} owed after: ` : `${chosen.name} after: `}
+          {chosen.type === "credit_card"
+            ? t("money.picker.owedAfter", { name: chosen.name })
+            : t("money.picker.after", { name: chosen.name })}
           <Text style={{ fontFamily: FONT.bodyX, color: OC.ink }}>
             {chosen.type === "credit_card"
               ? money.format(amountMinor - chosen.balanceMinor)

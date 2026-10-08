@@ -9,6 +9,7 @@ import { LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
+import { t } from "../i18n";
 
 export type NewReminderInput = {
   title: string;
@@ -39,7 +40,7 @@ export function useReminders(deps: RepositoryDeps): RemindersState {
       setReminders(rows);
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load your reminders.");
+      setError(caught instanceof Error ? caught.message : t("tasks.reminders.loadError"));
       setState("error");
     }
   }, []);

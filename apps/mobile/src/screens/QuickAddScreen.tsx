@@ -31,13 +31,14 @@ import { getApiBaseUrl, type ApiErrorCode } from "../lib/api-client";
 import { useAuth } from "../auth/AuthProvider";
 import { useUpgradeNavigation } from "../hooks/useUpgradeNavigation";
 import { useSettingsNavigation } from "../hooks/useSettingsNavigation";
+import { t } from "../i18n";
 
 /** Example prompts; the bill amount is shown in the user's own currency (story 13.1). */
 function exampleChips(billAmount: string): readonly string[] {
   return [
-    `Pay the electric bill ${billAmount} on Saturday`,
-    "Gym Mon/Wed/Fri at 6am",
-    "Dentist Tuesday 3pm",
+    t("assistant.quickAdd.chips.bill", { amount: billAmount }),
+    t("assistant.quickAdd.chips.gym"),
+    t("assistant.quickAdd.chips.dentist"),
   ];
 }
 
@@ -86,13 +87,13 @@ function errorBanner(
 } {
   switch (code) {
     case "FORBIDDEN":
-      return { tone: "warning", text: `${message} Upgrade to Pro for unlimited quick-add.` };
+      return { tone: "warning", text: t("assistant.quickAdd.errors.quotaSpent", { message }) };
     case "RATE_LIMITED":
-      return { tone: "warning", text: "Too many requests — give it a moment and try again." };
+      return { tone: "warning", text: t("assistant.quickAdd.errors.rateLimited") };
     case "UNAUTHORIZED":
-      return { tone: "info", text: "Sign in to use Otto's brain. (Pro feature.)" };
+      return { tone: "info", text: t("assistant.quickAdd.errors.signIn") };
     case "NOT_CONFIGURED":
-      return { tone: "info", text: "Otto's cloud brain isn't set up in this build yet." };
+      return { tone: "info", text: t("assistant.quickAdd.errors.notConfigured") };
     default:
       return { tone: "warning", text: message };
   }
@@ -174,8 +175,8 @@ export function QuickAddScreen(): React.JSX.Element {
   return (
     <Screen>
       <AppHeader
-        title="Quick add"
-        sub="Tell Otto in plain words"
+        title={t("assistant.quickAdd.title")}
+        sub={t("assistant.quickAdd.sub")}
         isPro={isPro}
         onUpgrade={goToUpgrade}
         onSettings={goToSettings}
@@ -184,18 +185,12 @@ export function QuickAddScreen(): React.JSX.Element {
       <View style={{ paddingHorizontal: 18 }}>
         {/* Otto's intro bubble */}
         <View style={{ marginTop: 12 }}>
-          <OttoVoice tone="light">
-            What can I take off your plate? A bill, a dose, a plan — say it however you&apos;d say
-            it to a friend.
-          </OttoVoice>
+          <OttoVoice tone="light">{t("assistant.quickAdd.intro")}</OttoVoice>
         </View>
 
         {!configured ? (
           <View style={{ marginTop: 14 }}>
-            <Banner
-              tone="info"
-              message="Otto's cloud brain isn't set up in this build. Quick add needs the Pro backend."
-            />
+            <Banner tone="info" message={t("assistant.quickAdd.notConfigured")} />
           </View>
         ) : null}
 
@@ -216,7 +211,7 @@ export function QuickAddScreen(): React.JSX.Element {
             onChangeText={setText}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder={`e.g. ${chips[0]}`}
+            placeholder={t("assistant.quickAdd.placeholder", { example: chips[0] ?? "" })}
             placeholderTextColor={OC.ink400}
             multiline
             editable={!thinking}
@@ -228,7 +223,7 @@ export function QuickAddScreen(): React.JSX.Element {
               color: OC.ink,
               padding: 0,
             }}
-            accessibilityLabel="What would you like to add?"
+            accessibilityLabel={t("assistant.quickAdd.inputLabel")}
           />
           <View
             style={{
@@ -239,13 +234,13 @@ export function QuickAddScreen(): React.JSX.Element {
             }}
           >
             <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
-              {isPro ? "Unlimited" : "A few free each day"}
+              {isPro ? t("assistant.quickAdd.quota.pro") : t("assistant.quickAdd.quota.free")}
             </Text>
             <Pressable
               onPress={() => handleSubmit()}
               disabled={!active}
               accessibilityRole="button"
-              accessibilityLabel="Ask Otto"
+              accessibilityLabel={t("assistant.quickAdd.ask")}
               style={({ pressed }) => [
                 {
                   flexDirection: "row",
@@ -260,7 +255,7 @@ export function QuickAddScreen(): React.JSX.Element {
               ]}
             >
               <Text style={{ fontFamily: FONT.bodyX, fontSize: 13.5, color: "#fff" }}>
-                {thinking ? "Otto's thinking…" : "Ask Otto"}
+                {thinking ? t("assistant.quickAdd.thinking") : t("assistant.quickAdd.ask")}
               </Text>
               {!thinking ? <Icon name="arrowR" size={15} color="#fff" /> : null}
             </Pressable>
@@ -306,7 +301,7 @@ export function QuickAddScreen(): React.JSX.Element {
           >
             <View style={{ width: 9, height: 9, borderRadius: 99, backgroundColor: OC.emerald }} />
             <Text style={{ fontFamily: FONT.bodySemi, fontSize: 14, color: OC.ink500 }}>
-              Reading your routine &amp; money…
+              {t("assistant.quickAdd.reading")}
             </Text>
           </View>
         ) : null}
@@ -334,8 +329,8 @@ export function QuickAddScreen(): React.JSX.Element {
           <View style={{ marginTop: 20 }}>
             <EmptyState
               icon="sparkle"
-              title="Nothing to add"
-              body="Otto didn't find anything to suggest. Try rephrasing."
+              title={t("assistant.quickAdd.empty.title")}
+              body={t("assistant.quickAdd.empty.body")}
             />
           </View>
         ) : null}

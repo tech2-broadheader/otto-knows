@@ -1,5 +1,6 @@
 // Small date/time helpers used at the UI edge to build schema-valid values.
 // Pure; no native imports — unit-tested in Node.
+import { t } from "../i18n";
 
 /** Today's calendar date as YYYY-MM-DD for a given Date (defaults to now). */
 export function todayDate(now: Date = new Date()): string {
@@ -58,9 +59,9 @@ export function briefingSlotForHour(hour: number): "morning" | "midday" | "eveni
 
 /** A warm, time-of-day greeting for the Today header (matches the design tone). */
 export function greetingForHour(hour: number): string {
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return t("assistant.today.greeting.morning");
+  if (hour < 18) return t("assistant.today.greeting.afternoon");
+  return t("assistant.today.greeting.evening");
 }
 
 /** "Thursday, June 18" (en-US) / "Thursday 18 June" (en-GB) — the date under the Today greeting. */

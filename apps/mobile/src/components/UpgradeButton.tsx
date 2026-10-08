@@ -4,8 +4,13 @@
 // lives in useUpgradeNavigation.
 import { PrimaryButton } from "../design/kit";
 import { useUpgradeNavigation } from "../hooks/useUpgradeNavigation";
+import { t } from "../i18n";
 
-export function UpgradeButton({ label = "Upgrade to Pro" }: { label?: string }): React.JSX.Element {
+export function UpgradeButton({
+  label = t("account.upgrade.button"),
+}: {
+  label?: string;
+}): React.JSX.Element {
   const goToUpgrade = useUpgradeNavigation();
   return (
     <PrimaryButton label={label} icon="sparkle" onPress={goToUpgrade} style={{ marginTop: 8 }} />

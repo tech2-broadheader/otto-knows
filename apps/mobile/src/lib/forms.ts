@@ -7,6 +7,7 @@ import type { AccountType, CurrencyCode, IncomeCadence, TransactionType } from "
 import { addMinutesToIso } from "@otto/core";
 import { isoFromDateTime } from "./datetime";
 import { parseMoneyInput } from "./money";
+import { t } from "../i18n";
 
 export type Money = { currency: CurrencyCode; locale: string };
 export type FormResult<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -21,10 +22,10 @@ function parseAmount(
   money: Money,
   { allowZero }: { allowZero: boolean },
 ): FormResult<number> {
-  if (text.trim() === "") return { ok: false, error: "Enter an amount." };
+  if (text.trim() === "") return { ok: false, error: t("money.forms.enterAmount") };
   const minor = parseMoneyInput(text, money.currency, money.locale);
-  if (minor === null) return { ok: false, error: "That amount doesn't look right." };
-  if (minor === 0 && !allowZero) return { ok: false, error: "Enter an amount above zero." };
+  if (minor === null) return { ok: false, error: t("money.forms.badAmount") };
+  if (minor === 0 && !allowZero) return { ok: false, error: t("money.forms.amountAboveZero") };
   return { ok: true, value: minor };
 }
 
@@ -56,13 +57,14 @@ export function validateTransactionForm(
 ): FormResult<TransactionFormValue> {
   const amount = parseAmount(input.amountText, money, { allowZero: false });
   if (!amount.ok) return amount;
-  if (!input.accountId) return { ok: false, error: "Pick a wallet." };
+  if (!input.accountId) return { ok: false, error: t("money.forms.pickWallet") };
   const isTransfer = input.type === "transfer";
-  if (isTransfer && !input.toAccountId) return { ok: false, error: "Pick where the money goes." };
+  if (isTransfer && !input.toAccountId)
+    return { ok: false, error: t("money.forms.pickDestination") };
   if (isTransfer && input.toAccountId === input.accountId) {
-    return { ok: false, error: "Pick two different wallets." };
+    return { ok: false, error: t("money.forms.pickTwoWallets") };
   }
-  if (!DATE_PATTERN.test(input.date)) return { ok: false, error: "Use a date like 2026-10-08." };
+  if (!DATE_PATTERN.test(input.date)) return { ok: false, error: t("money.forms.dateFormat") };
   const note = input.note.trim().slice(0, DESCRIPTION_MAX);
   return {
     ok: true,
@@ -101,7 +103,7 @@ export function validateWalletForm(
   money: Money,
 ): FormResult<WalletFormValue> {
   const name = input.name.trim();
-  if (name === "") return { ok: false, error: "Give the wallet a name." };
+  if (name === "") return { ok: false, error: t("money.forms.walletName") };
   let openingMinor = 0;
   if (input.balanceText.trim() !== "") {
     const amount = parseAmount(input.balanceText, money, { allowZero: true });
@@ -145,18 +147,18 @@ export function validateIncomeForm(
   money: Money,
 ): FormResult<IncomeFormValue> {
   const source = input.source.trim();
-  if (source === "") return { ok: false, error: "Where does this income come from?" };
+  if (source === "") return { ok: false, error: t("money.forms.incomeSource") };
   const amount = parseAmount(input.amountText, money, { allowZero: false });
   if (!amount.ok) return amount;
   if (!DATE_PATTERN.test(input.nextPayDate)) {
-    return { ok: false, error: "Use a date like 2026-10-08." };
+    return { ok: false, error: t("money.forms.dateFormat") };
   }
   let payDays: [number, number] | undefined;
   if (input.cadence === "semi-monthly") {
     const days = [input.firstDayText, input.secondDayText].map((t) => Number(t.trim()));
     const valid = days.every((d) => Number.isInteger(d) && d >= 1 && d <= 31);
     if (!valid || days[0] === days[1]) {
-      return { ok: false, error: "Pick two different pay days between 1 and 31." };
+      return { ok: false, error: t("money.forms.payDays") };
     }
     const [a, b] = days as [number, number];
     payDays = a < b ? [a, b] : [b, a];
@@ -197,9 +199,9 @@ export function validateAppointmentForm(
   utcOffset: string,
 ): FormResult<AppointmentFormValue> {
   const title = input.title.trim();
-  if (title === "") return { ok: false, error: "What's the appointment?" };
-  if (!DATE_PATTERN.test(input.date)) return { ok: false, error: "Use a date like 2026-10-08." };
-  if (!TIME_PATTERN.test(input.time)) return { ok: false, error: "Use a time like 15:00." };
+  if (title === "") return { ok: false, error: t("money.forms.appointmentTitle") };
+  if (!DATE_PATTERN.test(input.date)) return { ok: false, error: t("money.forms.dateFormat") };
+  if (!TIME_PATTERN.test(input.time)) return { ok: false, error: t("money.forms.timeFormat") };
   const location = input.location.trim();
   return {
     ok: true,
@@ -224,10 +226,10 @@ export function validateAlarmForm(input: AlarmFormInput): FormResult<AlarmFormVa
   const hour = input.hour.trim();
   const minute = input.minute.trim();
   if (!TWO_DIGITS.test(hour) || Number(hour) > 23) {
-    return { ok: false, error: "Enter an hour from 0 to 23." };
+    return { ok: false, error: t("money.forms.alarmHour") };
   }
   if (!TWO_DIGITS.test(minute) || Number(minute) > 59) {
-    return { ok: false, error: "Enter minutes from 0 to 59." };
+    return { ok: false, error: t("money.forms.alarmMinute") };
   }
   const label = input.label.trim();
   return {

@@ -44,18 +44,19 @@ import {
 import { OC, FONT } from "../design/theme";
 import { timeLabel, todayDate } from "../lib/datetime";
 import type { ScheduleResult } from "../notifications";
+import { t } from "../i18n";
 
 function describeScheduleResult(result: ScheduleResult): string {
-  if (result.ok) return "You'll get a notification at the due time.";
+  if (result.ok) return t("tasks.reminders.schedule.ok");
   switch (result.reason) {
     case "permission-denied":
-      return "Notifications are off. Enable them in your device settings to get reminded.";
+      return t("tasks.reminders.schedule.permissionDenied");
     case "no-due-time":
-      return "Add a due time to this reminder first.";
+      return t("tasks.reminders.schedule.noDueTime");
     case "in-past":
-      return "That due time has already passed.";
+      return t("tasks.reminders.schedule.inPast");
     default:
-      return "Could not schedule the reminder. Please try again.";
+      return t("tasks.reminders.schedule.failed");
   }
 }
 
@@ -63,7 +64,7 @@ function describeScheduleResult(result: ScheduleResult): string {
 function reminderSub(reminder: Reminder): string | undefined {
   if (reminder.dueAt) {
     const time = timeLabel(reminder.dueAt);
-    return time ? `Due ${time}` : reminder.notes;
+    return time ? t("tasks.reminders.due", { time }) : reminder.notes;
   }
   return reminder.notes;
 }
@@ -103,7 +104,7 @@ export function RemindersScreen(): React.JSX.Element {
 
   const handleAdd = (): void => {
     if (title.trim().length === 0) {
-      setFormError("Give the reminder a title.");
+      setFormError(t("tasks.reminders.titleRequired"));
       return;
     }
     setFormError(undefined);
@@ -115,7 +116,7 @@ export function RemindersScreen(): React.JSX.Element {
 
   const handleRemindMe = async (reminder: Reminder): Promise<void> => {
     const result = await remindMe(reminder);
-    Alert.alert("Remind me", describeScheduleResult(result));
+    Alert.alert(t("tasks.reminders.remindMe"), describeScheduleResult(result));
   };
 
   // Group the way the design does: things landing today vs everything else.
@@ -148,10 +149,10 @@ export function RemindersScreen(): React.JSX.Element {
             <Pressable
               onPress={() => void handleRemindMe(reminder)}
               accessibilityRole="button"
-              accessibilityLabel={`Remind me about ${reminder.title}`}
+              accessibilityLabel={t("tasks.reminders.remindMeAbout", { title: reminder.title })}
               hitSlop={8}
             >
-              <Pill tone="mint">Remind me</Pill>
+              <Pill tone="mint">{t("tasks.reminders.remindMe")}</Pill>
             </Pressable>
           ) : undefined
         }
@@ -162,15 +163,15 @@ export function RemindersScreen(): React.JSX.Element {
   return (
     <Screen>
       <AppHeader
-        title="Reminders"
+        title={t("tasks.header.title")}
         sub={
           view === "notes"
-            ? `${noteList.notes.length} note${noteList.notes.length === 1 ? "" : "s"}`
+            ? t("tasks.header.notes", { count: noteList.notes.length })
             : view === "appointments"
-              ? `${appointments.upcoming.length} upcoming`
+              ? t("tasks.header.upcoming", { count: appointments.upcoming.length })
               : view === "alarms"
-                ? `${alarms.alarms.filter((a) => a.enabled).length} on`
-                : `${openCount} open`
+                ? t("tasks.header.alarmsOn", { count: alarms.alarms.filter((a) => a.enabled).length })
+                : t("tasks.header.open", { count: openCount })
         }
         isPro={isPro}
         onUpgrade={goToUpgrade}
@@ -180,10 +181,10 @@ export function RemindersScreen(): React.JSX.Element {
       <View style={{ paddingHorizontal: 18, marginTop: 10 }}>
         <Segmented
           options={[
-            { k: "reminders", l: "Reminders" },
-            { k: "notes", l: "Notes" },
-            { k: "alarms", l: "Alarms" },
-            { k: "appointments", l: "Appts" },
+            { k: "reminders", l: t("tasks.segments.reminders") },
+            { k: "notes", l: t("tasks.segments.notes") },
+            { k: "alarms", l: t("tasks.segments.alarms") },
+            { k: "appointments", l: t("tasks.segments.appointments") },
           ]}
           value={view}
           onChange={(k) => setView(k as typeof view)}
@@ -196,22 +197,22 @@ export function RemindersScreen(): React.JSX.Element {
             state={noteList.state}
             error={noteList.error}
             onRetry={noteList.reload}
-            loadingLabel="Loading notes"
+            loadingLabel={t("tasks.notes.loading")}
           >
             <View style={{ marginBottom: 14 }}>
-              <TextField value={noteList.query} onChangeText={noteList.setQuery} placeholder="Search notes" />
+              <TextField value={noteList.query} onChangeText={noteList.setQuery} placeholder={t("tasks.notes.search")} />
             </View>
             {noteList.visible.length === 0 ? (
               <EmptyState
                 icon="note"
                 tone="sky"
-                title={noteList.query ? "No matching notes" : "No notes yet"}
+                title={noteList.query ? t("tasks.notes.noMatches") : t("tasks.notes.empty.title")}
                 body={
                   noteList.query
-                    ? "Try another word."
-                    : "Jot down anything — gift ideas, a Wi-Fi password, a grocery list."
+                    ? t("tasks.notes.noMatchesHint")
+                    : t("tasks.notes.empty.body")
                 }
-                action="New note"
+                action={t("tasks.notes.new")}
                 onAction={() => navigation.navigate("NoteEditor")}
               />
             ) : (
@@ -220,7 +221,13 @@ export function RemindersScreen(): React.JSX.Element {
                   key={note.id}
                   onPress={() => navigation.navigate("NoteEditor", { noteId: note.id })}
                   accessibilityRole="button"
-                  accessibilityLabel={`${note.pinned ? "Pinned. " : ""}${note.title ?? note.body.split("\n")[0]}`}
+                  accessibilityLabel={
+                    note.pinned
+                      ? t("tasks.notes.pinnedLabel", {
+                          title: note.title ?? note.body.split("\n")[0] ?? "",
+                        })
+                      : (note.title ?? note.body.split("\n")[0])
+                  }
                   style={({ pressed }) => [
                     {
                       backgroundColor: OC.surface,
@@ -248,7 +255,7 @@ export function RemindersScreen(): React.JSX.Element {
                       >
                         <Icon name="pin" size={11} color={OC.forest} stroke={2.4} />
                         <Text style={{ fontFamily: FONT.bodyX, fontSize: 11, color: OC.forest }}>
-                          Pinned
+                          {t("tasks.notes.pinned")}
                         </Text>
                       </View>
                     ) : null}
@@ -277,7 +284,7 @@ export function RemindersScreen(): React.JSX.Element {
                 </Pressable>
               ))
             )}
-            <AddButton label="New note" onPress={() => navigation.navigate("NoteEditor")} />
+            <AddButton label={t("tasks.notes.new")} onPress={() => navigation.navigate("NoteEditor")} />
           </AsyncBoundary>
         </View>
       ) : null}
@@ -299,15 +306,15 @@ export function RemindersScreen(): React.JSX.Element {
             state={appointments.state}
             error={appointments.error}
             onRetry={appointments.reload}
-            loadingLabel="Loading appointments"
+            loadingLabel={t("tasks.appointments.loading")}
           >
             {appointments.upcoming.length === 0 ? (
               <EmptyState
                 icon="cal"
                 tone="sky"
-                title="Nothing booked"
-                body="Add an appointment and it shows on your day, with a heads-up before it if you want one."
-                action="New appointment"
+                title={t("tasks.appointments.empty.title")}
+                body={t("tasks.appointments.empty.body")}
+                action={t("tasks.appointments.new")}
                 onAction={() => navigation.navigate("AppointmentForm")}
               />
             ) : (
@@ -340,17 +347,17 @@ export function RemindersScreen(): React.JSX.Element {
                     </View>
                     <Pressable
                       onPress={() =>
-                        Alert.alert("Delete this appointment?", appt.title, [
-                          { text: "Cancel", style: "cancel" },
+                        Alert.alert(t("tasks.appointments.deleteConfirm"), appt.title, [
+                          { text: t("common.cancel"), style: "cancel" },
                           {
-                            text: "Delete",
+                            text: t("common.delete"),
                             style: "destructive",
                             onPress: () => void appointments.remove(appt.id),
                           },
                         ])
                       }
                       accessibilityRole="button"
-                      accessibilityLabel={`Delete ${appt.title}`}
+                      accessibilityLabel={t("tasks.appointments.deleteLabel", { title: appt.title })}
                       hitSlop={8}
                     >
                       <Icon name="trash" size={17} color={OC.ink400} />
@@ -360,7 +367,7 @@ export function RemindersScreen(): React.JSX.Element {
               </Card>
             )}
             <AddButton
-              label="New appointment"
+              label={t("tasks.appointments.new")}
               onPress={() => navigation.navigate("AppointmentForm")}
             />
           </AsyncBoundary>
@@ -373,25 +380,25 @@ export function RemindersScreen(): React.JSX.Element {
             state={state}
             error={error}
             onRetry={reload}
-            loadingLabel="Loading reminders"
+            loadingLabel={t("tasks.reminders.loading")}
           >
             {today.length === 0 && upcoming.length === 0 && !showForm ? (
               <EmptyState
                 icon="check"
-                title="You're all caught up"
-                body="Nothing on your list right now. Add a reminder below and it'll land at the right moment."
-                action="Add a reminder"
+                title={t("tasks.reminders.empty.title")}
+                body={t("tasks.reminders.empty.body")}
+                action={t("tasks.reminders.add")}
                 onAction={() => setShowForm(true)}
               />
             ) : (
               <>
                 <View style={{ marginTop: 14 }}>
-                  <SectionLabel>Today</SectionLabel>
+                  <SectionLabel>{t("tasks.reminders.today")}</SectionLabel>
                   <Card pad={0} style={{ paddingHorizontal: 14 }}>
                     {today.length === 0 ? (
                       <View style={{ paddingVertical: 14 }}>
                         <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
-                          Nothing for today
+                          {t("tasks.reminders.nothingToday")}
                         </Text>
                         <Text
                           style={{
@@ -401,7 +408,7 @@ export function RemindersScreen(): React.JSX.Element {
                             color: OC.ink500,
                           }}
                         >
-                          Add a reminder below.
+                          {t("tasks.reminders.nothingTodayHint")}
                         </Text>
                       </View>
                     ) : (
@@ -412,7 +419,7 @@ export function RemindersScreen(): React.JSX.Element {
 
                 {upcoming.length > 0 ? (
                   <View style={{ marginTop: 20 }}>
-                    <SectionLabel>Upcoming</SectionLabel>
+                    <SectionLabel>{t("tasks.reminders.upcoming")}</SectionLabel>
                     <Card pad={0} style={{ paddingHorizontal: 14 }}>
                       {upcoming.map((r, i) => renderRow(r, i === upcoming.length - 1))}
                     </Card>
@@ -439,19 +446,19 @@ export function RemindersScreen(): React.JSX.Element {
                       </Text>
                     </View>
                   ) : null}
-                  <Field label="Title">
-                    <TextField value={title} onChangeText={setTitle} placeholder="e.g. Pay rent" />
+                  <Field label={t("tasks.reminders.form.title")}>
+                    <TextField value={title} onChangeText={setTitle} placeholder={t("tasks.reminders.form.titlePlaceholder")} />
                   </Field>
-                  <Field label="Notes" hint="optional">
+                  <Field label={t("tasks.reminders.form.notes")} hint={t("tasks.reminders.form.notesHint")}>
                     <TextField
                       value={notes}
                       onChangeText={setNotes}
-                      placeholder="Anything to remember"
+                      placeholder={t("tasks.reminders.form.notesPlaceholder")}
                       multiline
                     />
                   </Field>
                   <SaveBar
-                    label="Add reminder"
+                    label={t("tasks.reminders.form.submit")}
                     onCancel={() => {
                       setShowForm(false);
                       setFormError(undefined);
@@ -461,7 +468,7 @@ export function RemindersScreen(): React.JSX.Element {
                 </Card>
               </View>
             ) : (
-              <AddButton label="Add a reminder" onPress={() => setShowForm(true)} />
+              <AddButton label={t("tasks.reminders.add")} onPress={() => setShowForm(true)} />
             )}
           </AsyncBoundary>
         </View>

@@ -15,6 +15,7 @@ import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
 import { useAiUserContext, useSettings } from "../lib/settings-context";
 import type { RepositoryDeps } from "../data";
+import { t } from "../i18n";
 
 export type QuickAddStatus = "idle" | "submitting" | "ready" | "error";
 
@@ -72,7 +73,9 @@ export function useQuickAdd(deps: RepositoryDeps): QuickAddState {
         await applyProposal(proposal.action, deps, ctx);
         setProposals((current) => current.filter((p) => p.id !== proposal.id));
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Couldn't apply that.");
+        setError(
+          caught instanceof Error ? caught.message : t("assistant.quickAdd.errors.applyFailed"),
+        );
         setErrorCode("INTERNAL");
         setStatus("error");
       } finally {

@@ -36,15 +36,16 @@ import { validateIncomeForm } from "../lib/forms";
 import { parseMoneyInput } from "../lib/money";
 import { useMoney } from "../lib/settings-context";
 import { useAuth } from "../auth/AuthProvider";
+import { t } from "../i18n";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const RECENT_LIMIT = 6;
 
 const CADENCE_OPTIONS: { k: IncomeCadence; l: string }[] = [
-  { k: "monthly", l: "Monthly" },
-  { k: "semi-monthly", l: "Twice a month" },
-  { k: "biweekly", l: "Every 2 weeks" },
-  { k: "weekly", l: "Weekly" },
+  { k: "monthly", l: t("money.cadence.monthly") },
+  { k: "semi-monthly", l: t("money.cadence.semiMonthly") },
+  { k: "biweekly", l: t("money.cadence.biweekly") },
+  { k: "weekly", l: t("money.cadence.weekly") },
 ];
 
 type Nav = { navigate: (screen: string, params?: Record<string, string>) => void };
@@ -116,10 +117,10 @@ export function FinanceScreen(): React.JSX.Element {
     parseMoneyInput(text, money.currency, money.locale);
 
   const handleAddBill = async (): Promise<void> => {
-    if (billName.trim() === "") return setFormError("Give the bill a name.");
+    if (billName.trim() === "") return setFormError(t("money.home.errors.billName"));
     const minor = amountOrError(billAmount);
-    if (minor === null || minor === 0) return setFormError("Enter the bill amount.");
-    if (!DATE_PATTERN.test(billDue)) return setFormError("Use a due date like 2026-10-15.");
+    if (minor === null || minor === 0) return setFormError(t("money.home.errors.billAmount"));
+    if (!DATE_PATTERN.test(billDue)) return setFormError(t("money.home.errors.billDue"));
     setFormError(undefined);
     const result = await addBill({ name: billName.trim(), amountMinor: minor, dueDate: billDue });
     if (result === "at-cap") return;
@@ -128,11 +129,11 @@ export function FinanceScreen(): React.JSX.Element {
   };
 
   const handleAddCategory = async (): Promise<void> => {
-    if (catName.trim() === "") return setFormError("Give the category a name.");
+    if (catName.trim() === "") return setFormError(t("money.home.errors.categoryName"));
     let limit: number | undefined;
     if (catLimit.trim() !== "") {
       const parsed = amountOrError(catLimit);
-      if (parsed === null) return setFormError("Enter a valid monthly limit.");
+      if (parsed === null) return setFormError(t("money.home.errors.categoryLimit"));
       limit = parsed;
     }
     setFormError(undefined);
@@ -164,8 +165,8 @@ export function FinanceScreen(): React.JSX.Element {
   return (
     <Screen>
       <AppHeader
-        title="Money"
-        sub={`${activeAccounts.length} wallet${activeAccounts.length === 1 ? "" : "s"}`}
+        title={t("money.home.title")}
+        sub={t("money.home.walletCount", { count: activeAccounts.length })}
         isPro={isPro}
         onUpgrade={goToUpgrade}
         onSettings={() => navigation.navigate("Settings")}
@@ -176,7 +177,7 @@ export function FinanceScreen(): React.JSX.Element {
           state={state}
           error={error}
           onRetry={reload}
-          loadingLabel="Loading your money"
+          loadingLabel={t("money.home.loading")}
         >
           <SafeToSpendCard
             value={safeToSpend}
@@ -193,12 +194,12 @@ export function FinanceScreen(): React.JSX.Element {
                   hitSlop={8}
                 >
                   <Text style={{ fontFamily: FONT.bodyX, fontSize: 13, color: OC.green }}>
-                    Manage
+                    {t("money.home.manage")}
                   </Text>
                 </Pressable>
               }
             >
-              Wallets
+              {t("money.home.wallets")}
             </SectionLabel>
             <ScrollView
               horizontal
@@ -217,21 +218,27 @@ export function FinanceScreen(): React.JSX.Element {
           </View>
 
           <Card style={{ marginTop: 18, flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Ring pct={pct} value={pctLabel} label="of budget" size={96} stroke={11} />
+            <Ring
+              pct={pct}
+              value={pctLabel}
+              label={t("money.home.ofBudget")}
+              size={96}
+              stroke={11}
+            />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.ink500 }}>
-                Spent this month
+                {t("money.home.spentThisMonth")}
               </Text>
               <Display style={{ fontSize: 22, marginTop: 2 }}>
                 {money.format(summary.totalSpentMinor)}
               </Display>
               {summary.totalLimitMinor > 0 ? (
                 <Text style={{ fontFamily: FONT.body, fontSize: 13, color: OC.ink500 }}>
-                  of {money.format(summary.totalLimitMinor)}
+                  {t("money.home.ofLimit", { amount: money.format(summary.totalLimitMinor) })}
                 </Text>
               ) : (
                 <Text style={{ fontFamily: FONT.body, fontSize: 13, color: OC.ink500 }}>
-                  Add a category limit to track this.
+                  {t("money.home.addCategoryLimit")}
                 </Text>
               )}
               <Pressable
@@ -240,7 +247,7 @@ export function FinanceScreen(): React.JSX.Element {
                 style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 }}
               >
                 <Text style={{ fontFamily: FONT.bodyX, fontSize: 13, color: OC.green }}>
-                  Monthly report
+                  {t("money.home.monthlyReport")}
                 </Text>
                 <Icon name="chevR" size={14} color={OC.green} stroke={2.4} />
               </Pressable>
@@ -253,16 +260,18 @@ export function FinanceScreen(): React.JSX.Element {
                 <Pressable
                   onPress={() => navigation.navigate("AddTransaction")}
                   accessibilityRole="button"
-                  accessibilityLabel="Add transaction"
+                  accessibilityLabel={t("money.home.addTransaction")}
                   hitSlop={8}
                   style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
                 >
                   <Icon name="plus" size={14} color={OC.green} stroke={2.6} />
-                  <Text style={{ fontFamily: FONT.bodyX, fontSize: 13, color: OC.green }}>Add</Text>
+                  <Text style={{ fontFamily: FONT.bodyX, fontSize: 13, color: OC.green }}>
+                    {t("money.home.add")}
+                  </Text>
                 </Pressable>
               }
             >
-              Recent
+              {t("money.home.recent")}
             </SectionLabel>
             <Card pad={16} style={{ paddingTop: 4, paddingBottom: 4 }}>
               {transactions.length === 0 ? (
@@ -274,7 +283,7 @@ export function FinanceScreen(): React.JSX.Element {
                     color: OC.ink500,
                   }}
                 >
-                  Nothing yet — tap Add to log your first one.
+                  {t("money.home.noTransactions")}
                 </Text>
               ) : (
                 transactions
@@ -298,11 +307,13 @@ export function FinanceScreen(): React.JSX.Element {
             <SectionLabel
               right={
                 <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
-                  {isPro ? `${bills.length}` : `${bills.length} of ${FREE_CAPS.bills} free`}
+                  {isPro
+                    ? `${bills.length}`
+                    : t("money.home.billsFree", { count: bills.length, cap: FREE_CAPS.bills })}
                 </Text>
               }
             >
-              Bills
+              {t("money.home.bills")}
             </SectionLabel>
             <Card pad={16} style={{ paddingTop: 4, paddingBottom: 4 }}>
               {bills.length === 0 ? (
@@ -314,7 +325,7 @@ export function FinanceScreen(): React.JSX.Element {
                     color: OC.ink500,
                   }}
                 >
-                  No bills yet.
+                  {t("money.home.noBills")}
                 </Text>
               ) : (
                 bills.map((bill, index) => (
@@ -335,10 +346,10 @@ export function FinanceScreen(): React.JSX.Element {
                         {bill.name}
                       </Text>
                       <Text style={{ fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
-                        Due {money.shortDate(bill.dueDate)}
+                        {t("money.home.due", { date: money.shortDate(bill.dueDate) })}
                       </Text>
                     </View>
-                    {bill.isPaid ? <Pill tone="green">Paid</Pill> : null}
+                    {bill.isPaid ? <Pill tone="green">{t("money.home.paid")}</Pill> : null}
                     <Text
                       style={{
                         fontFamily: FONT.bodyX,
@@ -357,7 +368,7 @@ export function FinanceScreen(): React.JSX.Element {
               <View style={{ marginTop: 12 }}>
                 <ProGate onUpgrade={goToUpgrade}>
                   <Display style={{ fontSize: 17, color: "#fff" }}>
-                    At your {FREE_CAPS.bills}-bill limit
+                    {t("money.home.billLimit", { cap: FREE_CAPS.bills })}
                   </Display>
                   <Text
                     style={{
@@ -376,13 +387,15 @@ export function FinanceScreen(): React.JSX.Element {
           </View>
 
           {!manageOpen ? (
-            <AddButton label="Income, bills & categories" onPress={() => setManageOpen(true)} />
+            <AddButton label={t("money.home.manageOpen")} onPress={() => setManageOpen(true)} />
           ) : (
             <View style={{ marginTop: 16, gap: 16 }}>
               <FormError message={formError} />
 
               <Card>
-                <Display style={{ fontSize: 17, marginBottom: 6 }}>Income</Display>
+                <Display style={{ fontSize: 17, marginBottom: 6 }}>
+                  {t("money.home.income.title")}
+                </Display>
                 <Text
                   style={{
                     fontFamily: FONT.body,
@@ -392,17 +405,17 @@ export function FinanceScreen(): React.JSX.Element {
                   }}
                 >
                   {income.length === 0
-                    ? "Add your pay so Otto can work out what's safe to spend."
+                    ? t("money.home.income.empty")
                     : income.map((i) => i.source).join(" · ")}
                 </Text>
-                <Field label="Source">
+                <Field label={t("money.home.income.source")}>
                   <TextField
                     value={incomeSource}
                     onChangeText={setIncomeSource}
-                    placeholder="e.g. Salary"
+                    placeholder={t("money.egSalary")}
                   />
                 </Field>
-                <Field label="Amount each payday">
+                <Field label={t("money.home.income.amount")}>
                   <TextField
                     value={incomeAmount}
                     onChangeText={setIncomeAmount}
@@ -411,7 +424,7 @@ export function FinanceScreen(): React.JSX.Element {
                     keyboardType="decimal-pad"
                   />
                 </Field>
-                <Field label="How often">
+                <Field label={t("money.home.income.howOften")}>
                   <ChoicePills
                     options={CADENCE_OPTIONS}
                     value={cadence}
@@ -419,7 +432,10 @@ export function FinanceScreen(): React.JSX.Element {
                   />
                 </Field>
                 {cadence === "semi-monthly" ? (
-                  <Field label="Which two days?" hint="31 = end of month">
+                  <Field
+                    label={t("money.home.income.whichDays")}
+                    hint={t("money.home.income.whichDaysHint")}
+                  >
                     <View style={{ flexDirection: "row", gap: 10 }}>
                       <View style={{ flex: 1 }}>
                         <TextField
@@ -440,19 +456,27 @@ export function FinanceScreen(): React.JSX.Element {
                     </View>
                   </Field>
                 ) : null}
-                <Field label="Next payday">
+                <Field label={t("money.home.income.nextPayday")}>
                   <TextField
                     value={nextPayDate}
                     onChangeText={setNextPayDate}
                     placeholder="2026-10-15"
                   />
                 </Field>
-                <PrimaryButton label="Add income" onPress={() => void handleAddIncome()} />
+                <PrimaryButton
+                  label={t("money.home.income.add")}
+                  onPress={() => void handleAddIncome()}
+                />
               </Card>
 
               <Card>
                 <Display style={{ fontSize: 17, marginBottom: 14 }}>
-                  {isPro ? "Add a bill" : `Bills (${bills.length}/${FREE_CAPS.bills})`}
+                  {isPro
+                    ? t("money.home.bill.title")
+                    : t("money.home.bill.titleCapped", {
+                        count: bills.length,
+                        cap: FREE_CAPS.bills,
+                      })}
                 </Display>
                 {billsAtCap ? (
                   <Text
@@ -467,14 +491,14 @@ export function FinanceScreen(): React.JSX.Element {
                   </Text>
                 ) : (
                   <View>
-                    <Field label="Bill name">
+                    <Field label={t("money.home.bill.name")}>
                       <TextField
                         value={billName}
                         onChangeText={setBillName}
-                        placeholder="e.g. Electric"
+                        placeholder={t("money.home.bill.namePlaceholder")}
                       />
                     </Field>
-                    <Field label="Amount">
+                    <Field label={t("money.home.bill.amount")}>
                       <TextField
                         value={billAmount}
                         onChangeText={setBillAmount}
@@ -483,14 +507,17 @@ export function FinanceScreen(): React.JSX.Element {
                         keyboardType="decimal-pad"
                       />
                     </Field>
-                    <Field label="Due date">
+                    <Field label={t("money.home.bill.dueDate")}>
                       <TextField
                         value={billDue}
                         onChangeText={setBillDue}
                         placeholder="2026-10-15"
                       />
                     </Field>
-                    <PrimaryButton label="Add bill" onPress={() => void handleAddBill()} />
+                    <PrimaryButton
+                      label={t("money.home.bill.add")}
+                      onPress={() => void handleAddBill()}
+                    />
                   </View>
                 )}
               </Card>
@@ -498,8 +525,11 @@ export function FinanceScreen(): React.JSX.Element {
               <Card>
                 <Display style={{ fontSize: 17, marginBottom: 14 }}>
                   {isPro
-                    ? "Budget categories"
-                    : `Budget categories (${categories.length}/${FREE_CAPS.budgetCategories})`}
+                    ? t("money.home.category.title")
+                    : t("money.home.category.titleCapped", {
+                        count: categories.length,
+                        cap: FREE_CAPS.budgetCategories,
+                      })}
                 </Display>
                 {categoriesAtCap ? (
                   <Text
@@ -514,14 +544,14 @@ export function FinanceScreen(): React.JSX.Element {
                   </Text>
                 ) : (
                   <View>
-                    <Field label="Category name">
+                    <Field label={t("money.home.category.name")}>
                       <TextField
                         value={catName}
                         onChangeText={setCatName}
-                        placeholder="e.g. Food"
+                        placeholder={t("money.home.category.namePlaceholder")}
                       />
                     </Field>
-                    <Field label="Monthly limit" hint="optional">
+                    <Field label={t("money.home.category.limit")} hint={t("money.optionalHint")}>
                       <TextField
                         value={catLimit}
                         onChangeText={setCatLimit}
@@ -530,13 +560,16 @@ export function FinanceScreen(): React.JSX.Element {
                         keyboardType="decimal-pad"
                       />
                     </Field>
-                    <PrimaryButton label="Add category" onPress={() => void handleAddCategory()} />
+                    <PrimaryButton
+                      label={t("money.home.category.add")}
+                      onPress={() => void handleAddCategory()}
+                    />
                   </View>
                 )}
               </Card>
 
               <GhostButton
-                label="Done"
+                label={t("common.done")}
                 onPress={() => {
                   setManageOpen(false);
                   setFormError(undefined);

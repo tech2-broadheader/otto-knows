@@ -13,23 +13,36 @@ import { FONT, OC } from "../design/theme";
 import { localUtcOffset, todayDate } from "../lib/datetime";
 import { dateForChoice, validateAppointmentForm } from "../lib/forms";
 import { addMinutesToIso } from "@otto/core";
+import { t } from "../i18n";
 
 const DURATIONS = [
-  { k: "15", l: "15 min" },
-  { k: "30", l: "30 min" },
-  { k: "60", l: "1 hour" },
-  { k: "120", l: "2 hours" },
+  { k: "15", l: t("tasks.appointmentForm.durations.min15") },
+  { k: "30", l: t("tasks.appointmentForm.durations.min30") },
+  { k: "60", l: t("tasks.appointmentForm.durations.hour1") },
+  { k: "120", l: t("tasks.appointmentForm.durations.hours2") },
 ];
 const REMINDERS = [
-  { k: "none", l: "No" },
-  { k: "15", l: "15 min before" },
-  { k: "60", l: "1 hour before" },
-  { k: "1440", l: "1 day before" },
+  { k: "none", l: t("tasks.appointmentForm.reminders.none") },
+  { k: "15", l: t("tasks.appointmentForm.reminders.min15") },
+  { k: "60", l: t("tasks.appointmentForm.reminders.hour1") },
+  { k: "1440", l: t("tasks.appointmentForm.reminders.day1") },
 ];
 const DESTINATIONS = [
-  { title: "Otto", sub: "On this phone, private", enabled: true },
-  { title: "Phone calendar", sub: "Coming soon — needs calendar access", enabled: false },
-  { title: "Google Calendar", sub: "Coming soon — connect Google in Settings", enabled: false },
+  {
+    title: t("tasks.appointmentForm.destinations.otto.title"),
+    sub: t("tasks.appointmentForm.destinations.otto.sub"),
+    enabled: true,
+  },
+  {
+    title: t("tasks.appointmentForm.destinations.phone.title"),
+    sub: t("tasks.appointmentForm.destinations.phone.sub"),
+    enabled: false,
+  },
+  {
+    title: t("tasks.appointmentForm.destinations.google.title"),
+    sub: t("tasks.appointmentForm.destinations.google.sub"),
+    enabled: false,
+  },
 ];
 
 export function AppointmentFormScreen(): React.JSX.Element {
@@ -48,8 +61,8 @@ export function AppointmentFormScreen(): React.JSX.Element {
   const [saving, setSaving] = useState(false);
 
   const dateOptions = [
-    { k: dateForChoice("today", today), l: "Today" },
-    { k: dateForChoice("tomorrow", today), l: "Tomorrow" },
+    { k: dateForChoice("today", today), l: t("tasks.appointmentForm.today") },
+    { k: dateForChoice("tomorrow", today), l: t("tasks.appointmentForm.tomorrow") },
   ];
   const endsAt = /^\d{2}:\d{2}$/.test(time)
     ? addMinutesToIso(`${date}T${time}:00+00:00`, Number(duration)).slice(11, 16)
@@ -74,7 +87,7 @@ export function AppointmentFormScreen(): React.JSX.Element {
       await appointments.create(result.value);
       navigation.goBack();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Couldn't save the appointment.");
+      setError(caught instanceof Error ? caught.message : t("tasks.appointmentForm.saveError"));
     } finally {
       setSaving(false);
     }
@@ -82,11 +95,11 @@ export function AppointmentFormScreen(): React.JSX.Element {
 
   return (
     <OverlayScreen
-      title="New appointment"
+      title={t("tasks.appointmentForm.title")}
       onBack={() => navigation.goBack()}
       footer={
         <SaveBar
-          label={saving ? "Saving…" : "Save appointment"}
+          label={saving ? t("tasks.saving") : t("tasks.appointmentForm.save")}
           disabled={saving}
           onCancel={() => navigation.goBack()}
           onSave={() => void save()}
@@ -94,28 +107,39 @@ export function AppointmentFormScreen(): React.JSX.Element {
       }
     >
       <FormError message={error} />
-      <Field label="What">
-        <TextField value={title} onChangeText={setTitle} placeholder="e.g. Dentist" />
+      <Field label={t("tasks.appointmentForm.what")}>
+        <TextField
+          value={title}
+          onChangeText={setTitle}
+          placeholder={t("tasks.appointmentForm.whatPlaceholder")}
+        />
       </Field>
-      <Field label="Date">
+      <Field label={t("tasks.appointmentForm.date")}>
         <ChoicePills options={dateOptions} value={date} onChange={setDate} />
         <View style={{ marginTop: 8 }}>
           <TextField value={date} onChangeText={setDate} placeholder="2026-10-13" />
         </View>
       </Field>
-      <Field label="Starts" hint="24-hour, e.g. 15:00">
+      <Field label={t("tasks.appointmentForm.starts")} hint={t("tasks.appointmentForm.startsHint")}>
         <TextField value={time} onChangeText={setTime} placeholder="15:00" />
       </Field>
-      <Field label="How long" hint={endsAt ? `Ends ${endsAt}` : undefined}>
+      <Field
+        label={t("tasks.appointmentForm.howLong")}
+        hint={endsAt ? t("tasks.appointmentForm.ends", { time: endsAt }) : undefined}
+      >
         <ChoicePills options={DURATIONS} value={duration} onChange={setDuration} />
       </Field>
-      <Field label="Where" hint="optional">
-        <TextField value={location} onChangeText={setLocation} placeholder="Address or place" />
+      <Field label={t("tasks.appointmentForm.where")} hint={t("tasks.appointmentForm.whereHint")}>
+        <TextField
+          value={location}
+          onChangeText={setLocation}
+          placeholder={t("tasks.appointmentForm.wherePlaceholder")}
+        />
       </Field>
-      <Field label="Remind me">
+      <Field label={t("tasks.appointmentForm.remindMe")}>
         <ChoicePills options={REMINDERS} value={remind} onChange={setRemind} />
       </Field>
-      <Field label="Save to">
+      <Field label={t("tasks.appointmentForm.saveTo")}>
         <Card pad={0}>
           {DESTINATIONS.map((d, index) => (
             <View

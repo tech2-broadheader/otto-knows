@@ -3,7 +3,13 @@
 // language, with English filling any gaps.
 import { readDeviceLocale } from "../lib/device-locale";
 import { en, type EnglishCatalog } from "./en";
-import { createTranslator, type MessageKey, type MessageParams } from "./translate";
+import {
+  SLOT_MARK,
+  createTranslator,
+  splitAtSlot,
+  type MessageKey,
+  type MessageParams,
+} from "./translate";
 import { TRANSLATIONS } from "./translations";
 
 export type TKey = MessageKey<EnglishCatalog>;
@@ -18,4 +24,13 @@ const translate = translatorFor(readDeviceLocale().locale);
 /** A user-facing message by key, e.g. t("common.save") or t("tasks.open", { count: 3 }). */
 export function t(key: TKey, params?: MessageParams): string {
   return translate(key, params);
+}
+
+/**
+ * A message split around one placeholder, for rich text mid-sentence: e.g.
+ * const [before, after] = tSlot("money.safeToSpend.shortfall", "more", { payday })
+ * then render {before}<Bold>…</Bold>{after}. Word order stays the translator's.
+ */
+export function tSlot(key: TKey, slot: string, params: MessageParams = {}): [string, string] {
+  return splitAtSlot(translate(key, { ...params, [slot]: SLOT_MARK }));
 }

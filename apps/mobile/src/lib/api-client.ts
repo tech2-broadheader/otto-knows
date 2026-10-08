@@ -23,6 +23,7 @@ import {
   type Routine,
   type TipDomain,
 } from "@otto/schemas";
+import { t } from "../i18n";
 
 /** Error codes the proxy can return (mirrors the web `ERROR_STATUS` keys). */
 export type ApiErrorCode =
@@ -103,7 +104,7 @@ export async function postEnvelope<T>(
     return {
       ok: false,
       code: "NOT_CONFIGURED",
-      message: "Otto's cloud features aren't set up in this build.",
+      message: t("account.errors.notConfigured"),
     };
   }
 
@@ -122,14 +123,14 @@ export async function postEnvelope<T>(
       body: JSON.stringify(body),
     });
   } catch {
-    return { ok: false, code: "NETWORK", message: "Couldn't reach Otto. Check your connection." };
+    return { ok: false, code: "NETWORK", message: t("account.errors.network") };
   }
 
   let envelope: unknown;
   try {
     envelope = await response.json();
   } catch {
-    return { ok: false, code: "MALFORMED", message: "Otto sent back an unexpected response." };
+    return { ok: false, code: "MALFORMED", message: t("account.errors.malformed") };
   }
 
   // Failure envelope: `{ error: { code, message } }`.
@@ -139,7 +140,11 @@ export async function postEnvelope<T>(
 
   // Non-2xx without a typed error body — synthesize one from the status.
   if (!response.ok) {
-    return { ok: false, code: codeForStatus(response.status), message: "Something went wrong." };
+    return {
+      ok: false,
+      code: codeForStatus(response.status),
+      message: t("account.errors.generic"),
+    };
   }
 
   // Success envelope: `{ data: T }`.
@@ -147,7 +152,7 @@ export async function postEnvelope<T>(
     return { ok: true, data: envelope.data as T };
   }
 
-  return { ok: false, code: "MALFORMED", message: "Otto sent back an unexpected response." };
+  return { ok: false, code: "MALFORMED", message: t("account.errors.malformed") };
 }
 
 function isErrorEnvelope(
@@ -182,7 +187,7 @@ export async function quickAdd(
   if (!result.ok) return result;
   const parsed = quickAddResponseSchema.safeParse(result.data);
   if (!parsed.success) {
-    return { ok: false, code: "MALFORMED", message: "Otto sent back an unexpected response." };
+    return { ok: false, code: "MALFORMED", message: t("account.errors.malformed") };
   }
   return { ok: true, data: parsed.data.proposals };
 }
@@ -213,13 +218,13 @@ export async function optimize(
 ): Promise<ApiResult<OptimizationProposal>> {
   const validRequest = optimizeRequestSchema.safeParse(request);
   if (!validRequest.success) {
-    return { ok: false, code: "VALIDATION", message: "That routine request looks incomplete." };
+    return { ok: false, code: "VALIDATION", message: t("account.errors.incompleteRoutine") };
   }
   const result = await postEnvelope<unknown>("/api/llm/optimize", validRequest.data, fetchImpl);
   if (!result.ok) return result;
   const parsed = optimizeResponseSchema.safeParse(result.data);
   if (!parsed.success) {
-    return { ok: false, code: "MALFORMED", message: "Otto sent back an unexpected response." };
+    return { ok: false, code: "MALFORMED", message: t("account.errors.malformed") };
   }
   return { ok: true, data: parsed.data.proposal };
 }
@@ -247,7 +252,7 @@ export async function fetchTips(
   if (!result.ok) return result;
   const parsed = tipsResponseSchema.safeParse(result.data);
   if (!parsed.success) {
-    return { ok: false, code: "MALFORMED", message: "Otto sent back an unexpected response." };
+    return { ok: false, code: "MALFORMED", message: t("account.errors.malformed") };
   }
   return { ok: true, data: parsed.data.tips };
 }

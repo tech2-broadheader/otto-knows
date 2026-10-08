@@ -9,6 +9,7 @@ import { LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
+import { t } from "../i18n";
 
 export type NoteInput = { title: string; body: string; pinned: boolean };
 
@@ -41,7 +42,7 @@ export function useNotes(): NotesState {
       setNotes(await noteRepository.list(LOCAL_USER_ID));
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load your notes.");
+      setError(caught instanceof Error ? caught.message : t("tasks.notes.loadError"));
       setState("error");
     }
   }, []);

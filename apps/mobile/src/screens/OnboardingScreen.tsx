@@ -27,6 +27,7 @@ import {
 } from "../design/kit";
 import { Icon, type IconName } from "../design/Icon";
 import { OC, FONT, RADIUS, toneColor, tint } from "../design/theme";
+import { t } from "../i18n";
 import { WelcomeStep, TeachStep, TEACH } from "../components/teaching";
 import { RegionStep } from "../components/RegionStep";
 import { startingRegion, type Region } from "../lib/regions";
@@ -34,13 +35,13 @@ import { useSettings, useUpdateSettings } from "../lib/settings-context";
 
 // Flow: Welcome → 3 "how Otto works" teaching cards → Region → Consent → Routine.
 const CTA_LABELS = [
-  "Show me how",
-  "Next",
-  "Next",
-  "Set me up",
-  "That's me",
-  "I agree",
-  "Set my rhythm",
+  t("onboarding.cta.showMeHow"),
+  t("onboarding.cta.next"),
+  t("onboarding.cta.next"),
+  t("onboarding.cta.setMeUp"),
+  t("onboarding.cta.thatsMe"),
+  t("onboarding.cta.agree"),
+  t("onboarding.cta.setMyRhythm"),
 ] as const;
 const REGION_STEP = TEACH.length + 1;
 const STEP_COUNT = CTA_LABELS.length;
@@ -56,25 +57,25 @@ const SOURCES: ReadonlyArray<{
 }> = [
   {
     source: "calendar",
-    title: "Calendar & reminders",
-    description: "Read your schedule to time things right",
-    purpose: "Read calendar events to build your daily briefing",
+    title: t("onboarding.consent.sources.calendar.title"),
+    description: t("onboarding.consent.sources.calendar.description"),
+    purpose: t("onboarding.consent.sources.calendar.purpose"),
     icon: "cal",
     tone: "sky",
   },
   {
     source: "finance",
-    title: "Finance",
-    description: "Bills, budget & income you enter",
-    purpose: "Store and read your finances to track budget and bills",
+    title: t("onboarding.consent.sources.finance.title"),
+    description: t("onboarding.consent.sources.finance.description"),
+    purpose: t("onboarding.consent.sources.finance.purpose"),
     icon: "peso",
     tone: "green",
   },
   {
     source: "health",
-    title: "Health data",
-    description: "Most sensitive — off unless you say so",
-    purpose: "Store and read medications to time dose reminders",
+    title: t("onboarding.consent.sources.health.title"),
+    description: t("onboarding.consent.sources.health.description"),
+    purpose: t("onboarding.consent.sources.health.purpose"),
     icon: "heart",
     tone: "coral",
   },
@@ -91,7 +92,10 @@ const ANCHOR_KINDS: readonly RoutineAnchorKind[] = [
   "custom",
 ];
 
-const KIND_OPTIONS: Option[] = ANCHOR_KINDS.map((kind) => ({ k: kind, l: kind }));
+const KIND_OPTIONS: Option[] = ANCHOR_KINDS.map((kind) => ({
+  k: kind,
+  l: t(`onboarding.routine.kinds.${kind}`),
+}));
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -116,7 +120,7 @@ function ConsentStep(): React.JSX.Element {
 
   return (
     <View style={{ paddingTop: 6 }}>
-      <Display style={{ fontSize: 26 }}>What can I look at?</Display>
+      <Display style={{ fontSize: 26 }}>{t("onboarding.consent.title")}</Display>
       <Text
         style={{
           marginTop: 8,
@@ -127,10 +131,15 @@ function ConsentStep(): React.JSX.Element {
           color: OC.ink500,
         }}
       >
-        You choose, per source. Turn any of these off anytime — nothing is ever used for ads.
+        {t("onboarding.consent.intro")}
       </Text>
 
-      <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Loading consent">
+      <AsyncBoundary
+        state={state}
+        error={error}
+        onRetry={reload}
+        loadingLabel={t("onboarding.consent.loading")}
+      >
         {SOURCES.map((s, index) => {
           const accent = toneColor(s.tone);
           const on = isGranted(s.source);
@@ -197,8 +206,7 @@ function ConsentStep(): React.JSX.Element {
               color: OC.forest,
             }}
           >
-            Encrypted on your device and never sold or used for ads. Every access to health and
-            finance data is logged for your records.
+            {t("onboarding.consent.privacy")}
           </Text>
         </View>
       </AsyncBoundary>
@@ -219,11 +227,11 @@ function RoutineStep(): React.JSX.Element {
 
   const handleAdd = (): void => {
     if (label.trim().length === 0) {
-      setFormError("Give the anchor a name.");
+      setFormError(t("onboarding.routine.nameRequired"));
       return;
     }
     if (!TIME_PATTERN.test(time)) {
-      setFormError("Enter a time as HH:mm (24h), e.g. 07:30.");
+      setFormError(t("onboarding.routine.timeInvalid"));
       return;
     }
     setFormError(undefined);
@@ -238,7 +246,7 @@ function RoutineStep(): React.JSX.Element {
 
   return (
     <View style={{ paddingTop: 6 }}>
-      <Display style={{ fontSize: 26 }}>When&apos;s your day?</Display>
+      <Display style={{ fontSize: 26 }}>{t("onboarding.routine.title")}</Display>
       <Text
         style={{
           marginTop: 8,
@@ -249,11 +257,15 @@ function RoutineStep(): React.JSX.Element {
           color: OC.ink500,
         }}
       >
-        A few anchors so reminders land at the right moment — not random times. I&apos;ll learn the
-        rest.
+        {t("onboarding.routine.intro")}
       </Text>
 
-      <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Loading routine">
+      <AsyncBoundary
+        state={state}
+        error={error}
+        onRetry={reload}
+        loadingLabel={t("onboarding.routine.loading")}
+      >
         {needsSetup ? (
           <View
             style={{
@@ -266,11 +278,10 @@ function RoutineStep(): React.JSX.Element {
             <Text
               style={{ fontFamily: FONT.body, fontSize: 13.5, lineHeight: 20, color: OC.forest }}
             >
-              Start with a few defaults — wake, meds, lunch, wind-down and sleep. Everything is
-              editable.
+              {t("onboarding.routine.starter")}
             </Text>
             <PrimaryButton
-              label="Add starter anchors"
+              label={t("onboarding.routine.addStarter")}
               onPress={() => void seedDefaults()}
               style={{ marginTop: 14 }}
             />
@@ -319,7 +330,7 @@ function RoutineStep(): React.JSX.Element {
                 <Pressable
                   onPress={() => void removeAnchor(anchor.id)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Remove ${anchor.label}`}
+                  accessibilityLabel={t("onboarding.routine.remove", { label: anchor.label })}
                   hitSlop={8}
                   style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
                 >
@@ -359,23 +370,38 @@ function RoutineStep(): React.JSX.Element {
                     </Text>
                   </View>
                 ) : null}
-                <Field label="Name">
-                  <TextField value={label} onChangeText={setLabel} placeholder="e.g. Lunch" />
+                <Field label={t("onboarding.routine.name")}>
+                  <TextField
+                    value={label}
+                    onChangeText={setLabel}
+                    placeholder={t("onboarding.routine.namePlaceholder")}
+                  />
                 </Field>
-                <Field label="Kind">
+                <Field label={t("onboarding.routine.kind")}>
                   <ChoicePills
                     options={KIND_OPTIONS}
                     value={kind}
                     onChange={(k) => setKind(k as RoutineAnchorKind)}
                   />
                 </Field>
-                <Field label="Time (HH:mm)">
-                  <TextField value={time} onChangeText={setTime} placeholder="12:30" />
+                <Field label={t("onboarding.routine.time")}>
+                  <TextField
+                    value={time}
+                    onChangeText={setTime}
+                    placeholder={t("onboarding.routine.timePlaceholder")}
+                  />
                 </Field>
-                <PrimaryButton label="Add anchor" onPress={handleAdd} icon="check" />
+                <PrimaryButton
+                  label={t("onboarding.routine.addAnchor")}
+                  onPress={handleAdd}
+                  icon="check"
+                />
               </View>
             ) : (
-              <AddButton label="Add an anchor" onPress={() => setShowForm(true)} />
+              <AddButton
+                label={t("onboarding.routine.addAnAnchor")}
+                onPress={() => setShowForm(true)}
+              />
             )}
           </>
         )}
@@ -413,7 +439,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }): Re
       setSaveError(undefined);
       return true;
     } catch {
-      setSaveError("Couldn't save your region. Try again.");
+      setSaveError(t("onboarding.regionSaveError"));
       return false;
     } finally {
       setSaving(false);
@@ -431,8 +457,8 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }): Re
   if (step === 0) {
     stepBody = <WelcomeStep />;
   } else if (step <= TEACH.length) {
-    const t = TEACH[step - 1];
-    stepBody = t ? <TeachStep title={t.title} body={t.body} art={t.art} /> : null;
+    const card = TEACH[step - 1];
+    stepBody = card ? <TeachStep title={card.title} body={card.body} art={card.art} /> : null;
   } else if (step === REGION_STEP) {
     stepBody = (
       <RegionStep
@@ -465,7 +491,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }): Re
           <Pressable
             onPress={() => setStep((s) => Math.max(0, s - 1))}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t("common.back")}
             style={({ pressed }) => ({
               width: 36,
               height: 36,
@@ -501,14 +527,16 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }): Re
         <Pressable
           onPress={onComplete}
           accessibilityRole="button"
-          accessibilityLabel="Skip onboarding"
+          accessibilityLabel={t("onboarding.skipLabel")}
           style={({ pressed }) => ({
             width: 36,
             alignItems: "flex-end",
             opacity: pressed ? 0.6 : 1,
           })}
         >
-          <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.ink400 }}>Skip</Text>
+          <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.ink400 }}>
+            {t("onboarding.skip")}
+          </Text>
         </Pressable>
       </View>
 

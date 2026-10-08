@@ -1,5 +1,7 @@
 // Shared copy: buttons and labels used across many screens (story 13.3).
 export const common = {
+  /** Working name (brand open: OD-4). */
+  appName: "Otto",
   save: "Save",
   cancel: "Cancel",
   done: "Done",

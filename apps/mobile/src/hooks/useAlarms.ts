@@ -19,6 +19,7 @@ import { LOCAL_USER_ID } from "../lib/constants";
 import { nowIso, todayDate } from "../lib/datetime";
 import { newUuid } from "../lib/id";
 import { requestNotificationPermission } from "../notifications";
+import { t } from "../i18n";
 
 export type AlarmInput = Pick<Alarm, "time" | "label" | "repeatDays" | "vibrate" | "snoozeMinutes">;
 
@@ -59,7 +60,7 @@ export function useAlarms(): AlarmsState {
       setPermissions(alarmPermissions());
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load your alarms.");
+      setError(caught instanceof Error ? caught.message : t("tasks.alarms.loadError"));
       setState("error");
     }
   }, []);

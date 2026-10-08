@@ -8,12 +8,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton } from "../design/kit";
 import { Icon } from "../design/Icon";
 import { OC, FONT } from "../design/theme";
+import { t } from "../i18n";
 import { WelcomeStep, TeachStep, TEACH } from "../components/teaching";
 
 type Nav = { goBack: () => void };
 
 const STEP_COUNT = 1 + TEACH.length; // welcome + teaching cards
-const CTA_LABELS = ["Show me how", "Next", "Next", "Got it"] as const;
+const CTA_LABELS = [
+  t("onboarding.cta.showMeHow"),
+  t("onboarding.cta.next"),
+  t("onboarding.cta.next"),
+  t("onboarding.cta.gotIt"),
+] as const;
 
 export function HowItWorksScreen({ navigation }: { navigation: Nav }): React.JSX.Element {
   const insets = useSafeAreaInsets();
@@ -33,7 +39,7 @@ export function HowItWorksScreen({ navigation }: { navigation: Nav }): React.JSX
         <Pressable
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t("common.close")}
           style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 11, backgroundColor: OC.surface, borderWidth: 1, borderColor: OC.line, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1 })}
         >
           <Icon name="x" size={19} color={OC.ink700} />
@@ -51,10 +57,10 @@ export function HowItWorksScreen({ navigation }: { navigation: Nav }): React.JSX
       </ScrollView>
 
       <View style={{ paddingHorizontal: 22, paddingTop: 12, paddingBottom: insets.bottom + 16 }}>
-        <PrimaryButton label={CTA_LABELS[step] ?? "Next"} onPress={next} />
+        <PrimaryButton label={CTA_LABELS[step] ?? t("onboarding.cta.next")} onPress={next} />
         {step === 0 ? (
           <Pressable onPress={() => navigation.goBack()} style={{ alignItems: "center", paddingVertical: 10, marginTop: 2 }}>
-            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 13, color: OC.ink400 }}>Close</Text>
+            <Text style={{ fontFamily: FONT.bodyBold, fontSize: 13, color: OC.ink400 }}>{t("common.close")}</Text>
           </Pressable>
         ) : null}
       </View>

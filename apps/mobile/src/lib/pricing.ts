@@ -7,6 +7,7 @@
 // TODO(E9 monetization): replace these display strings + planId values with the
 // real products resolved from billing; verify amounts against current PH pricing
 // before launch (spec §9, §14 "Pricing validation").
+import { t } from "../i18n";
 
 /** Stable identifiers for each plan. Map to real billing SKUs in E9. */
 export type PlanId = "free" | "pro-monthly" | "pro-annual" | "lifetime";
@@ -40,48 +41,48 @@ export type Plan = {
 export const PLANS: readonly Plan[] = [
   {
     id: "free",
-    name: "Free",
+    name: t("account.plans.free.name"),
     price: "₱0",
     priceSuffix: "",
     cadence: "free",
-    tagline: "It remembers and reminds.",
+    tagline: t("account.plans.free.tagline"),
     benefits: [
-      "Calendar, reminders & events",
-      "Manual finance + basic monthly budget",
-      "A fixed daily routine",
-      "Routine-timed reminders & a basic daily brief",
-      "A few quick-adds each day",
+      t("account.plans.freeBenefits.calendar"),
+      t("account.plans.freeBenefits.finance"),
+      t("account.plans.freeBenefits.routine"),
+      t("account.plans.freeBenefits.reminders"),
+      t("account.plans.freeBenefits.quickAdds"),
     ],
     isPaid: false,
   },
   {
     id: "pro-monthly",
-    name: "Pro monthly",
+    name: t("account.plans.proMonthly.name"),
     price: "₱99",
     priceSuffix: "/mo",
     cadence: "monthly",
-    tagline: "It thinks and adjusts.",
+    tagline: t("account.plans.proMonthly.tagline"),
     benefits: PRO_BENEFITS(),
     isPaid: true,
   },
   {
     id: "pro-annual",
-    name: "Pro annual",
+    name: t("account.plans.proAnnual.name"),
     price: "₱599",
     priceSuffix: "/yr",
     cadence: "annual",
-    tagline: "Everything in Pro, billed yearly — the best value.",
+    tagline: t("account.plans.proAnnual.tagline"),
     benefits: PRO_BENEFITS(),
-    badge: "Best value",
+    badge: t("account.plans.bestValue"),
     isPaid: true,
   },
   {
     id: "lifetime",
-    name: "Lifetime",
+    name: t("account.plans.lifetime.name"),
     price: "₱1,299",
-    priceSuffix: "one-time",
+    priceSuffix: t("account.plans.suffixOneTime"),
     cadence: "one-time",
-    tagline: "Pay once, keep Pro forever — no subscription.",
+    tagline: t("account.plans.lifetime.tagline"),
     benefits: PRO_BENEFITS(),
     isPaid: true,
   },
@@ -90,23 +91,22 @@ export const PLANS: readonly Plan[] = [
 /** The shared Pro benefit list (spec §8 "Paid — the actual assistant"). */
 function PRO_BENEFITS(): readonly string[] {
   return [
-    "Conversational AI — unlimited natural language",
-    "Adaptive routine that learns your real rhythm",
-    "Routine optimizer — reshape your day, you confirm",
-    "Gentle finance & health tips",
-    "Cross-domain insights & forecasts",
-    "Cloud backup, cross-device sync & export",
-    "Caregiver / family mode",
-    "Widgets",
+    t("account.plans.proBenefits.ai"),
+    t("account.plans.proBenefits.adaptive"),
+    t("account.plans.proBenefits.optimizer"),
+    t("account.plans.proBenefits.tips"),
+    t("account.plans.proBenefits.insights"),
+    t("account.plans.proBenefits.sync"),
+    t("account.plans.proBenefits.caregiver"),
+    t("account.plans.proBenefits.widgets"),
   ];
 }
 
 /** The no-ads trust line shown on the paywall (spec §2). */
-export const TRUST_LINE =
-  "You pay us instead of being sold — no ads, ever. Your money-and-meds data is never used to advertise to you.";
+export const TRUST_LINE = t("account.plans.trustLine");
 
 /** The one-line free-vs-paid mental model (spec §3). */
-export const FREE_VS_PAID_TAGLINE = "Free remembers and reminds. Pro thinks and adjusts.";
+export const FREE_VS_PAID_TAGLINE = t("account.plans.freeVsPaid");
 
 /** All paid plans (the ones that get a purchase CTA). */
 export function paidPlans(): readonly Plan[] {
@@ -131,7 +131,7 @@ export function priceLabel(plan: Plan): string {
 
 /** Accessible CTA label for a paid plan (no CTA for Free). */
 export function ctaLabel(plan: Plan): string {
-  return `Choose ${plan.name}`;
+  return t("account.plans.choose", { plan: plan.name });
 }
 
 /**

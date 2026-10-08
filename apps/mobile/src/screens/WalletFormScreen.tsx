@@ -19,14 +19,15 @@ import { upgradePromptFor } from "../lib/caps";
 import { validateWalletForm } from "../lib/forms";
 import { formatMoneyInput } from "../lib/money";
 import { useMoney } from "../lib/settings-context";
+import { t } from "../i18n";
 
 type Params = { accountId?: string };
 
 const TYPES: { type: AccountType; sub: string }[] = [
-  { type: "cash", sub: "Bills and coins" },
-  { type: "ewallet", sub: "Mobile wallets" },
-  { type: "bank", sub: "Savings, payroll" },
-  { type: "credit_card", sub: "Tracks what you owe" },
+  { type: "cash", sub: t("money.walletForm.types.cash") },
+  { type: "ewallet", sub: t("money.walletForm.types.ewallet") },
+  { type: "bank", sub: t("money.walletForm.types.bank") },
+  { type: "credit_card", sub: t("money.walletForm.types.credit_card") },
 ];
 
 export function WalletFormScreen(): React.JSX.Element {
@@ -87,7 +88,7 @@ export function WalletFormScreen(): React.JSX.Element {
       }
       navigation.goBack();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Couldn't save the wallet.");
+      setError(caught instanceof Error ? caught.message : t("money.walletForm.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -96,10 +97,7 @@ export function WalletFormScreen(): React.JSX.Element {
   const archive = (): void => {
     if (!editing) return;
     if (!canArchiveAccount(editingBalance)) {
-      Alert.alert(
-        "Empty it first",
-        "Archive a wallet once its balance is zero — move what's left with a transfer.",
-      );
+      Alert.alert(t("money.walletForm.emptyFirstTitle"), t("money.walletForm.emptyFirstBody"));
       return;
     }
     void finance.archiveAccount(editing.id).then((ok) => ok && navigation.goBack());
@@ -107,12 +105,12 @@ export function WalletFormScreen(): React.JSX.Element {
 
   return (
     <OverlayScreen
-      title={editing ? "Edit wallet" : "Add a wallet"}
+      title={editing ? t("money.walletForm.titleEdit") : t("money.walletForm.titleAdd")}
       onBack={() => navigation.goBack()}
       footer={
         atCap ? undefined : (
           <SaveBar
-            label={saving ? "Saving…" : "Save wallet"}
+            label={saving ? t("money.saving") : t("money.walletForm.save")}
             disabled={saving}
             onCancel={() => navigation.goBack()}
             onSave={() => void save()}
@@ -123,7 +121,7 @@ export function WalletFormScreen(): React.JSX.Element {
       {atCap ? (
         <ProGate onUpgrade={goToUpgrade}>
           <Text style={{ fontFamily: FONT.display, fontSize: 17, color: "#fff" }}>
-            You're at the wallet limit
+            {t("money.walletForm.atLimit")}
           </Text>
           <Text
             style={{
@@ -140,7 +138,7 @@ export function WalletFormScreen(): React.JSX.Element {
       ) : (
         <>
           <FormError message={error} />
-          <Field label="Type">
+          <Field label={t("money.walletForm.type")}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {TYPES.map(({ type: option, sub }) => {
                 const on = option === type;
@@ -187,19 +185,27 @@ export function WalletFormScreen(): React.JSX.Element {
               })}
             </View>
           </Field>
-          <Field label="Name">
+          <Field label={t("money.walletForm.name")}>
             <TextField
               value={name}
               onChangeText={setName}
-              placeholder={isCard ? "e.g. Visa card" : "e.g. Savings"}
+              placeholder={
+                isCard
+                  ? t("money.walletForm.namePlaceholderCard")
+                  : t("money.walletForm.namePlaceholder")
+              }
             />
           </Field>
-          <Field label="Provider" hint="optional">
-            <TextField value={provider} onChangeText={setProvider} placeholder="Your bank or app" />
+          <Field label={t("money.walletForm.provider")} hint={t("money.optionalHint")}>
+            <TextField
+              value={provider}
+              onChangeText={setProvider}
+              placeholder={t("money.walletForm.providerPlaceholder")}
+            />
           </Field>
           <Field
-            label={isCard ? "Amount owed now" : "Balance now"}
-            hint={isCard ? "From your latest statement" : "What's in it today"}
+            label={isCard ? t("money.walletForm.owedNow") : t("money.walletForm.balanceNow")}
+            hint={isCard ? t("money.walletForm.owedNowHint") : t("money.walletForm.balanceNowHint")}
           >
             <TextField
               value={balanceText}
@@ -219,7 +225,7 @@ export function WalletFormScreen(): React.JSX.Element {
               ]}
             >
               <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14, color: OC.coralInk }}>
-                Archive wallet
+                {t("money.walletForm.archive")}
               </Text>
             </Pressable>
           ) : null}

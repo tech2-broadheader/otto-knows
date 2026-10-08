@@ -25,6 +25,7 @@ import { Icon, type IconName } from "../design/Icon";
 import { OC, FONT, RADIUS, tint } from "../design/theme";
 import { useAuth } from "../auth/AuthProvider";
 import { CONSENT_POLICY_VERSION } from "../lib/constants";
+import { t } from "../i18n";
 import appConfig from "../../app.json";
 
 const APP_NAME = appConfig.expo.name;
@@ -41,25 +42,25 @@ const SOURCES: ReadonlyArray<{
 }> = [
   {
     source: "calendar",
-    title: "Calendar & reminders",
-    description: "Read your schedule to time things right",
-    purpose: "Read calendar events to build your daily briefing",
+    title: t("account.settings.consent.calendar.title"),
+    description: t("account.settings.consent.calendar.description"),
+    purpose: t("account.settings.consent.calendar.purpose"),
     icon: "cal",
     tone: "sky",
   },
   {
     source: "finance",
-    title: "Finance",
-    description: "Bills, budget & income you enter",
-    purpose: "Store and read your finances to track budget and bills",
+    title: t("account.settings.consent.finance.title"),
+    description: t("account.settings.consent.finance.description"),
+    purpose: t("account.settings.consent.finance.purpose"),
     icon: "peso",
     tone: "green",
   },
   {
     source: "health",
-    title: "Health data",
-    description: "Most sensitive · off unless you say so",
-    purpose: "Store and read medications to time dose reminders",
+    title: t("account.settings.consent.health.title"),
+    description: t("account.settings.consent.health.description"),
+    purpose: t("account.settings.consent.health.purpose"),
     icon: "heart",
     tone: "coral",
   },
@@ -116,7 +117,7 @@ function NavRow({
           {subtitle}
         </Text>
       </View>
-      {locked ? <Pill tone="pro">PRO</Pill> : <Icon name="chevR" size={18} color={OC.ink400} />}
+      {locked ? <Pill tone="pro">{t("common.pro")}</Pill> : <Icon name="chevR" size={18} color={OC.ink400} />}
     </Pressable>
   );
 }
@@ -156,10 +157,10 @@ function CalendarConnectCard(): React.JSX.Element {
           {glyph}
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
-              Syncing your calendar…
+              {t("account.settings.calendar.syncing")}
             </Text>
             <Text style={{ marginTop: 2, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
-              Reading today&apos;s events
+              {t("account.settings.calendar.readingToday")}
             </Text>
           </View>
           <View style={{ width: 11, height: 11, borderRadius: 99, backgroundColor: OC.emerald }} />
@@ -181,16 +182,16 @@ function CalendarConnectCard(): React.JSX.Element {
           {glyph}
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
-              Google Calendar
+              {t("account.settings.calendar.name")}
             </Text>
             <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
-              Read-only · on your device
+              {t("account.settings.calendar.readOnly")}
             </Text>
           </View>
           <Pill tone="green">
             <Icon name="check" size={12} color="#fff" stroke={3} />
             <Text style={{ color: "#fff", fontFamily: FONT.bodyBold, fontSize: 11.5 }}>
-              Connected
+              {t("account.settings.calendar.connected")}
             </Text>
           </Pill>
         </View>
@@ -210,22 +211,22 @@ function CalendarConnectCard(): React.JSX.Element {
             onPress={() => void syncToday()}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel="Sync today"
+            accessibilityLabel={t("account.settings.calendar.syncToday")}
             style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
           >
             <Text style={{ color: OC.green, fontFamily: FONT.bodyX, fontSize: 12.5 }}>
-              Sync today
+              {t("account.settings.calendar.syncToday")}
             </Text>
           </Pressable>
           <Pressable
             onPress={() => void disconnect()}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel="Disconnect Google Calendar"
+            accessibilityLabel={t("account.settings.calendar.disconnectA11y")}
             style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
           >
             <Text style={{ color: OC.coral, fontFamily: FONT.bodyBold, fontSize: 12.5 }}>
-              Disconnect
+              {t("account.settings.calendar.disconnect")}
             </Text>
           </Pressable>
         </View>
@@ -256,7 +257,7 @@ function CalendarConnectCard(): React.JSX.Element {
       >
         <Icon name="cal" size={26} color={OC.sky} />
       </View>
-      <Display style={{ fontSize: 17, textAlign: "center" }}>Connect Google Calendar</Display>
+      <Display style={{ fontSize: 17, textAlign: "center" }}>{t("account.settings.calendar.connectTitle")}</Display>
       <Text
         style={{
           fontFamily: FONT.body,
@@ -268,14 +269,13 @@ function CalendarConnectCard(): React.JSX.Element {
           maxWidth: 280,
         }}
       >
-        So Otto can time reminders around your real schedule. Read-only — it never edits your events
-        without asking.
+        {t("account.settings.calendar.connectBody")}
       </Text>
       <Pressable
         onPress={() => void connect()}
         disabled={busy || !configured}
         accessibilityRole="button"
-        accessibilityLabel="Connect with Google"
+        accessibilityLabel={t("account.settings.calendar.connectWithGoogle")}
         style={({ pressed }) => [
           {
             marginTop: 14,
@@ -293,7 +293,7 @@ function CalendarConnectCard(): React.JSX.Element {
       >
         <Icon name="cal" size={18} color="#fff" />
         <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 14.5 }}>
-          Connect with Google
+          {t("account.settings.calendar.connectWithGoogle")}
         </Text>
       </Pressable>
       {!configured ? (
@@ -306,7 +306,7 @@ function CalendarConnectCard(): React.JSX.Element {
             textAlign: "center",
           }}
         >
-          Google Calendar isn&apos;t set up in this build (missing client id).
+          {t("account.settings.calendar.notConfigured")}
         </Text>
       ) : message ? (
         <Text
@@ -336,7 +336,7 @@ export function SettingsScreen({
   const { status, email, isPro, signOut } = useAuth();
   const signedIn = status === "signed-in";
   return (
-    <OverlayScreen title="Settings" onBack={() => navigation.goBack()}>
+    <OverlayScreen title={t("account.settings.title")} onBack={() => navigation.goBack()}>
       {/* Profile header — dark gradient, driven by the live auth session. */}
       <GradientCard style={{ marginBottom: 18 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
@@ -358,19 +358,19 @@ export function SettingsScreen({
               style={{ fontFamily: FONT.display, fontSize: 18, color: "#fff" }}
               numberOfLines={1}
             >
-              {signedIn && email ? email : "Your Otto"}
+              {signedIn && email ? email : t("account.settings.profile.fallbackName")}
             </Text>
             <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12.5, color: OC.sage }}>
-              {isPro ? "Otto Pro" : signedIn ? "Free plan" : "Local & anonymous"}
+              {isPro ? t("account.settings.profile.planPro") : signedIn ? t("account.settings.profile.planFree") : t("account.settings.profile.planLocal")}
             </Text>
           </View>
           {isPro ? (
-            <Pill tone="pro">PRO</Pill>
+            <Pill tone="pro">{t("common.pro")}</Pill>
           ) : signedIn ? (
             <Pressable
               onPress={() => navigation.navigate("Upgrade")}
               accessibilityRole="button"
-              accessibilityLabel="Upgrade to Pro"
+              accessibilityLabel={t("account.settings.profile.upgradeToPro")}
               style={({ pressed }) => [
                 {
                   backgroundColor: OC.emerald,
@@ -381,13 +381,13 @@ export function SettingsScreen({
                 },
               ]}
             >
-              <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 12.5 }}>Upgrade</Text>
+              <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 12.5 }}>{t("common.upgrade")}</Text>
             </Pressable>
           ) : (
             <Pressable
               onPress={() => navigation.navigate("Login")}
               accessibilityRole="button"
-              accessibilityLabel="Sign in"
+              accessibilityLabel={t("account.settings.profile.signIn")}
               style={({ pressed }) => [
                 {
                   backgroundColor: OC.emerald,
@@ -398,7 +398,7 @@ export function SettingsScreen({
                 },
               ]}
             >
-              <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 12.5 }}>Sign in</Text>
+              <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 12.5 }}>{t("account.settings.profile.signIn")}</Text>
             </Pressable>
           )}
         </View>
@@ -420,7 +420,7 @@ export function SettingsScreen({
               <Pressable
                 onPress={() => navigation.navigate("Upgrade")}
                 accessibilityRole="button"
-                accessibilityLabel="Upgrade to Pro"
+                accessibilityLabel={t("account.settings.profile.upgradeToPro")}
                 style={({ pressed }) => [
                   {
                     flex: 1,
@@ -433,14 +433,14 @@ export function SettingsScreen({
                 ]}
               >
                 <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.mint }}>
-                  Upgrade to Pro
+                  {t("account.settings.profile.upgradeToPro")}
                 </Text>
               </Pressable>
             ) : null}
             <Pressable
               onPress={() => void signOut()}
               accessibilityRole="button"
-              accessibilityLabel="Sign out"
+              accessibilityLabel={t("account.settings.profile.signOut")}
               style={({ pressed }) => [
                 {
                   flex: isPro ? 1 : undefined,
@@ -454,27 +454,27 @@ export function SettingsScreen({
               ]}
             >
               <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12.5, color: OC.sage }}>
-                Sign out
+                {t("account.settings.profile.signOut")}
               </Text>
             </Pressable>
           </View>
         ) : null}
       </GradientCard>
 
-      <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Loading settings">
+      <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel={t("account.settings.loading")}>
         {/* Connections */}
-        <SectionLabel>Connections</SectionLabel>
+        <SectionLabel>{t("account.settings.sections.connections")}</SectionLabel>
         <CalendarConnectCard />
 
         {/* Region & currency (stories 13.1 / 13.4) */}
         <View style={{ marginTop: 18 }}>
-          <SectionLabel>Region &amp; currency</SectionLabel>
+          <SectionLabel>{t("account.settings.sections.region")}</SectionLabel>
           <RegionSettings />
         </View>
 
         {/* Consent */}
         <View style={{ marginTop: 18 }}>
-          <SectionLabel>Consent</SectionLabel>
+          <SectionLabel>{t("account.settings.sections.consent")}</SectionLabel>
           <Card pad={16} style={{ paddingVertical: 2 }}>
             {SOURCES.map((s, index) => (
               <ToggleRow
@@ -513,26 +513,25 @@ export function SettingsScreen({
                 color: OC.forest,
               }}
             >
-              Encrypted on your device and never sold or used for ads. Every access to health and
-              finance data is logged for your records.
+              {t("account.settings.consent.encryptionNote")}
             </Text>
           </View>
         </View>
 
         {/* Pro tools */}
         <View style={{ marginTop: 18 }}>
-          <SectionLabel>Pro tools</SectionLabel>
+          <SectionLabel>{t("account.settings.sections.proTools")}</SectionLabel>
           <Card pad={16} style={{ paddingVertical: 2 }}>
             <NavRow
               icon="dumbbell"
-              title="Routine optimizer"
-              subtitle="Reshape your day — you confirm"
+              title={t("account.settings.proTools.optimizer.title")}
+              subtitle={t("account.settings.proTools.optimizer.subtitle")}
               onPress={() => navigation.navigate("Optimizer")}
             />
             <NavRow
               icon="sparkle"
-              title="Tips"
-              subtitle="Gentle finance & health"
+              title={t("account.settings.proTools.tips.title")}
+              subtitle={t("account.settings.proTools.tips.subtitle")}
               onPress={() => navigation.navigate("Tips")}
               locked={!isPro}
               last
@@ -542,12 +541,12 @@ export function SettingsScreen({
 
         {/* Help */}
         <View style={{ marginTop: 18 }}>
-          <SectionLabel>Help</SectionLabel>
+          <SectionLabel>{t("account.settings.sections.help")}</SectionLabel>
           <Card pad={16} style={{ paddingVertical: 2 }}>
             <NavRow
               icon="sparkle"
-              title="How Otto works"
-              subtitle="A quick tour of the basics"
+              title={t("account.settings.help.howItWorks.title")}
+              subtitle={t("account.settings.help.howItWorks.subtitle")}
               onPress={() => navigation.navigate("HowItWorks")}
               last
             />
@@ -556,7 +555,7 @@ export function SettingsScreen({
 
         {/* About */}
         <View style={{ marginTop: 18 }}>
-          <SectionLabel>About</SectionLabel>
+          <SectionLabel>{t("account.settings.sections.about")}</SectionLabel>
           <Card>
             <Text style={{ fontFamily: FONT.bodyBold, fontSize: 15, color: OC.ink }}>
               {APP_NAME}
@@ -564,28 +563,28 @@ export function SettingsScreen({
             <Text
               style={{ marginTop: 1, fontFamily: FONT.body, fontStyle: "italic", fontSize: 13, color: OC.ink500 }}
             >
-              Otto knows.
+              {t("account.settings.about.tagline")}
             </Text>
             <Text style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 13, color: OC.ink400 }}>
-              Version {APP_VERSION}
+              {t("account.settings.about.version", { version: APP_VERSION })}
             </Text>
             <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 13, color: OC.ink400 }}>
-              Privacy policy version {CONSENT_POLICY_VERSION}
+              {t("account.settings.about.policyVersion", { version: CONSENT_POLICY_VERSION })}
             </Text>
             <Text style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 12, color: OC.ink400 }}>
-              Free tier runs entirely on your device. Your data stays local.
+              {t("account.settings.about.localNote")}
             </Text>
           </Card>
         </View>
 
         {/* Your data — export, erase, delete account (right to erasure) */}
         <View style={{ marginTop: 18, marginBottom: 10 }}>
-          <SectionLabel>Your data</SectionLabel>
+          <SectionLabel>{t("account.settings.sections.yourData")}</SectionLabel>
           <Card pad={16} style={{ paddingVertical: 2 }}>
             <NavRow
               icon="shield"
-              title="Your data"
-              subtitle="Download a copy, erase, or delete your account"
+              title={t("account.settings.yourData.title")}
+              subtitle={t("account.settings.yourData.subtitle")}
               onPress={() => navigation.navigate("YourData")}
               last
             />

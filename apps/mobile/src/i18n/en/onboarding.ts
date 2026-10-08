@@ -1,2 +1,146 @@
 // Copy for the onboarding screens (story 13.3).
-export const onboarding = {} as const;
+export const onboarding = {
+  cta: {
+    showMeHow: "Show me how",
+    next: "Next",
+    setMeUp: "Set me up",
+    thatsMe: "That's me",
+    agree: "I agree",
+    setMyRhythm: "Set my rhythm",
+    gotIt: "Got it",
+  },
+  skip: "Skip",
+  skipLabel: "Skip onboarding",
+  regionSaveError: "Couldn't save your region. Try again.",
+  welcome: {
+    title: "Hi, I'm Otto.",
+    body: "I'll hold your day together — calendar, bills, meds and your routine — and tell you what actually matters. Calmly. No nagging.",
+  },
+  teach: {
+    sources: {
+      calendar: "Calendar",
+      money: "Money",
+      meds: "Meds",
+      routine: "Routine",
+    },
+    exampleBrief:
+      "A calm day ahead — payday's Friday, but the electric bill ({bill}) is due Saturday. Want a heads-up Thursday night?",
+    exampleProposal: {
+      title: "Nudge me Thu 20:00 — pay the electric bill",
+      detail: "{bill} · before payday clears Friday",
+    },
+    readsYourDay: {
+      title: "Otto reads your whole day",
+      body: "Calendar, bills, meds and your routine — Otto holds them in one place, so nothing slips through the cracks.",
+    },
+    oneBrief: {
+      title: "One calm brief — not a list",
+      body: "Each morning, midday and evening, Otto tells you what actually matters in one warm message. No notification pile-up.",
+    },
+    youConfirm: {
+      title: "Just tell Otto — you confirm",
+      body: "Say it in plain words. Otto turns it into the right bill, reminder or plan — and never changes anything without your yes.",
+    },
+  },
+  consent: {
+    title: "What can I look at?",
+    intro: "You choose, per source. Turn any of these off anytime — nothing is ever used for ads.",
+    loading: "Loading consent",
+    privacy:
+      "Encrypted on your device and never sold or used for ads. Every access to health and finance data is logged for your records.",
+    sources: {
+      calendar: {
+        title: "Calendar & reminders",
+        description: "Read your schedule to time things right",
+        purpose: "Read calendar events to build your daily briefing",
+      },
+      finance: {
+        title: "Finance",
+        description: "Bills, budget & income you enter",
+        purpose: "Store and read your finances to track budget and bills",
+      },
+      health: {
+        title: "Health data",
+        description: "Most sensitive — off unless you say so",
+        purpose: "Store and read medications to time dose reminders",
+      },
+    },
+  },
+  routine: {
+    kinds: {
+      wake: "Wake up",
+      meds: "Meds",
+      meal: "Meal",
+      work: "Work",
+      exercise: "Exercise",
+      "wind-down": "Wind down",
+      sleep: "Sleep",
+      custom: "Custom",
+    },
+    title: "When's your day?",
+    intro:
+      "A few anchors so reminders land at the right moment — not random times. I'll learn the rest.",
+    loading: "Loading routine",
+    starter:
+      "Start with a few defaults — wake, meds, lunch, wind-down and sleep. Everything is editable.",
+    addStarter: "Add starter anchors",
+    remove: "Remove {label}",
+    nameRequired: "Give the anchor a name.",
+    timeInvalid: "Enter a time as HH:mm (24h), e.g. 07:30.",
+    name: "Name",
+    namePlaceholder: "e.g. Lunch",
+    kind: "Kind",
+    time: "Time (HH:mm)",
+    timePlaceholder: "12:30",
+    addAnchor: "Add anchor",
+    addAnAnchor: "Add an anchor",
+  },
+  region: {
+    title: "Where are you based?",
+    intro:
+      "I'll write money and dates the way your country does. You can change this later in Settings.",
+    currency: "Your money is in {currency}",
+    currencyNote: "One currency for all your wallets — Otto never converts.",
+    differentCurrency: "Use a different currency",
+  },
+  regionSettings: {
+    region: "Region",
+    regionHint: "How numbers and dates look",
+    currency: "Currency",
+    timeZone: "Time zone",
+    timeZoneValue: "{timezone} (from your phone)",
+    change: "Change region or currency",
+    locked:
+      "Your money is recorded in {currency}. The currency stays fixed once you've added money — Otto never converts amounts.",
+    lockedError: "Your money is recorded in {currency}, so the currency can't change now.",
+  },
+  regions: {
+    PH: "Philippines",
+    SG: "Singapore",
+    MY: "Malaysia",
+    ID: "Indonesia",
+    TH: "Thailand",
+    VN: "Vietnam",
+    US: "United States",
+    CA: "Canada",
+    GB: "United Kingdom",
+    IE: "Ireland",
+    DE: "Germany",
+    FR: "France",
+    ES: "Spain",
+    IT: "Italy",
+    NL: "Netherlands",
+    CH: "Switzerland",
+    SE: "Sweden",
+    NO: "Norway",
+    DK: "Denmark",
+    PL: "Poland",
+    CZ: "Czechia",
+  },
+  regionGroups: {
+    philippines: "Philippines",
+    southeastAsia: "Southeast Asia",
+    northAmerica: "US & Canada",
+    europe: "UK & Europe",
+  },
+} as const;

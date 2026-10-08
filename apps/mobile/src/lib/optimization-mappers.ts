@@ -12,6 +12,7 @@ import {
   type RoutineAnchor,
   type ScheduleChange,
 } from "@otto/schemas";
+import { t } from "../i18n";
 
 /** Injected context so the mappers stay pure (no `Date.now`/native id inside). */
 export type ApplyOptimizationContext = {
@@ -67,11 +68,15 @@ export function addedAnchor(
 export function describeChange(change: ScheduleChange): string {
   switch (change.action) {
     case "move":
-      return `Move ${change.label} ${change.fromTime ?? "?"} → ${change.toTime}`;
+      return t("assistant.optimizer.describe.move", {
+        label: change.label,
+        from: change.fromTime ?? "?",
+        to: change.toTime,
+      });
     case "add":
-      return `Add ${change.label} at ${change.toTime}`;
+      return t("assistant.optimizer.describe.add", { label: change.label, time: change.toTime });
     case "keep":
-      return `Keep ${change.label} at ${change.toTime}`;
+      return t("assistant.optimizer.describe.keep", { label: change.label, time: change.toTime });
     default: {
       const _exhaustive: never = change.action;
       return String(_exhaustive);

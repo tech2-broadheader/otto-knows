@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createTranslator, extraKeys, interpolate } from "./translate";
+import { SLOT_MARK, createTranslator, extraKeys, interpolate, splitAtSlot } from "./translate";
 
 const base = {
   common: { save: "Save", hello: "Hello, {name}!" },
@@ -38,5 +38,17 @@ describe("extraKeys", () => {
     const translation = { common: { save: "Guardar", sav: "typo" }, nope: { x: "y" } };
     expect(extraKeys(translation, base)).toEqual(["common.sav", "nope.x"]);
     expect(extraKeys({ common: { save: "Guardar" } }, base)).toEqual([]);
+  });
+});
+
+describe("splitAtSlot", () => {
+  it("splits a message around its rich-text slot, ignoring look-alike user text", () => {
+    const t = createTranslator({ alarms: { next: "Next alarm in {in} — {label}" } } as const, "en");
+    const message = t("alarms.next", { in: SLOT_MARK, label: "Call {in} mum" });
+    expect(splitAtSlot(message)).toEqual(["Next alarm in ", " — Call {in} mum"]);
+  });
+
+  it("keeps the whole message before the slot when it has none", () => {
+    expect(splitAtSlot("No slot here")).toEqual(["No slot here", ""]);
   });
 });

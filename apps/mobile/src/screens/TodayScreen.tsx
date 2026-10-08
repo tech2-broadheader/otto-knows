@@ -29,6 +29,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { newUuid } from "../lib/id";
 import { useSettings } from "../lib/settings-context";
 import { greetingForHour, longDateLabel, nowIso, timeLabel } from "../lib/datetime";
+import { t } from "../i18n";
 
 /** Icon + accent tone for each context-item kind (matches the design timeline). */
 const KIND_STYLE: Record<ContextItem["kind"], { icon: IconName; tone: string }> = {
@@ -48,21 +49,21 @@ function proposalDisplay(
   const money = (m: Money): string => formatMoney(m, locale);
   switch (a.type) {
     case "add_bill":
-      return { icon: "wallet", tone: "amber", title: `Add bill — ${a.bill.name} ${money(a.bill.amount)}`, detail: `Due ${a.bill.dueDate}` };
+      return { icon: "wallet", tone: "amber", title: t("assistant.today.proposal.addBill", { name: a.bill.name, amount: money(a.bill.amount) }), detail: t("assistant.today.proposal.due", { date: a.bill.dueDate }) };
     case "add_medication":
-      return { icon: "pill", tone: "green", title: `Add medication — ${a.medication.name}`, detail: a.medication.times.join(", ") };
+      return { icon: "pill", tone: "green", title: t("assistant.today.proposal.addMedication", { name: a.medication.name }), detail: a.medication.times.join(", ") };
     case "create_reminder":
       return { icon: "bell", tone: "green", title: a.reminder.title, detail: a.reminder.dueAt ? timeLabel(a.reminder.dueAt) || undefined : undefined };
     case "log_expense":
-      return { icon: "wallet", tone: "amber", title: `Log expense — ${money(a.expense.amount)}`, detail: a.expense.description };
+      return { icon: "wallet", tone: "amber", title: t("assistant.today.proposal.logExpense", { amount: money(a.expense.amount) }), detail: a.expense.description };
     case "block_time":
       return { icon: "cal", tone: "sky", title: a.block.title, detail: timeLabel(a.block.startAt) || undefined };
     case "add_routine_anchor":
-      return { icon: "dumbbell", tone: "green", title: `Add routine — ${a.anchor.label}`, detail: a.anchor.time };
+      return { icon: "dumbbell", tone: "green", title: t("assistant.today.proposal.addRoutine", { label: a.anchor.label }), detail: a.anchor.time };
     case "create_event":
       return { icon: "cal", tone: "sky", title: a.event.title, detail: timeLabel(a.event.startAt) || undefined };
     case "add_note":
-      return { icon: "note", tone: "sky", title: `Save note — ${a.note.title ?? a.note.body.split("\n")[0] ?? ""}` };
+      return { icon: "note", tone: "sky", title: t("assistant.today.proposal.saveNote", { title: a.note.title ?? a.note.body.split("\n")[0] ?? "" }) };
   }
 }
 
@@ -109,10 +110,10 @@ export function TodayScreen(): React.JSX.Element {
       />
 
       <View style={{ paddingHorizontal: 18 }}>
-        <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel="Building your day">
+        <AsyncBoundary state={state} error={error} onRetry={reload} loadingLabel={t("assistant.today.loading")}>
           <View style={{ marginTop: 10 }}>
             <OttoVoice time={timeLabel(nowIso()) || undefined}>
-              {briefing?.summary ?? "Nothing to summarize yet."}
+              {briefing?.summary ?? t("assistant.today.emptySummary")}
             </OttoVoice>
           </View>
 
@@ -139,18 +140,18 @@ export function TodayScreen(): React.JSX.Element {
             <SectionLabel
               right={
                 <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
-                  {items.length} {items.length === 1 ? "item" : "items"} today
+                  {t("assistant.today.itemCount", { count: items.length })}
                 </Text>
               }
             >
-              Today&apos;s rhythm
+              {t("assistant.today.rhythm")}
             </SectionLabel>
             <Card pad={16}>
               {items.length === 0 ? (
                 <View style={{ paddingVertical: 4 }}>
-                  <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>An open day</Text>
+                  <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>{t("assistant.today.openDay.title")}</Text>
                   <Text style={{ marginTop: 4, fontFamily: FONT.body, fontSize: 12.5, color: OC.ink500 }}>
-                    Add anchors, reminders or bills and they&apos;ll show up here.
+                    {t("assistant.today.openDay.body")}
                   </Text>
                 </View>
               ) : (
@@ -184,7 +185,7 @@ export function TodayScreen(): React.JSX.Element {
           ))}
 
           <View style={{ marginTop: 22 }}>
-            <SectionLabel>Otto&apos;s deeper read</SectionLabel>
+            <SectionLabel>{t("assistant.today.deeperRead.label")}</SectionLabel>
             {isPro ? (
               <Card>
                 <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 11 }}>
@@ -193,19 +194,19 @@ export function TodayScreen(): React.JSX.Element {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Display style={{ fontSize: 16 }}>
-                      {briefingFromLlm ? "Otto read across your day" : "Spending is running a touch warm"}
+                      {briefingFromLlm ? t("assistant.today.deeperRead.llmTitle") : t("assistant.today.deeperRead.title")}
                     </Display>
                     <Text style={{ marginTop: 4, fontFamily: FONT.body, fontSize: 13.5, lineHeight: 20, color: OC.ink700 }}>
-                      Otto looks across your calendar, money and meds together — not just listing them — so the heads-ups land before things become a problem.
+                      {t("assistant.today.deeperRead.body")}
                     </Text>
                   </View>
                 </View>
               </Card>
             ) : (
               <ProGate onUpgrade={() => navigation.navigate("Upgrade")}>
-                <Display style={{ fontSize: 18, color: "#fff", lineHeight: 22 }}>See the week before it happens</Display>
+                <Display style={{ fontSize: 18, color: "#fff", lineHeight: 22 }}>{t("assistant.today.proGate.title")}</Display>
                 <Text style={{ fontSize: 13.5, color: OC.sage, marginTop: 6, lineHeight: 20, fontFamily: FONT.body }}>
-                  Overspend forecasts, refill warnings and payday-vs-bill heads-ups — Otto thinking across all your data, not just listing it.
+                  {t("assistant.today.proGate.body")}
                 </Text>
               </ProGate>
             )}
@@ -221,8 +222,8 @@ export function TodayScreen(): React.JSX.Element {
               <Icon name="dumbbell" size={20} color={OC.green} />
             </View>
             <View style={{ flex: 1 }}>
-              <Display style={{ fontSize: 15.5 }}>Make room for something new</Display>
-              <Text style={{ marginTop: 2, fontFamily: FONT.body, fontSize: 12.5, color: OC.ink500 }}>Let Otto reshape your day around it</Text>
+              <Display style={{ fontSize: 15.5 }}>{t("assistant.today.optimizerCta.title")}</Display>
+              <Text style={{ marginTop: 2, fontFamily: FONT.body, fontSize: 12.5, color: OC.ink500 }}>{t("assistant.today.optimizerCta.sub")}</Text>
             </View>
             <Icon name="chevR" size={20} color={OC.ink400} />
           </Pressable>

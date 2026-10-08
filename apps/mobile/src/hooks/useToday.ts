@@ -38,6 +38,7 @@ import { useAiUserContext, useSettings } from "../lib/settings-context";
 import { newUuid } from "../lib/id";
 import { briefingSlotForHour, localUtcOffset, nowIso, todayDate } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
+import { t } from "../i18n";
 
 export type TodayState = {
   state: LoadState;
@@ -161,7 +162,7 @@ export function useToday(deps: RepositoryDeps): TodayState {
       setBriefingFromLlm(usedLlm);
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not build your day.");
+      setError(caught instanceof Error ? caught.message : t("assistant.today.loadError"));
       setState("error");
     }
   }, [deps, isPro, locale, user]);

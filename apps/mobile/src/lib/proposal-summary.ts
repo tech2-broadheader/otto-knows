@@ -4,6 +4,7 @@
 import type { ProposalAction } from "@otto/schemas";
 import { formatMoney, formatShortDate } from "@otto/core";
 import { timeLabel } from "./datetime";
+import { t } from "../i18n";
 
 export function summarizeAction(action: ProposalAction, locale: string): string {
   switch (action.type) {
@@ -16,15 +17,28 @@ export function summarizeAction(action: ProposalAction, locale: string): string 
       return `${formatMoney(action.expense.amount, locale)}${note}`;
     }
     case "add_bill":
-      return `${action.bill.name} — ${formatMoney(action.bill.amount, locale)}, due ${formatShortDate(action.bill.dueDate, locale)}`;
+      return t("assistant.summary.bill", {
+        name: action.bill.name,
+        amount: formatMoney(action.bill.amount, locale),
+        date: formatShortDate(action.bill.dueDate, locale),
+      });
     case "add_medication": {
-      const dose = action.medication.dosage ? ` ${action.medication.dosage}` : "";
-      return `${action.medication.name}${dose} at ${action.medication.times.join(", ")}`;
+      const times = action.medication.times.join(", ");
+      return action.medication.dosage
+        ? t("assistant.summary.medicationWithDose", {
+            name: action.medication.name,
+            dosage: action.medication.dosage,
+            times,
+          })
+        : t("assistant.summary.medication", { name: action.medication.name, times });
     }
     case "block_time":
       return `${action.block.title} (${timeLabel(action.block.startAt)}–${timeLabel(action.block.endAt)})`;
     case "add_routine_anchor":
-      return `${action.anchor.label} at ${action.anchor.time}`;
+      return t("assistant.summary.anchor", {
+        label: action.anchor.label,
+        time: action.anchor.time,
+      });
     case "create_event": {
       const where = action.event.location ? ` · ${action.event.location}` : "";
       return `${action.event.title} (${timeLabel(action.event.startAt)})${where}`;

@@ -3,6 +3,7 @@
 // reboot); Otto's database is the source of truth, and at start-up the two are
 // reconciled.
 import type { Alarm, DayOfWeek } from "@otto/schemas";
+import { t } from "../i18n";
 
 /** What the native module needs to arm one alarm. */
 export type NativeAlarm = {
@@ -26,7 +27,8 @@ const ISO_DAY: Record<DayOfWeek, number> = {
   sun: 7,
 };
 
-export const DEFAULT_ALARM_LABEL = "Alarm";
+/** Also shown by the native module on the ringing screen. */
+export const DEFAULT_ALARM_LABEL = t("tasks.alarms.defaultLabel");
 
 export function toNativeAlarm(alarm: Alarm): NativeAlarm {
   const [hour, minute] = alarm.time.split(":").map(Number);

@@ -12,6 +12,7 @@ import { Card, OverlayScreen, PrimaryButton, ProposalCard } from "../design/kit"
 import { Icon } from "../design/Icon";
 import { FONT, OC } from "../design/theme";
 import { useMoney } from "../lib/settings-context";
+import { t } from "../i18n";
 
 type Params = { noteId?: string };
 type Stage = "editing" | "proposed" | "accepted" | "dismissed";
@@ -44,7 +45,7 @@ export function NoteEditorScreen(): React.JSX.Element {
   /** Save the note; returns its id, or undefined when there's nothing to save. */
   const persist = async (): Promise<string | undefined> => {
     if (body.trim() === "") {
-      setError("Write something first.");
+      setError(t("tasks.noteEditor.bodyRequired"));
       return undefined;
     }
     setError(undefined);
@@ -72,10 +73,10 @@ export function NoteEditorScreen(): React.JSX.Element {
 
   const confirmDelete = (): void => {
     if (!noteId) return navigation.goBack();
-    Alert.alert("Delete this note?", "This can't be undone.", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("tasks.noteEditor.deleteConfirm"), t("tasks.noteEditor.deleteWarning"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: () => void notes.remove(noteId).then(() => navigation.goBack()),
       },
@@ -86,17 +87,21 @@ export function NoteEditorScreen(): React.JSX.Element {
 
   return (
     <OverlayScreen
-      title="Note"
+      title={t("tasks.noteEditor.title")}
       onBack={() => void done()}
       footer={
-        <PrimaryButton label="Make a reminder" icon="bell" onPress={() => void proposeReminder()} />
+        <PrimaryButton
+          label={t("tasks.noteEditor.makeReminder")}
+          icon="bell"
+          onPress={() => void proposeReminder()}
+        />
       }
     >
       <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8, marginBottom: 12 }}>
         <Pressable
           onPress={() => setPinned((p) => !p)}
           accessibilityRole="button"
-          accessibilityLabel={pinned ? "Unpin note" : "Pin note"}
+          accessibilityLabel={pinned ? t("tasks.noteEditor.unpin") : t("tasks.noteEditor.pin")}
           accessibilityState={{ selected: pinned }}
           style={{
             width: 40,
@@ -114,7 +119,7 @@ export function NoteEditorScreen(): React.JSX.Element {
         <Pressable
           onPress={confirmDelete}
           accessibilityRole="button"
-          accessibilityLabel="Delete note"
+          accessibilityLabel={t("tasks.noteEditor.delete")}
           style={{
             width: 40,
             height: 40,
@@ -136,20 +141,20 @@ export function NoteEditorScreen(): React.JSX.Element {
         <TextInput
           value={title}
           onChangeText={setTitle}
-          placeholder="Title (optional)"
+          placeholder={t("tasks.noteEditor.titlePlaceholder")}
           placeholderTextColor={OC.ink400}
           maxLength={NOTE_TITLE_MAX}
-          accessibilityLabel="Title"
+          accessibilityLabel={t("tasks.noteEditor.titleLabel")}
           style={{ fontFamily: FONT.display, fontSize: 21, color: OC.ink, padding: 0 }}
         />
         <TextInput
           value={body}
           onChangeText={setBody}
-          placeholder="Write anything…"
+          placeholder={t("tasks.noteEditor.bodyPlaceholder")}
           placeholderTextColor={OC.ink400}
           maxLength={NOTE_BODY_MAX}
           multiline
-          accessibilityLabel="Note"
+          accessibilityLabel={t("tasks.noteEditor.bodyLabel")}
           style={{
             fontFamily: FONT.body,
             fontSize: 15,
@@ -162,7 +167,7 @@ export function NoteEditorScreen(): React.JSX.Element {
         />
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
-            {edited ? `Edited ${edited}` : "New note"}
+            {edited ? t("tasks.noteEditor.edited", { date: edited }) : t("tasks.noteEditor.new")}
           </Text>
           <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
             {body.length.toLocaleString(money.locale)} /{" "}
@@ -176,8 +181,10 @@ export function NoteEditorScreen(): React.JSX.Element {
           <ProposalCard
             icon="bell"
             tone="green"
-            title={`Reminder: ${title.trim() || body.trim().split("\n")[0]}`}
-            detail="Adds it to Reminders with this note. Set a time there if you want a nudge."
+            title={t("tasks.noteEditor.proposalTitle", {
+              title: title.trim() || (body.trim().split("\n")[0] ?? ""),
+            })}
+            detail={t("tasks.noteEditor.proposalDetail")}
             state={
               stage === "accepted" ? "accepted" : stage === "dismissed" ? "dismissed" : undefined
             }

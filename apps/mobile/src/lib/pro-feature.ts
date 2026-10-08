@@ -5,6 +5,7 @@
 // (useAuth().isPro) also gates the entry points. These helpers turn an outcome into a friendly banner
 // so a non-Pro / signed-out / unconfigured / offline state never crashes a screen
 // (CLAUDE.md §1.11, §6 — friendly user messages; the proxy carries the detail).
+import { t } from "../i18n";
 import type { ApiErrorCode } from "./api-client";
 
 export type Banner = { tone: "info" | "warning"; text: string };
@@ -13,7 +14,7 @@ export type Banner = { tone: "info" | "warning"; text: string };
 export function proGateBanner(featureLabel: string): Banner {
   return {
     tone: "info",
-    text: `${featureLabel} is a Pro feature. Upgrade to Otto Pro to unlock it.`,
+    text: t("account.pro.gate", { feature: featureLabel }),
   };
 }
 
@@ -21,13 +22,13 @@ export function proGateBanner(featureLabel: string): Banner {
 export function proErrorBanner(code: ApiErrorCode | undefined, message: string): Banner {
   switch (code) {
     case "FORBIDDEN":
-      return { tone: "info", text: `${message} Upgrade to Otto Pro to unlock it.` };
+      return { tone: "info", text: t("account.pro.forbidden", { message }) };
     case "UNAUTHORIZED":
-      return { tone: "info", text: "Sign in to use this Pro feature." };
+      return { tone: "info", text: t("account.pro.unauthorized") };
     case "RATE_LIMITED":
-      return { tone: "warning", text: "Too many requests — give it a moment and try again." };
+      return { tone: "warning", text: t("account.pro.rateLimited") };
     case "NOT_CONFIGURED":
-      return { tone: "info", text: "Otto's cloud features aren't set up in this build yet." };
+      return { tone: "info", text: t("account.pro.notConfigured") };
     default:
       return { tone: "warning", text: message };
   }

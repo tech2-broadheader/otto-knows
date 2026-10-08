@@ -8,6 +8,7 @@ import { SUPPORTED_CURRENCIES, type CurrencyCode } from "@otto/schemas";
 import { ChoicePills, Display } from "../design/kit";
 import { Icon } from "../design/Icon";
 import { FONT, OC, RADIUS, eyebrow } from "../design/theme";
+import { t } from "../i18n";
 import { currencySymbol } from "../lib/money";
 import { REGION_GROUPS, type Region } from "../lib/regions";
 
@@ -26,7 +27,7 @@ export function RegionStep({
 
   return (
     <View style={{ paddingTop: 6 }}>
-      <Display style={{ fontSize: 26 }}>Where are you based?</Display>
+      <Display style={{ fontSize: 26 }}>{t("onboarding.region.title")}</Display>
       <Text
         style={{
           marginTop: 8,
@@ -37,8 +38,7 @@ export function RegionStep({
           color: OC.ink500,
         }}
       >
-        I&apos;ll write money and dates the way your country does. You can change this later in
-        Settings.
+        {t("onboarding.region.intro")}
       </Text>
 
       {/* Currency confirmation — follows the region unless the user picks another */}
@@ -68,10 +68,10 @@ export function RegionStep({
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.forest }}>
-              Your money is in {currency}
+              {t("onboarding.region.currency", { currency })}
             </Text>
             <Text style={{ marginTop: 1, fontFamily: FONT.body, fontSize: 12, color: OC.ink500 }}>
-              One currency for all your wallets — Otto never converts.
+              {t("onboarding.region.currencyNote")}
             </Text>
           </View>
         </View>
@@ -94,7 +94,7 @@ export function RegionStep({
             style={({ pressed }) => ({ marginTop: 10, opacity: pressed ? 0.6 : 1 })}
           >
             <Text style={{ fontFamily: FONT.bodyX, fontSize: 13.5, color: OC.green }}>
-              Use a different currency
+              {t("onboarding.region.differentCurrency")}
             </Text>
           </Pressable>
         )}

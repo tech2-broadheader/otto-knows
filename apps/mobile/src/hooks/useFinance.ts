@@ -44,6 +44,7 @@ import { DEFAULT_CASH_ACCOUNT_ID, LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { currentMonth, isoFromDateTime, localUtcOffset, nowIso, todayDate } from "../lib/datetime";
 import { useSettings } from "../lib/settings-context";
+import { t } from "../i18n";
 import type { LoadState } from "../components/AsyncBoundary";
 
 /** Transactions logged without a time are placed at midday so the date never shifts. */
@@ -150,7 +151,7 @@ export function useFinance(deps: RepositoryDeps, options: { isPro?: boolean } = 
       setAccounts(a);
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load your finances.");
+      setError(caught instanceof Error ? caught.message : t("money.loadFailed"));
       setState("error");
     }
   }, [accountRepo, billRepo, incomeRepo, txRepo, currency]);
@@ -328,7 +329,7 @@ export function useFinance(deps: RepositoryDeps, options: { isPro?: boolean } = 
   const updateAccount = useCallback(
     async (id: string, input: WalletInput) => {
       const existing = accounts.find((a) => a.id === id);
-      if (!existing) throw new Error("That wallet no longer exists.");
+      if (!existing) throw new Error(t("money.wallets.gone"));
       const updated = await accountRepo.update(
         accountSchema.parse({
           ...existing,
@@ -360,7 +361,7 @@ export function useFinance(deps: RepositoryDeps, options: { isPro?: boolean } = 
   const restoreAccount = useCallback(
     async (id: string) => {
       const existing = accounts.find((a) => a.id === id);
-      if (!existing) throw new Error("That wallet no longer exists.");
+      if (!existing) throw new Error(t("money.wallets.gone"));
       if (!isPro && activeAccounts.length >= FREE_CAPS.wallets) return "at-cap" as const;
       const restored = await accountRepo.update({
         ...existing,

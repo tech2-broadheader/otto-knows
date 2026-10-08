@@ -46,13 +46,14 @@ import {
   recurrenceFromFreq,
   type MedRecurrenceFreq,
 } from "../lib/medication-input";
+import { t } from "../i18n";
 
 const FREQ_LABEL: Record<MedRecurrenceFreq, string> = {
-  daily: "Daily",
-  weekdays: "Weekdays",
-  weekends: "Weekends",
-  weekly: "Weekly",
-  monthly: "Monthly",
+  daily: t("assistant.health.freq.daily"),
+  weekdays: t("assistant.health.freq.weekdays"),
+  weekends: t("assistant.health.freq.weekends"),
+  weekly: t("assistant.health.freq.weekly"),
+  monthly: t("assistant.health.freq.monthly"),
 };
 
 /** Recurrence options for the ChoicePills selector. */
@@ -111,10 +112,10 @@ export function MedicationsScreen(): React.JSX.Element {
   };
 
   const handleSubmit = async (): Promise<void> => {
-    if (name.trim().length === 0) return setFormError("Medication needs a name.");
+    if (name.trim().length === 0) return setFormError(t("assistant.health.errors.nameRequired"));
     const times = parseTimesList(timesText);
     if (times === null) {
-      return setFormError("Add at least one dose time as HH:mm (e.g. 08:00, 20:00).");
+      return setFormError(t("assistant.health.errors.timesRequired"));
     }
     setFormError(undefined);
     const input: MedicationInput = {
@@ -145,8 +146,8 @@ export function MedicationsScreen(): React.JSX.Element {
   return (
     <Screen>
       <AppHeader
-        title="Health"
-        sub="Medications"
+        title={t("common.tabs.health")}
+        sub={t("assistant.health.sub")}
         isPro={isPro}
         onUpgrade={goToUpgrade}
         onSettings={goToSettings}
@@ -157,7 +158,7 @@ export function MedicationsScreen(): React.JSX.Element {
           state={state}
           error={error}
           onRetry={reload}
-          loadingLabel="Loading medications"
+          loadingLabel={t("assistant.health.loading")}
         >
           {/* Next dose hero */}
           {nextDose ? (
@@ -172,7 +173,7 @@ export function MedicationsScreen(): React.JSX.Element {
                     color: OC.emerald,
                   }}
                 >
-                  Next dose
+                  {t("assistant.health.nextDose")}
                 </Text>
                 <View
                   style={{
@@ -211,17 +212,20 @@ export function MedicationsScreen(): React.JSX.Element {
             <SectionLabel
               right={
                 <Text style={{ fontFamily: FONT.bodySemi, fontSize: 11.5, color: OC.ink400 }}>
-                  {medications.length} of {FREE_CAPS.medications} free
+                  {t("assistant.health.capCount", {
+                    count: medications.length,
+                    cap: FREE_CAPS.medications,
+                  })}
                 </Text>
               }
             >
-              Your medications
+              {t("assistant.health.listLabel")}
             </SectionLabel>
             <Card pad={0} style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
               {medications.length === 0 ? (
                 <EmptyState
-                  title="No medications yet"
-                  body="Add one below to get dose reminders."
+                  title={t("assistant.health.empty.title")}
+                  body={t("assistant.health.empty.body")}
                 />
               ) : (
                 medications.map((med, index) => {
@@ -255,7 +259,7 @@ export function MedicationsScreen(): React.JSX.Element {
                                   fontSize: 11.5,
                                 }}
                               >
-                                {med.quantityRemaining} left
+                                {t("assistant.health.left", { count: med.quantityRemaining ?? 0 })}
                               </Text>
                             </Pill>
                           ) : undefined
@@ -273,7 +277,7 @@ export function MedicationsScreen(): React.JSX.Element {
             <View style={{ marginTop: 18 }}>
               <ProGate onUpgrade={goToUpgrade}>
                 <Display style={{ fontSize: 17, color: "#fff", lineHeight: 22 }}>
-                  At your 3-med limit
+                  {t("assistant.health.proGate.title")}
                 </Display>
                 <Text
                   style={{
@@ -284,8 +288,7 @@ export function MedicationsScreen(): React.JSX.Element {
                     fontFamily: FONT.body,
                   }}
                 >
-                  Pro tracks unlimited meds, warns you before refills run out, and adds gentle
-                  health tips from your wearable.
+                  {t("assistant.health.proGate.body")}
                 </Text>
               </ProGate>
             </View>
@@ -293,7 +296,9 @@ export function MedicationsScreen(): React.JSX.Element {
             <View style={{ marginTop: 16 }}>
               <Card>
                 <Display style={{ fontSize: 18, marginBottom: 14 }}>
-                  {editingId ? "Edit medication" : "Add a medication"}
+                  {editingId
+                    ? t("assistant.health.form.editTitle")
+                    : t("assistant.health.form.addTitle")}
                 </Display>
                 {formError ? (
                   <View
@@ -321,20 +326,34 @@ export function MedicationsScreen(): React.JSX.Element {
                     </Text>
                   </View>
                 ) : null}
-                <Field label="Name">
-                  <TextField value={name} onChangeText={setName} placeholder="e.g. Metformin" />
+                <Field label={t("assistant.health.form.name")}>
+                  <TextField
+                    value={name}
+                    onChangeText={setName}
+                    placeholder={t("assistant.health.form.namePlaceholder")}
+                  />
                 </Field>
-                <Field label="Dosage" hint="optional">
-                  <TextField value={dosage} onChangeText={setDosage} placeholder="e.g. 500mg" />
+                <Field
+                  label={t("assistant.health.form.dosage")}
+                  hint={t("assistant.health.form.optionalHint")}
+                >
+                  <TextField
+                    value={dosage}
+                    onChangeText={setDosage}
+                    placeholder={t("assistant.health.form.dosagePlaceholder")}
+                  />
                 </Field>
-                <Field label="Dose times" hint="HH:mm, comma-separated">
+                <Field
+                  label={t("assistant.health.form.times")}
+                  hint={t("assistant.health.form.timesHint")}
+                >
                   <TextField
                     value={timesText}
                     onChangeText={setTimesText}
-                    placeholder="e.g. 08:00, 20:00"
+                    placeholder={t("assistant.health.form.timesPlaceholder")}
                   />
                 </Field>
-                <Field label="Repeats">
+                <Field label={t("assistant.health.form.repeats")}>
                   <ChoicePills
                     options={FREQ_OPTIONS}
                     value={freq}
@@ -344,12 +363,16 @@ export function MedicationsScreen(): React.JSX.Element {
                 <SaveBar
                   onCancel={resetForm}
                   onSave={() => void handleSubmit()}
-                  label={editingId ? "Save changes" : "Add medication"}
+                  label={
+                    editingId
+                      ? t("assistant.health.form.saveChanges")
+                      : t("assistant.health.form.add")
+                  }
                 />
                 {editingId ? (
                   <View style={{ marginTop: 10 }}>
                     <GhostButton
-                      label="Delete"
+                      label={t("common.delete")}
                       onPress={() => void deleteMedication(editingId).then(resetForm)}
                     />
                   </View>
@@ -357,7 +380,10 @@ export function MedicationsScreen(): React.JSX.Element {
               </Card>
             </View>
           ) : (
-            <AddButton label="Add a medication" onPress={() => setShowForm(true)} />
+            <AddButton
+              label={t("assistant.health.form.addTitle")}
+              onPress={() => setShowForm(true)}
+            />
           )}
         </AsyncBoundary>
       </View>

@@ -7,6 +7,7 @@ import { View, Text, Image } from "react-native";
 import { Display, OttoVoice, ProposalCard, MASCOT } from "../design/kit";
 import { Icon, type IconName } from "../design/Icon";
 import { OC, FONT, toneColor, tint } from "../design/theme";
+import { t } from "../i18n";
 import { currencyMinorUnits } from "@otto/schemas";
 import { useMoney } from "../lib/settings-context";
 
@@ -18,12 +19,7 @@ function useExampleBill(): string {
 
 function ExampleBrief(): React.JSX.Element {
   const bill = useExampleBill();
-  return (
-    <OttoVoice time="8:02">
-      A calm day ahead — payday&apos;s Friday, but the electric bill ({bill}) is due Saturday. Want
-      a heads-up Thursday night?
-    </OttoVoice>
-  );
+  return <OttoVoice time="8:02">{t("onboarding.teach.exampleBrief", { bill })}</OttoVoice>;
 }
 
 function ExampleProposal(): React.JSX.Element {
@@ -32,8 +28,8 @@ function ExampleProposal(): React.JSX.Element {
     <ProposalCard
       icon="bell"
       tone="amber"
-      title="Nudge me Thu 20:00 — pay the electric bill"
-      detail={`${bill} · before payday clears Friday`}
+      title={t("onboarding.teach.exampleProposal.title")}
+      detail={t("onboarding.teach.exampleProposal.detail", { bill })}
     />
   );
 }
@@ -41,17 +37,17 @@ function ExampleProposal(): React.JSX.Element {
 /** The four data sources Otto unifies, as a tidy row of tiles. */
 function SourceTiles(): React.JSX.Element {
   const tiles: { icon: IconName; tone: string; label: string }[] = [
-    { icon: "cal", tone: "sky", label: "Calendar" },
-    { icon: "peso", tone: "green", label: "Money" },
-    { icon: "pill", tone: "coral", label: "Meds" },
-    { icon: "sun", tone: "amber", label: "Routine" },
+    { icon: "cal", tone: "sky", label: t("onboarding.teach.sources.calendar") },
+    { icon: "peso", tone: "green", label: t("onboarding.teach.sources.money") },
+    { icon: "pill", tone: "coral", label: t("onboarding.teach.sources.meds") },
+    { icon: "sun", tone: "amber", label: t("onboarding.teach.sources.routine") },
   ];
   return (
     <View style={{ flexDirection: "row", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
-      {tiles.map((t) => {
-        const a = toneColor(t.tone);
+      {tiles.map((tile) => {
+        const a = toneColor(tile.tone);
         return (
-          <View key={t.label} style={{ alignItems: "center", gap: 6 }}>
+          <View key={tile.icon} style={{ alignItems: "center", gap: 6 }}>
             <View
               style={{
                 width: 64,
@@ -62,10 +58,10 @@ function SourceTiles(): React.JSX.Element {
                 justifyContent: "center",
               }}
             >
-              <Icon name={t.icon} size={28} color={a} />
+              <Icon name={tile.icon} size={28} color={a} />
             </View>
             <Text style={{ fontFamily: FONT.bodySemi, fontSize: 12, color: OC.ink500 }}>
-              {t.label}
+              {tile.label}
             </Text>
           </View>
         );
@@ -80,7 +76,7 @@ export function WelcomeStep(): React.JSX.Element {
     <View style={{ alignItems: "center", paddingTop: 14 }}>
       <Image source={MASCOT} style={{ width: 300, height: 300, resizeMode: "contain" }} />
       <Display style={{ fontSize: 32, lineHeight: 34, textAlign: "center", marginTop: 6 }}>
-        Hi, I&apos;m Otto.
+        {t("onboarding.welcome.title")}
       </Display>
       <Text
         style={{
@@ -93,8 +89,7 @@ export function WelcomeStep(): React.JSX.Element {
           color: OC.ink500,
         }}
       >
-        I&apos;ll hold your day together — calendar, bills, meds and your routine — and tell you
-        what actually matters. Calmly. No nagging.
+        {t("onboarding.welcome.body")}
       </Text>
     </View>
   );
@@ -103,18 +98,18 @@ export function WelcomeStep(): React.JSX.Element {
 /** The three "how Otto works" teaching cards (shown by example). */
 export const TEACH: { title: string; body: string; art: ReactNode }[] = [
   {
-    title: "Otto reads your whole day",
-    body: "Calendar, bills, meds and your routine — Otto holds them in one place, so nothing slips through the cracks.",
+    title: t("onboarding.teach.readsYourDay.title"),
+    body: t("onboarding.teach.readsYourDay.body"),
     art: <SourceTiles />,
   },
   {
-    title: "One calm brief — not a list",
-    body: "Each morning, midday and evening, Otto tells you what actually matters in one warm message. No notification pile-up.",
+    title: t("onboarding.teach.oneBrief.title"),
+    body: t("onboarding.teach.oneBrief.body"),
     art: <ExampleBrief />,
   },
   {
-    title: "Just tell Otto — you confirm",
-    body: "Say it in plain words. Otto turns it into the right bill, reminder or plan — and never changes anything without your yes.",
+    title: t("onboarding.teach.youConfirm.title"),
+    body: t("onboarding.teach.youConfirm.body"),
     art: <ExampleProposal />,
   },
 ];

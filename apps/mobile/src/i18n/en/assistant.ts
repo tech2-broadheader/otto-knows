@@ -1,2 +1,199 @@
 // Copy for the assistant screens (story 13.3).
-export const assistant = {} as const;
+export const assistant = {
+  today: {
+    greeting: {
+      morning: "Good morning",
+      afternoon: "Good afternoon",
+      evening: "Good evening",
+    },
+    loading: "Building your day",
+    loadError: "Could not build your day.",
+    emptySummary: "Nothing to summarize yet.",
+    itemCount_one: "{count} item today",
+    itemCount_other: "{count} items today",
+    rhythm: "Today's rhythm",
+    openDay: {
+      title: "An open day",
+      body: "Add anchors, reminders or bills and they'll show up here.",
+    },
+    deeperRead: {
+      label: "Otto's deeper read",
+      llmTitle: "Otto read across your day",
+      title: "Spending is running a touch warm",
+      body: "Otto looks across your calendar, money and meds together — not just listing them — so the heads-ups land before things become a problem.",
+    },
+    proGate: {
+      title: "See the week before it happens",
+      body: "Overspend forecasts, refill warnings and payday-vs-bill heads-ups — Otto thinking across all your data, not just listing it.",
+    },
+    optimizerCta: {
+      title: "Make room for something new",
+      sub: "Let Otto reshape your day around it",
+    },
+    proposal: {
+      addBill: "Add bill — {name} {amount}",
+      due: "Due {date}",
+      addMedication: "Add medication — {name}",
+      logExpense: "Log expense — {amount}",
+      addRoutine: "Add routine — {label}",
+      saveNote: "Save note — {title}",
+    },
+  },
+  quickAdd: {
+    title: "Quick add",
+    sub: "Tell Otto in plain words",
+    intro:
+      "What can I take off your plate? A bill, a dose, a plan — say it however you'd say it to a friend.",
+    notConfigured:
+      "Otto's cloud brain isn't set up in this build. Quick add needs the Pro backend.",
+    placeholder: "e.g. {example}",
+    inputLabel: "What would you like to add?",
+    quota: { pro: "Unlimited", free: "A few free each day" },
+    ask: "Ask Otto",
+    thinking: "Otto's thinking…",
+    reading: "Reading your routine & money…",
+    chips: {
+      bill: "Pay the electric bill {amount} on Saturday",
+      gym: "Gym Mon/Wed/Fri at 6am",
+      dentist: "Dentist Tuesday 3pm",
+    },
+    empty: {
+      title: "Nothing to add",
+      body: "Otto didn't find anything to suggest. Try rephrasing.",
+    },
+    errors: {
+      quotaSpent: "{message} Upgrade to Pro for unlimited quick-add.",
+      rateLimited: "Too many requests — give it a moment and try again.",
+      signIn: "Sign in to use Otto's brain. (Pro feature.)",
+      notConfigured: "Otto's cloud brain isn't set up in this build yet.",
+      applyFailed: "Couldn't apply that.",
+    },
+  },
+  optimizer: {
+    title: "Routine optimizer",
+    proGate: {
+      title: "The optimizer is a Pro power",
+      body: "Tell Otto what to make room for and it reshapes your day with reasoning — then waits for your yes.",
+    },
+    applied: {
+      title: "Your day's reshaped.",
+      body: "It's in. Otto will adapt the times as it learns when you actually move.",
+      backToToday: "Back to Today",
+    },
+    prompt: "What do you want to make room for? I'll work around what's already fixed.",
+    placeholder: "e.g. A 30-min workout, mornings, 4× a week",
+    inputLabel: "What do you want to make room for?",
+    run: "Reshape my day",
+    running: "Reshaping…",
+    reading: "Reading your routine & calendar…",
+    back: "Back",
+    proposalEyebrow: "Otto proposes a reshaped day",
+    why: "Why this works: ",
+    adjust: "Adjust",
+    apply: "Apply to my day",
+    applying: "Applying…",
+    chips: {
+      workout: "A 30-min workout, mornings, 4×/week",
+      read: "Read before bed, 20 min",
+      call: "Call my mom every Sunday",
+    },
+    change: {
+      added: "New in your day",
+      movedFrom: "Moved from {time}",
+      moved: "Moved",
+      unchanged: "Unchanged",
+    },
+    describe: {
+      move: "Move {label} {from} → {to}",
+      add: "Add {label} at {time}",
+      keep: "Keep {label} at {time}",
+    },
+    errors: {
+      noRoutine: "Set up your routine first so Otto has a day to reshape.",
+      applyFailed: "Couldn't apply that plan.",
+    },
+  },
+  tips: {
+    title: "Tips",
+    proGate: {
+      title: "Gentle tips are a Pro touch",
+      body: "Otto notices patterns across your spending and routine and offers a kind nudge — never a scold, never a streak to break.",
+    },
+    intro:
+      "A few quiet patterns I noticed this week. Take what's useful, leave the rest — none of this is a rule.",
+    filters: { all: "All", money: "Money", health: "Health" },
+    pick: {
+      title: "Pick a topic",
+      body: "Choose All, Money or Health to see a few gentle tips from Otto.",
+    },
+    loading: "Gathering tips…",
+    empty: {
+      title: "No tips right now",
+      body: "Try the other topic or check back later — Otto only nudges when there's something worth noticing.",
+    },
+    healthNote: "A gentle health note",
+    moneyNote: "A gentle money note",
+  },
+  health: {
+    sub: "Medications",
+    loading: "Loading medications",
+    loadError: "Could not load your medications.",
+    nextDose: "Next dose",
+    capCount: "{count} of {cap} free",
+    listLabel: "Your medications",
+    empty: {
+      title: "No medications yet",
+      body: "Add one below to get dose reminders.",
+    },
+    left: "{count} left",
+    proGate: {
+      title: "At your 3-med limit",
+      body: "Pro tracks unlimited meds, warns you before refills run out, and adds gentle health tips from your wearable.",
+    },
+    freq: {
+      daily: "Daily",
+      weekdays: "Weekdays",
+      weekends: "Weekends",
+      weekly: "Weekly",
+      monthly: "Monthly",
+    },
+    errors: {
+      nameRequired: "Medication needs a name.",
+      timesRequired: "Add at least one dose time as HH:mm (e.g. 08:00, 20:00).",
+    },
+    form: {
+      addTitle: "Add a medication",
+      editTitle: "Edit medication",
+      name: "Name",
+      namePlaceholder: "e.g. Metformin",
+      dosage: "Dosage",
+      optionalHint: "optional",
+      dosagePlaceholder: "e.g. 500mg",
+      times: "Dose times",
+      timesHint: "HH:mm, comma-separated",
+      timesPlaceholder: "e.g. 08:00, 20:00",
+      repeats: "Repeats",
+      saveChanges: "Save changes",
+      add: "Add medication",
+    },
+  },
+  routine: {
+    loadError: "Could not load your routine.",
+    seed: {
+      wake: "Wake",
+      meds: "Morning meds",
+      lunch: "Lunch",
+      windDown: "Wind-down",
+      sleep: "Sleep",
+    },
+  },
+  summary: {
+    bill: "{name} — {amount}, due {date}",
+    medication: "{name} at {times}",
+    medicationWithDose: "{name} {dosage} at {times}",
+    anchor: "{label} at {time}",
+  },
+  proposal: {
+    blockedUntil: "Blocked time until {time}",
+  },
+} as const;

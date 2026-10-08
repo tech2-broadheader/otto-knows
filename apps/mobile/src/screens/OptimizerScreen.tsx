@@ -31,12 +31,13 @@ import { OC, FONT, RADIUS, eyebrow } from "../design/theme";
 import { getApiBaseUrl } from "../lib/api-client";
 import { useAuth } from "../auth/AuthProvider";
 import { proErrorBanner } from "../lib/pro-feature";
+import { t } from "../i18n";
 
 /** Example routines offered as one-tap chips (match the design's examples). */
 const EXAMPLE_CHIPS: readonly string[] = [
-  "A 30-min workout, mornings, 4×/week",
-  "Read before bed, 20 min",
-  "Call my mom every Sunday",
+  t("assistant.optimizer.chips.workout"),
+  t("assistant.optimizer.chips.read"),
+  t("assistant.optimizer.chips.call"),
 ];
 
 /** Icon + tone for a proposed change row (added = exercise/green, kept = sky). */
@@ -48,9 +49,9 @@ function changeStyle(change: ScheduleChange): { icon: IconName; tone: string } {
 
 /** A short suffix describing the change ("new" / "moved" / "unchanged"). */
 function changeSub(change: ScheduleChange): string {
-  if (change.action === "add") return "New in your day";
-  if (change.action === "move") return change.fromTime ? `Moved from ${change.fromTime}` : "Moved";
-  return "Unchanged";
+  if (change.action === "add") return t("assistant.optimizer.change.added");
+  if (change.action === "move") return change.fromTime ? t("assistant.optimizer.change.movedFrom", { time: change.fromTime }) : t("assistant.optimizer.change.moved");
+  return t("assistant.optimizer.change.unchanged");
 }
 
 type OptimizerNavigation = {
@@ -86,20 +87,19 @@ export function OptimizerScreen(): React.JSX.Element {
   };
 
   return (
-    <OverlayScreen title="Routine optimizer" onBack={() => navigation.goBack()}>
+    <OverlayScreen title={t("assistant.optimizer.title")} onBack={() => navigation.goBack()}>
       {/* Pre-request gate: not entitled or no backend → calm message, no form. */}
       {!isPro || !configured ? (
         <View style={{ marginTop: 8 }}>
           {!isPro ? (
             <ProGate onUpgrade={() => navigation.navigate("Upgrade")}>
               <Display style={{ fontSize: 19, color: "#fff", lineHeight: 23 }}>
-                The optimizer is a Pro power
+                {t("assistant.optimizer.proGate.title")}
               </Display>
               <Text
                 style={{ fontSize: 13.5, color: OC.sage, marginTop: 6, lineHeight: 20, fontFamily: FONT.body }}
               >
-                Tell Otto what to make room for and it reshapes your day with reasoning — then waits
-                for your yes.
+                {t("assistant.optimizer.proGate.body")}
               </Text>
             </ProGate>
           ) : (
@@ -120,21 +120,21 @@ export function OptimizerScreen(): React.JSX.Element {
           >
             <Icon name="check" size={32} color={OC.green} stroke={2.6} />
           </View>
-          <Display style={{ fontSize: 21, textAlign: "center" }}>Your day&apos;s reshaped.</Display>
+          <Display style={{ fontSize: 21, textAlign: "center" }}>{t("assistant.optimizer.applied.title")}</Display>
           <Text
             style={{ fontSize: 14, color: OC.ink500, marginTop: 6, lineHeight: 21, textAlign: "center", fontFamily: FONT.body }}
           >
-            It&apos;s in. Otto will adapt the times as it learns when you actually move.
+            {t("assistant.optimizer.applied.body")}
           </Text>
           <Pressable
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
-            accessibilityLabel="Back to Today"
+            accessibilityLabel={t("assistant.optimizer.applied.backToToday")}
             style={({ pressed }) => [
               { marginTop: 18, backgroundColor: OC.green, borderRadius: RADIUS.btn, paddingVertical: 13, paddingHorizontal: 24, opacity: pressed ? 0.9 : 1 },
             ]}
           >
-            <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 14.5 }}>Back to Today</Text>
+            <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 14.5 }}>{t("assistant.optimizer.applied.backToToday")}</Text>
           </Pressable>
         </View>
       ) : (
@@ -142,7 +142,7 @@ export function OptimizerScreen(): React.JSX.Element {
           {/* Otto's voice prompt */}
           <View style={{ marginTop: 4 }}>
             <OttoVoice tone="light">
-              What do you want to make room for? I&apos;ll work around what&apos;s already fixed.
+              {t("assistant.optimizer.prompt")}
             </OttoVoice>
           </View>
 
@@ -155,25 +155,25 @@ export function OptimizerScreen(): React.JSX.Element {
               onChangeText={setText}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              placeholder="e.g. A 30-min workout, mornings, 4× a week"
+              placeholder={t("assistant.optimizer.placeholder")}
               placeholderTextColor={OC.ink400}
               multiline
               editable={!thinking}
               style={{ minHeight: 44, fontFamily: FONT.body, fontSize: 15.5, lineHeight: 22, color: OC.ink, padding: 0 }}
-              accessibilityLabel="What do you want to make room for?"
+              accessibilityLabel={t("assistant.optimizer.inputLabel")}
             />
             <View style={{ marginTop: 6, flexDirection: "row", justifyContent: "flex-end" }}>
               <Pressable
                 onPress={() => handleRun()}
                 disabled={!hasText || thinking}
                 accessibilityRole="button"
-                accessibilityLabel="Reshape my day"
+                accessibilityLabel={t("assistant.optimizer.run")}
                 style={({ pressed }) => [
                   { backgroundColor: hasText && !thinking ? OC.green : OC.line, borderRadius: 11, paddingHorizontal: 16, paddingVertical: 9, opacity: pressed && hasText && !thinking ? 0.9 : 1 },
                 ]}
               >
                 <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 13.5 }}>
-                  {thinking ? "Reshaping…" : "Reshape my day"}
+                  {thinking ? t("assistant.optimizer.running") : t("assistant.optimizer.run")}
                 </Text>
               </Pressable>
             </View>
@@ -202,7 +202,7 @@ export function OptimizerScreen(): React.JSX.Element {
             <View style={{ marginTop: 24, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
               <View style={{ width: 9, height: 9, borderRadius: 99, backgroundColor: OC.emerald }} />
               <Text style={{ fontFamily: FONT.bodySemi, fontSize: 14, color: OC.ink500 }}>
-                Reading your routine &amp; calendar…
+                {t("assistant.optimizer.reading")}
               </Text>
             </View>
           ) : null}
@@ -220,12 +220,12 @@ export function OptimizerScreen(): React.JSX.Element {
               <Pressable
                 onPress={discard}
                 accessibilityRole="button"
-                accessibilityLabel="Back"
+                accessibilityLabel={t("assistant.optimizer.back")}
                 style={({ pressed }) => [
                   { marginTop: 8, alignItems: "center", borderRadius: RADIUS.btn, borderWidth: 1.5, borderColor: OC.lineStrong, paddingVertical: 13, opacity: pressed ? 0.7 : 1 },
                 ]}
               >
-                <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink700 }}>Back</Text>
+                <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink700 }}>{t("assistant.optimizer.back")}</Text>
               </Pressable>
             </View>
           ) : null}
@@ -234,7 +234,7 @@ export function OptimizerScreen(): React.JSX.Element {
           {(status === "proposed" || status === "applying") && proposal ? (
             <View style={{ marginTop: 22 }}>
               <Text style={[eyebrow, { fontSize: 10.5, marginBottom: 10 }]}>
-                Otto proposes a reshaped day
+                {t("assistant.optimizer.proposalEyebrow")}
               </Text>
               <Card pad={16}>
                 {proposal.changes.map((change, index) => {
@@ -257,7 +257,7 @@ export function OptimizerScreen(): React.JSX.Element {
                 style={{ marginTop: 12, backgroundColor: OC.mist, borderRadius: RADIUS.inner, paddingHorizontal: 14, paddingVertical: 12 }}
               >
                 <Text style={{ fontFamily: FONT.body, fontSize: 13, lineHeight: 20, color: OC.forest }}>
-                  <Text style={{ fontFamily: FONT.bodyBold }}>Why this works: </Text>
+                  <Text style={{ fontFamily: FONT.bodyBold }}>{t("assistant.optimizer.why")}</Text>
                   {proposal.summary}
                 </Text>
               </View>
@@ -267,15 +267,15 @@ export function OptimizerScreen(): React.JSX.Element {
                   onPress={discard}
                   disabled={status === "applying"}
                   accessibilityRole="button"
-                  accessibilityLabel="Adjust"
+                  accessibilityLabel={t("assistant.optimizer.adjust")}
                   style={({ pressed }) => [
                     { flex: 1, alignItems: "center", borderRadius: RADIUS.btn, borderWidth: 1.5, borderColor: OC.lineStrong, paddingVertical: 13, opacity: pressed ? 0.7 : 1 },
                   ]}
                 >
-                  <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink700 }}>Adjust</Text>
+                  <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink700 }}>{t("assistant.optimizer.adjust")}</Text>
                 </Pressable>
                 <PrimaryButton
-                  label={status === "applying" ? "Applying…" : "Apply to my day"}
+                  label={status === "applying" ? t("assistant.optimizer.applying") : t("assistant.optimizer.apply")}
                   icon="check"
                   onPress={() => void apply()}
                   disabled={status === "applying"}

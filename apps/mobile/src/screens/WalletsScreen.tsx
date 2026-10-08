@@ -13,6 +13,7 @@ import { AddButton, Card, Display, OverlayScreen, SectionLabel } from "../design
 import { FONT, OC } from "../design/theme";
 import { upgradePromptFor } from "../lib/caps";
 import { useMoney } from "../lib/settings-context";
+import { t } from "../i18n";
 
 type Nav = {
   navigate: (screen: string, params?: Record<string, string>) => void;
@@ -41,21 +42,22 @@ export function WalletsScreen(): React.JSX.Element {
 
   const restore = async (id: string): Promise<void> => {
     const result = await finance.restoreAccount(id);
-    if (result === "at-cap") Alert.alert("Wallet limit reached", upgradePromptFor("wallets"));
+    if (result === "at-cap")
+      Alert.alert(t("money.wallets.limitReached"), upgradePromptFor("wallets"));
   };
 
   return (
-    <OverlayScreen title="Wallets" onBack={() => navigation.goBack()}>
+    <OverlayScreen title={t("money.wallets.title")} onBack={() => navigation.goBack()}>
       <AsyncBoundary
         state={finance.state}
         error={finance.error}
         onRetry={reload}
-        loadingLabel="Loading wallets"
+        loadingLabel={t("money.wallets.loading")}
       >
         <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
           <Card pad={14} style={{ flex: 1 }}>
             <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12, color: OC.ink500 }}>
-              Money on hand
+              {t("money.wallets.onHand")}
             </Text>
             <Display style={{ fontSize: 21, marginTop: 2 }}>
               {money.format(finance.wallets.onHandMinor)}
@@ -72,7 +74,7 @@ export function WalletsScreen(): React.JSX.Element {
             }}
           >
             <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12, color: OC.coralInk }}>
-              Owed on cards
+              {t("money.wallets.owedOnCards")}
             </Text>
             <Display style={{ fontSize: 21, marginTop: 2, color: OC.coralInk }}>
               {money.format(finance.wallets.cardOwedMinor)}
@@ -91,7 +93,17 @@ export function WalletsScreen(): React.JSX.Element {
                 key={account.id}
                 onPress={() => navigation.navigate("WalletForm", { accountId: account.id })}
                 accessibilityRole="button"
-                accessibilityLabel={`${account.name}, ${isCard ? `owes ${money.format(Math.max(-amount, 0))}` : money.format(amount)}. Edit`}
+                accessibilityLabel={
+                  isCard
+                    ? t("money.wallets.rowA11yCard", {
+                        name: account.name,
+                        amount: money.format(Math.max(-amount, 0)),
+                      })
+                    : t("money.wallets.rowA11y", {
+                        name: account.name,
+                        amount: money.format(amount),
+                      })
+                }
                 style={({ pressed }) => [
                   {
                     flexDirection: "row",
@@ -116,7 +128,7 @@ export function WalletsScreen(): React.JSX.Element {
                 {isCard ? (
                   <View style={{ alignItems: "flex-end" }}>
                     <Text style={{ fontFamily: FONT.bodyBold, fontSize: 11, color: OC.coralInk }}>
-                      Owed
+                      {t("money.wallets.owed")}
                     </Text>
                     <Text style={{ fontFamily: FONT.bodyX, fontSize: 15, color: OC.coralInk }}>
                       {money.format(Math.max(-amount, 0))}
@@ -139,11 +151,14 @@ export function WalletsScreen(): React.JSX.Element {
           })}
         </Card>
 
-        <AddButton label="Add a wallet" onPress={() => navigation.navigate("WalletForm")} />
+        <AddButton
+          label={t("money.wallets.add")}
+          onPress={() => navigation.navigate("WalletForm")}
+        />
 
         {archived.length > 0 ? (
           <View style={{ marginTop: 20 }}>
-            <SectionLabel>Archived</SectionLabel>
+            <SectionLabel>{t("money.wallets.archived")}</SectionLabel>
             {archived.map((account) => (
               <View
                 key={account.id}
@@ -163,7 +178,7 @@ export function WalletsScreen(): React.JSX.Element {
                     {account.name}
                   </Text>
                   <Text style={{ fontFamily: FONT.body, fontSize: 12, color: OC.ink400 }}>
-                    History kept
+                    {t("money.wallets.historyKept")}
                   </Text>
                 </View>
                 <Pressable
@@ -172,7 +187,7 @@ export function WalletsScreen(): React.JSX.Element {
                   hitSlop={8}
                 >
                   <Text style={{ fontFamily: FONT.bodyX, fontSize: 13, color: OC.green }}>
-                    Restore
+                    {t("money.wallets.restore")}
                   </Text>
                 </Pressable>
               </View>

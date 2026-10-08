@@ -1,6 +1,7 @@
 // Free-tier caps (epics 3.2 / 9.2). Enforced client-side for the local free tier;
 // the cloud backend re-enforces server-side for Pro routes (ARCHITECTURE §8).
 // Pure; no native imports — unit-tested in Node.
+import { t } from "../i18n";
 
 /** Maximum number of each capped entity a free-tier user may create. */
 export const FREE_CAPS = {
@@ -25,12 +26,5 @@ export function remainingBeforeCap(entity: CappedEntity, currentCount: number): 
 
 /** User-facing upgrade prompt shown when an entity hits its free cap. */
 export function upgradePromptFor(entity: CappedEntity): string {
-  const cap = FREE_CAPS[entity];
-  const label: Record<CappedEntity, string> = {
-    bills: "bills",
-    medications: "medications",
-    budgetCategories: "budget categories",
-    wallets: "wallets",
-  };
-  return `Free plan includes up to ${cap} ${label[entity]}. Upgrade to Pro for unlimited.`;
+  return t(`account.caps.upgradePrompt.${entity}`, { cap: FREE_CAPS[entity] });
 }

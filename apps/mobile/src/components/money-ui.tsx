@@ -10,16 +10,17 @@ import { Card, Display } from "../design/kit";
 import { Icon, type IconName } from "../design/Icon";
 import { OC, FONT, RADIUS, eyebrow, shadow, tint } from "../design/theme";
 import { useMoney } from "../lib/settings-context";
+import { t, tSlot } from "../i18n";
 
 /** Icon + accent per wallet type, shared by every wallet surface. */
 export const WALLET_STYLE: Record<
   Account["type"],
   { icon: IconName; color: string; label: string }
 > = {
-  cash: { icon: "peso", color: OC.green, label: "Cash" },
-  ewallet: { icon: "wallet", color: OC.sky, label: "E-wallet" },
-  bank: { icon: "shield", color: OC.emerald, label: "Bank" },
-  credit_card: { icon: "lock", color: OC.coral, label: "Credit card" },
+  cash: { icon: "peso", color: OC.green, label: t("money.walletTypes.cash") },
+  ewallet: { icon: "wallet", color: OC.sky, label: t("money.walletTypes.ewallet") },
+  bank: { icon: "shield", color: OC.emerald, label: t("money.walletTypes.bank") },
+  credit_card: { icon: "lock", color: OC.coral, label: t("money.walletTypes.credit_card") },
 };
 
 const TX_STYLE: Record<Transaction["type"], { icon: IconName; color: string }> = {
@@ -64,10 +65,10 @@ export function SafeToSpendCard({
         <IconTile icon="cal" color={OC.green} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
-            Add your payday
+            {t("money.safeToSpend.addPayday")}
           </Text>
           <Text style={{ fontFamily: FONT.body, fontSize: 12.5, color: OC.ink500, marginTop: 1 }}>
-            Otto will show what's safe to spend until then.
+            {t("money.safeToSpend.addPaydayBody")}
           </Text>
         </View>
         <Icon name="chevR" size={18} color={OC.green} />
@@ -81,10 +82,10 @@ export function SafeToSpendCard({
         <IconTile icon="refresh" color={OC.skyInk} background={OC.skyBg} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: FONT.bodyBold, fontSize: 14.5, color: OC.ink }}>
-            When's your next payday?
+            {t("money.safeToSpend.paydayUpdateTitle")}
           </Text>
           <Text style={{ fontFamily: FONT.body, fontSize: 12.5, color: OC.ink500, marginTop: 1 }}>
-            Your custom pay date has passed. Update it to keep this accurate.
+            {t("money.safeToSpend.paydayUpdateBody")}
           </Text>
         </View>
         <Pressable
@@ -97,7 +98,9 @@ export function SafeToSpendCard({
             paddingVertical: 9,
           }}
         >
-          <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 13 }}>Update</Text>
+          <Text style={{ color: "#fff", fontFamily: FONT.bodyX, fontSize: 13 }}>
+            {t("money.safeToSpend.update")}
+          </Text>
         </Pressable>
       </Card>
     );
@@ -106,12 +109,16 @@ export function SafeToSpendCard({
   const payday = value.nextPayday ? money.shortDate(value.nextPayday) : "";
 
   if (value.safeMinor < 0) {
+    // The shortfall amount is bold mid-sentence.
+    const [shortfallBefore, shortfallAfter] = tSlot("money.safeToSpend.shortfall", "more", {
+      payday,
+    });
     return (
       <Card pad={16}>
         <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
           <IconTile icon="clock" color={OC.amberInk} background={OC.amberBg} />
           <View style={{ flex: 1 }}>
-            <Display style={{ fontSize: 17 }}>Heads up before payday</Display>
+            <Display style={{ fontSize: 17 }}>{t("money.safeToSpend.headsUp")}</Display>
             <Text
               style={{
                 fontFamily: FONT.body,
@@ -121,11 +128,13 @@ export function SafeToSpendCard({
                 marginTop: 4,
               }}
             >
-              Bills before {payday} are{" "}
+              {shortfallBefore}
               <Text style={{ fontFamily: FONT.bodyBold }}>
-                {money.format(-value.safeMinor)} more
-              </Text>{" "}
-              than what's on hand. A transfer from savings would cover it.
+                {t("money.safeToSpend.shortfallAmount", {
+                  amount: money.format(-value.safeMinor),
+                })}
+              </Text>
+              {shortfallAfter}
             </Text>
           </View>
         </View>
@@ -145,13 +154,17 @@ export function SafeToSpendCard({
           ]}
         >
           <Text style={{ fontFamily: FONT.bodyBold, fontSize: 13.5, color: OC.ink700 }}>
-            Add a transfer
+            {t("money.safeToSpend.addTransfer")}
           </Text>
         </Pressable>
       </Card>
     );
   }
 
+  // The per-day amount is bold mid-sentence.
+  const [perDayBefore, perDayAfter] = value.daysUntilPayday
+    ? tSlot("money.safeToSpend.perDayFor", "perDay", { count: value.daysUntilPayday })
+    : tSlot("money.safeToSpend.perDayPayday", "perDay");
   return (
     <LinearGradient
       colors={[OC.dark, OC.dark2]}
@@ -161,16 +174,20 @@ export function SafeToSpendCard({
     >
       <View
         accessible
-        accessibilityLabel={`Safe to spend: ${money.format(value.safeMinor)} until ${payday}, about ${money.format(value.perDayMinor ?? 0)} a day`}
+        accessibilityLabel={t("money.safeToSpend.a11y", {
+          amount: money.format(value.safeMinor),
+          payday,
+          perDay: money.format(value.perDayMinor ?? 0),
+        })}
       >
         <View
           style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
         >
-          <Text style={[eyebrow, { color: OC.sage }]}>Safe to spend</Text>
+          <Text style={[eyebrow, { color: OC.sage }]}>{t("money.safeToSpend.title")}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <Icon name="cal" size={14} color={OC.emerald} />
             <Text style={{ fontFamily: FONT.bodyBold, fontSize: 12, color: OC.mint }}>
-              Payday {payday}
+              {t("money.safeToSpend.payday", { date: payday })}
             </Text>
           </View>
         </View>
@@ -185,11 +202,11 @@ export function SafeToSpendCard({
             marginTop: 6,
           }}
         >
-          about{" "}
+          {perDayBefore}
           <Text style={{ fontFamily: FONT.bodyBold, color: "#fff" }}>
-            {money.format(value.perDayMinor ?? 0)} a day
+            {t("money.safeToSpend.perDay", { amount: money.format(value.perDayMinor ?? 0) })}
           </Text>
-          {value.daysUntilPayday ? ` for the next ${value.daysUntilPayday} days` : " — it's payday"}
+          {perDayAfter}
         </Text>
         <View
           style={{
@@ -201,12 +218,18 @@ export function SafeToSpendCard({
             gap: 8,
           }}
         >
-          <Breakdown label="On hand" value={money.format(value.onHandMinor)} />
           <Breakdown
-            label="Bills by payday"
+            label={t("money.safeToSpend.onHand")}
+            value={money.format(value.onHandMinor)}
+          />
+          <Breakdown
+            label={t("money.safeToSpend.billsByPayday")}
             value={`−${money.format(value.billsBeforePaydayMinor)}`}
           />
-          <Breakdown label="Card owed" value={`−${money.format(value.cardOwedMinor)}`} />
+          <Breakdown
+            label={t("money.safeToSpend.cardOwed")}
+            value={`−${money.format(value.cardOwedMinor)}`}
+          />
         </View>
       </View>
     </LinearGradient>
@@ -274,7 +297,14 @@ export function WalletChip({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${account.name}: ${isCard ? `owes ${money.format(Math.max(-amount, 0))}` : money.format(amount)}`}
+      accessibilityLabel={
+        isCard
+          ? t("money.chip.a11yCard", {
+              name: account.name,
+              amount: money.format(Math.max(-amount, 0)),
+            })
+          : t("money.chip.a11y", { name: account.name, amount: money.format(amount) })
+      }
       style={({ pressed }) => [
         {
           width: 132,
@@ -334,16 +364,16 @@ export function TxRow({
   const title =
     tx.description ??
     (tx.type === "transfer"
-      ? `${accountName ?? "Wallet"} → ${toAccountName ?? "Wallet"}`
+      ? `${accountName ?? t("money.tx.wallet")} → ${toAccountName ?? t("money.tx.wallet")}`
       : tx.type === "income"
-        ? "Income"
-        : (categoryName ?? "Expense"));
+        ? t("money.addTransaction.types.income")
+        : (categoryName ?? t("money.addTransaction.types.expense")));
   const sub = [
     tx.type === "expense"
-      ? (categoryName ?? "Expense")
+      ? (categoryName ?? t("money.addTransaction.types.expense"))
       : tx.type === "income"
-        ? "Income"
-        : "Transfer",
+        ? t("money.addTransaction.types.income")
+        : t("money.addTransaction.types.transfer"),
     tx.type === "transfer" ? undefined : accountName,
     date,
   ]
@@ -356,7 +386,7 @@ export function TxRow({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${signed}, ${sub}. Edit`}
+      accessibilityLabel={t("money.tx.a11y", { title, amount: signed, sub })}
       style={({ pressed }) => [
         {
           flexDirection: "row",

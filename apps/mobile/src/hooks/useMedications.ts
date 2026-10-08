@@ -14,6 +14,7 @@ import { LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
+import { t } from "../i18n";
 
 /** Input for creating/editing a medication (UI-friendly; validated via schema). */
 export type MedicationInput = {
@@ -50,7 +51,7 @@ export function useMedications(deps: RepositoryDeps): MedicationsState {
       setMedications(rows);
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load your medications.");
+      setError(caught instanceof Error ? caught.message : t("assistant.health.loadError"));
       setState("error");
     }
   }, [medRepo]);

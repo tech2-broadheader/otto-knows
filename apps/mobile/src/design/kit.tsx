@@ -172,7 +172,7 @@ export function GhostButton({ label, onPress, style }: { label: string; onPress?
 // ─────────── Otto's voice (the brief) ───────────
 export function OttoVoice({
   children,
-  title = "Otto",
+  title = t("common.appName"),
   time,
   tone = "dark",
 }: {

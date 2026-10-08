@@ -17,12 +17,12 @@ import { OC, FONT, RADIUS, shadow } from "../design/theme";
 import { useAuth } from "../auth/AuthProvider";
 import { FREE_VS_PAID_TAGLINE, TRUST_LINE, paidPlans, plansForCurrency, type Plan } from "../lib/pricing";
 import { useSettings } from "../lib/settings-context";
+import { t } from "../i18n";
 
 type UpgradeNavigation = { goBack: () => void; navigate: (screen: "Login") => void };
 
 /** Calm "billing isn't connected" notice; replaces the real purchase flow. */
-const BILLING_COMING_SOON =
-  "Subscriptions aren't connected yet — this is coming soon. Nothing was charged.";
+const BILLING_COMING_SOON = t("account.upgrade.billingComingSoon");
 
 export function UpgradeScreen({
   navigation,
@@ -44,7 +44,7 @@ export function UpgradeScreen({
       navigation.navigate("Login");
       return;
     }
-    Alert.alert("Start Otto Pro", BILLING_COMING_SOON);
+    Alert.alert(t("account.upgrade.alertTitle"), BILLING_COMING_SOON);
   };
 
   return (
@@ -53,11 +53,10 @@ export function UpgradeScreen({
       <View style={{ alignItems: "center", paddingHorizontal: 2 }}>
         <Image source={MASCOT} style={{ width: 200, height: 200, resizeMode: "contain", marginBottom: -6 }} />
         <Text style={{ fontFamily: FONT.display, fontSize: 30, lineHeight: 32, color: "#fff", letterSpacing: -0.6, textAlign: "center" }}>
-          Let Otto think{"\n"}for you.
+          {t("account.upgrade.headline")}
         </Text>
         <Text style={{ marginTop: 10, maxWidth: 300, textAlign: "center", fontFamily: FONT.body, fontSize: 14.5, lineHeight: 22, color: OC.sage }}>
-          {FREE_VS_PAID_TAGLINE} Proactive nudges, the optimizer, adaptive routine, forecasts —
-          the whole brain.
+          {t("account.upgrade.heroBody", { tagline: FREE_VS_PAID_TAGLINE })}
         </Text>
       </View>
 
@@ -77,7 +76,7 @@ export function UpgradeScreen({
               key={plan.id}
               onPress={() => setSelected(plan.id)}
               accessibilityRole="radio"
-              accessibilityLabel={`${plan.name}, ${plan.price ? `${plan.price}${suffix}` : "price at checkout"}`}
+              accessibilityLabel={t("account.upgrade.planA11y", { name: plan.name, price: plan.price ? `${plan.price}${suffix}` : t("account.upgrade.priceAtCheckoutA11y") })}
               accessibilityState={{ selected: on }}
               style={{
                 flexDirection: "row",
@@ -116,7 +115,7 @@ export function UpgradeScreen({
                 </Text>
               ) : (
                 // Local prices come from the app store per country (story 9.6).
-                <Text style={{ fontFamily: FONT.bodySemi, fontSize: 12.5, color: OC.sage }}>Price at checkout</Text>
+                <Text style={{ fontFamily: FONT.bodySemi, fontSize: 12.5, color: OC.sage }}>{t("account.upgrade.priceAtCheckout")}</Text>
               )}
             </Pressable>
           );
@@ -127,13 +126,13 @@ export function UpgradeScreen({
       <Pressable
         onPress={handleStart}
         accessibilityRole="button"
-        accessibilityLabel="Start Otto Pro"
+        accessibilityLabel={t("account.upgrade.ctaA11y")}
         style={({ pressed }) => [
           { marginTop: 18, backgroundColor: OC.emerald, borderRadius: RADIUS.inner, paddingVertical: 15, alignItems: "center", opacity: pressed ? 0.9 : 1 },
           shadow("md"),
         ]}
       >
-        <Text style={{ fontFamily: FONT.bodyX, fontSize: 16, color: "#fff" }}>Start Pro</Text>
+        <Text style={{ fontFamily: FONT.bodyX, fontSize: 16, color: "#fff" }}>{t("account.upgrade.cta")}</Text>
       </Pressable>
 
       <Text style={{ marginTop: 12, textAlign: "center", fontFamily: FONT.body, fontSize: 12, lineHeight: 18, color: OC.sage }}>
@@ -143,10 +142,10 @@ export function UpgradeScreen({
       <Pressable
         onPress={() => navigation.goBack()}
         accessibilityRole="button"
-        accessibilityLabel="Maybe later"
+        accessibilityLabel={t("account.upgrade.maybeLater")}
         style={({ pressed }) => [{ marginTop: 12, alignItems: "center", paddingVertical: 8, opacity: pressed ? 0.6 : 1 }]}
       >
-        <Text style={{ fontFamily: FONT.bodyBold, fontSize: 13, color: OC.sage }}>Maybe later</Text>
+        <Text style={{ fontFamily: FONT.bodyBold, fontSize: 13, color: OC.sage }}>{t("account.upgrade.maybeLater")}</Text>
       </Pressable>
     </OverlayScreen>
   );

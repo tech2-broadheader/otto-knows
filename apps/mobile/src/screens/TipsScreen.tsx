@@ -30,6 +30,7 @@ import { OC, FONT } from "../design/theme";
 import { getApiBaseUrl } from "../lib/api-client";
 import { useAuth } from "../auth/AuthProvider";
 import { proErrorBanner } from "../lib/pro-feature";
+import { t } from "../i18n";
 
 type TipsNavigation = { goBack: () => void; navigate: (screen: "Upgrade") => void };
 
@@ -37,9 +38,9 @@ type TipsNavigation = { goBack: () => void; navigate: (screen: "Upgrade") => voi
 // "Money" both load finance, "Health" loads health — preserving the original
 // per-domain fetch while matching the design's three-way control.
 const FILTERS: Option[] = [
-  { k: "all", l: "All" },
-  { k: "finance", l: "Money" },
-  { k: "health", l: "Health" },
+  { k: "all", l: t("assistant.tips.filters.all") },
+  { k: "finance", l: t("assistant.tips.filters.money") },
+  { k: "health", l: t("assistant.tips.filters.health") },
 ];
 
 const ICON_FOR: Record<TipDomain, "wallet" | "heart"> = {
@@ -84,13 +85,12 @@ export function TipsScreen(): React.JSX.Element {
   // Not Pro → the calm Pro gate. Configured-but-not-Pro never reaches the list.
   if (!isPro) {
     return (
-      <OverlayScreen title="Tips" onBack={() => navigation.goBack()}>
+      <OverlayScreen title={t("assistant.tips.title")} onBack={() => navigation.goBack()}>
         <View style={{ paddingHorizontal: 4, paddingVertical: 8 }}>
           <ProGate onUpgrade={() => navigation.navigate("Upgrade")}>
-            <Display style={{ fontSize: 19, color: "#fff", lineHeight: 23 }}>Gentle tips are a Pro touch</Display>
+            <Display style={{ fontSize: 19, color: "#fff", lineHeight: 23 }}>{t("assistant.tips.proGate.title")}</Display>
             <Text style={{ fontSize: 13.5, color: OC.sage, marginTop: 6, lineHeight: 20, fontFamily: FONT.body }}>
-              Otto notices patterns across your spending and routine and offers a kind nudge — never a scold, never a
-              streak to break.
+              {t("assistant.tips.proGate.body")}
             </Text>
           </ProGate>
         </View>
@@ -101,17 +101,17 @@ export function TipsScreen(): React.JSX.Element {
   // Pro but the cloud backend isn't wired up in this build → friendly banner.
   if (!configured) {
     return (
-      <OverlayScreen title="Tips" onBack={() => navigation.goBack()}>
+      <OverlayScreen title={t("assistant.tips.title")} onBack={() => navigation.goBack()}>
         <InfoBanner {...proErrorBanner("NOT_CONFIGURED", "")} />
       </OverlayScreen>
     );
   }
 
   return (
-    <OverlayScreen title="Tips" onBack={() => navigation.goBack()}>
+    <OverlayScreen title={t("assistant.tips.title")} onBack={() => navigation.goBack()}>
       <View style={{ marginBottom: 14 }}>
         <OttoVoice tone="light">
-          A few quiet patterns I noticed this week. Take what&apos;s useful, leave the rest — none of this is a rule.
+          {t("assistant.tips.intro")}
         </OttoVoice>
       </View>
 
@@ -122,15 +122,15 @@ export function TipsScreen(): React.JSX.Element {
       {!hasLoaded ? (
         <EmptyState
           icon="sparkle"
-          title="Pick a topic"
-          body="Choose All, Money or Health to see a few gentle tips from Otto."
+          title={t("assistant.tips.pick.title")}
+          body={t("assistant.tips.pick.body")}
         />
       ) : null}
 
       {status === "loading" ? (
         <View style={{ marginTop: 4, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }}>
           <View style={{ width: 10, height: 10, borderRadius: 99, backgroundColor: OC.emerald }} />
-          <Text style={{ fontFamily: FONT.bodySemi, fontSize: 14, color: OC.ink500 }}>Gathering tips…</Text>
+          <Text style={{ fontFamily: FONT.bodySemi, fontSize: 14, color: OC.ink500 }}>{t("assistant.tips.loading")}</Text>
         </View>
       ) : null}
 
@@ -139,8 +139,8 @@ export function TipsScreen(): React.JSX.Element {
       {status === "ready" && tips.length === 0 ? (
         <EmptyState
           icon="check"
-          title="No tips right now"
-          body="Try the other topic or check back later — Otto only nudges when there's something worth noticing."
+          title={t("assistant.tips.empty.title")}
+          body={t("assistant.tips.empty.body")}
         />
       ) : null}
 
@@ -151,7 +151,7 @@ export function TipsScreen(): React.JSX.Element {
               icon={ICON_FOR[domain]}
               tone={TONE_FOR[domain]}
               domain={domain}
-              title={domain === "health" ? "A gentle health note" : "A gentle money note"}
+              title={domain === "health" ? t("assistant.tips.healthNote") : t("assistant.tips.moneyNote")}
               body={tip}
             />
           ))

@@ -9,6 +9,7 @@ import { CONSENT_POLICY_VERSION, LOCAL_USER_ID } from "../lib/constants";
 import { newUuid } from "../lib/id";
 import { nowIso } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
+import { t } from "../i18n";
 
 export type ConsentState = {
   state: LoadState;
@@ -33,7 +34,7 @@ export function useConsents(): ConsentState {
       setConsents(rows);
       setState("ready");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load your settings.");
+      setError(caught instanceof Error ? caught.message : t("account.errors.loadSettings"));
       setState("error");
     }
   }, []);

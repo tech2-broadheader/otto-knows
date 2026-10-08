@@ -10,6 +10,7 @@ import { FONT, OC, RADIUS } from "../design/theme";
 import { openExactAlarmSettings, openFullScreenSettings } from "../lib/alarms";
 import { DEFAULT_ALARM_LABEL } from "../lib/alarm-sync";
 import { AsyncBoundary } from "./AsyncBoundary";
+import { t, tSlot } from "../i18n";
 
 export function AlarmsSection({
   alarms,
@@ -20,20 +21,22 @@ export function AlarmsSection({
   onOpen: (alarmId?: string) => void;
 }): React.JSX.Element {
   const { permissions, next } = alarms;
+  // The "time until" is bold mid-sentence, so split the message around it.
+  const [nextBefore, nextAfter] = next
+    ? tSlot("tasks.alarms.next", "in", {
+        label: next.alarm.label ?? DEFAULT_ALARM_LABEL,
+        time: next.alarm.time,
+      })
+    : [];
 
   return (
     <AsyncBoundary
       state={alarms.state}
       error={alarms.error}
       onRetry={alarms.reload}
-      loadingLabel="Loading alarms"
+      loadingLabel={t("tasks.alarms.loading")}
     >
-      {!permissions.supported ? (
-        <Notice
-          icon="bell"
-          text="This version of Otto can save alarms but can't ring them. They'll ring once you install the full Otto app."
-        />
-      ) : null}
+      {!permissions.supported ? <Notice icon="bell" text={t("tasks.alarms.unsupported")} /> : null}
 
       {next ? (
         <View
@@ -50,8 +53,9 @@ export function AlarmsSection({
         >
           <Icon name="clock" size={17} color={OC.green} />
           <Text style={{ flex: 1, fontFamily: FONT.bodySemi, fontSize: 13, color: OC.forest }}>
-            Next alarm in <Text style={{ fontFamily: FONT.bodyX }}>{next.inText}</Text> —{" "}
-            {next.alarm.label ?? DEFAULT_ALARM_LABEL}, {next.alarm.time}
+            {nextBefore}
+            <Text style={{ fontFamily: FONT.bodyX }}>{next.inText}</Text>
+            {nextAfter}
           </Text>
         </View>
       ) : null}
@@ -59,9 +63,9 @@ export function AlarmsSection({
       {alarms.alarms.length === 0 ? (
         <EmptyState
           icon="clock"
-          title="No alarms yet"
-          body="Set one for waking up, a pickup or anything you can't miss — it rings even when Otto is closed."
-          action="New alarm"
+          title={t("tasks.alarms.empty.title")}
+          body={t("tasks.alarms.empty.body")}
+          action={t("tasks.alarms.new")}
           onAction={() => onOpen()}
         />
       ) : (
@@ -83,7 +87,7 @@ export function AlarmsSection({
                 <Pressable
                   onPress={() => onOpen(alarm.id)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Edit ${label} alarm, ${alarm.time}`}
+                  accessibilityLabel={t("tasks.alarms.editLabel", { label, time: alarm.time })}
                   style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.6 : 1 })}
                 >
                   <Text
@@ -118,21 +122,23 @@ export function AlarmsSection({
         </Card>
       )}
 
-      {alarms.alarms.length > 0 ? <AddButton label="New alarm" onPress={() => onOpen()} /> : null}
+      {alarms.alarms.length > 0 ? (
+        <AddButton label={t("tasks.alarms.new")} onPress={() => onOpen()} />
+      ) : null}
 
       {permissions.supported && !permissions.exact ? (
         <Notice
           icon="bell"
-          text="Alarms ring on the minute only if you allow “Alarms & reminders”. Until then they arrive as notifications, maybe a little late."
-          action="Allow in phone settings"
+          text={t("tasks.alarms.exactNotice")}
+          action={t("tasks.alarms.allowInSettings")}
           onAction={openExactAlarmSettings}
         />
       ) : null}
       {permissions.supported && permissions.exact && !permissions.fullScreen ? (
         <Notice
           icon="lock"
-          text="Allow full-screen alarms so they show on your lock screen, not just as a notification."
-          action="Allow in phone settings"
+          text={t("tasks.alarms.fullScreenNotice")}
+          action={t("tasks.alarms.allowInSettings")}
           onAction={openFullScreenSettings}
         />
       ) : null}

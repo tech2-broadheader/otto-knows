@@ -97,3 +97,15 @@ export function extraKeys(translation: unknown, english: unknown, prefix = ""): 
   }
   return out;
 }
+
+/**
+ * Rich text inside one message (e.g. a bold amount mid-sentence): pass
+ * SLOT_MARK as the slot's param, then split the result around it. The mark is
+ * a control character no user text contains, so labels can't break the split.
+ */
+export const SLOT_MARK = "\u0000";
+
+export function splitAtSlot(message: string): [string, string] {
+  const at = message.indexOf(SLOT_MARK);
+  return at === -1 ? [message, ""] : [message.slice(0, at), message.slice(at + SLOT_MARK.length)];
+}

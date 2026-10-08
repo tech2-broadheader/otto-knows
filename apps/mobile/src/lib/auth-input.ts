@@ -2,6 +2,7 @@
 // real check is Supabase server-side. We only catch obviously empty/garbled input
 // so we can show a calm inline message instead of a network round-trip. NEVER log
 // the password; this module only ever sees and returns booleans/messages.
+import { t } from "../i18n";
 
 /** A non-empty email that at least contains an "@" with text on both sides. */
 export function isValidEmail(email: string): boolean {
@@ -20,8 +21,8 @@ export function isValidPassword(password: string): boolean {
  * show in a Banner, or null when the input is good enough to submit.
  */
 export function validateCredentials(email: string, password: string): string | null {
-  if (email.trim().length === 0) return "Enter your email.";
-  if (!isValidEmail(email)) return "That email doesn't look right.";
-  if (!isValidPassword(password)) return "Enter your password.";
+  if (email.trim().length === 0) return t("account.auth.emptyEmail");
+  if (!isValidEmail(email)) return t("account.auth.badEmail");
+  if (!isValidPassword(password)) return t("account.auth.emptyPassword");
   return null;
 }

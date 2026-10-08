@@ -26,6 +26,7 @@ import {
 import { addMinutesToIso } from "@otto/core";
 import { LOCAL_USER_ID, DEFAULT_CASH_ACCOUNT_ID } from "./constants";
 import { timeLabel } from "./datetime";
+import { t } from "../i18n";
 
 /** Injected context so the mappers stay pure (no `Date.now`/native id inside). */
 export type ApplyContext = {
@@ -198,7 +199,7 @@ export function reminderFromTimeBlock(
   return reminderSchema.parse({
     ...stamp(ctx),
     title: draft.title,
-    notes: `Blocked time until ${draft.endAt}`,
+    notes: t("assistant.proposal.blockedUntil", { time: draft.endAt }),
     dueAt: draft.startAt,
     recurrence: { freq: "once" },
     status: "pending",

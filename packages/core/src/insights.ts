@@ -1,6 +1,7 @@
 // Cross-domain insight detection — the synthesis that makes Otto feel alive.
 // Pure: ids are supplied by an injected factory so the logic stays deterministic
 // and testable (the app passes expo-crypto's randomUUID; tests pass a counter).
+import { EN_CORE_COPY, type CoreCopy } from "./copy";
 import type { Bill, Income, Nudge } from "@otto/schemas";
 import { formatMoney, formatShortDate } from "./format";
 import { nextPayday as deriveNextPayday } from "./payday";
@@ -31,7 +32,7 @@ export function detectPaydayVsBillNudges(
   bills: readonly Bill[],
   asOfDate: string,
   makeId: IdFactory,
-  options: { locale: string; withinDays?: number },
+  options: { locale: string; withinDays?: number; copy?: CoreCopy },
 ): Nudge[] {
   const withinDays = options.withinDays ?? DEFAULT_WINDOW_DAYS;
   // Derived from each income's cadence so a stored date that has passed rolls
@@ -49,7 +50,12 @@ export function detectPaydayVsBillNudges(
     nudges.push({
       id: makeId(),
       kind: "payday-vs-bill",
-      message: `Heads up — ${bill.name} (${formatMoney(bill.amount, options.locale)}) is due ${formatShortDate(bill.dueDate, options.locale)}, but your next pay lands ${formatShortDate(nextPayday, options.locale)}. Want a nudge the day before?`,
+      message: (options.copy ?? EN_CORE_COPY).paydayBill({
+        bill: bill.name,
+        amount: formatMoney(bill.amount, options.locale),
+        due: formatShortDate(bill.dueDate, options.locale),
+        payday: formatShortDate(nextPayday, options.locale),
+      }),
       severity: "gentle",
       relatedIds: [bill.id],
     });

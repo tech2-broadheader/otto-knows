@@ -20,6 +20,7 @@ import { nowIso, todayDate } from "../lib/datetime";
 import { newUuid } from "../lib/id";
 import { requestNotificationPermission } from "../notifications";
 import { t } from "../i18n";
+import { CORE_COPY } from "../i18n/core-copy";
 
 export type AlarmInput = Pick<Alarm, "time" | "label" | "repeatDays" | "vibrate" | "snoozeMinutes">;
 
@@ -77,7 +78,9 @@ export function useAlarms(): AlarmsState {
 
   const next = useMemo(() => {
     const found = nextAlarm(alarms, nowLocal());
-    return found ? { alarm: found.alarm, inText: formatTimeUntil(found.minutesUntil) } : null;
+    return found
+      ? { alarm: found.alarm, inText: formatTimeUntil(found.minutesUntil, CORE_COPY) }
+      : null;
   }, [alarms]);
 
   const save = useCallback(

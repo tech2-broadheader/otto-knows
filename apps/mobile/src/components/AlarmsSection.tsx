@@ -11,6 +11,7 @@ import { openExactAlarmSettings, openFullScreenSettings } from "../lib/alarms";
 import { DEFAULT_ALARM_LABEL } from "../lib/alarm-sync";
 import { AsyncBoundary } from "./AsyncBoundary";
 import { t, tSlot } from "../i18n";
+import { CORE_COPY } from "../i18n/core-copy";
 
 export function AlarmsSection({
   alarms,
@@ -109,7 +110,7 @@ export function AlarmsSection({
                     }}
                   >
                     <Text style={{ fontFamily: FONT.bodyBold }}>{label}</Text> ·{" "}
-                    {describeRepeat(alarm.repeatDays)}
+                    {describeRepeat(alarm.repeatDays, CORE_COPY)}
                   </Text>
                 </Pressable>
                 <OToggle

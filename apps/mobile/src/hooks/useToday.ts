@@ -39,6 +39,7 @@ import { newUuid } from "../lib/id";
 import { briefingSlotForHour, localUtcOffset, nowIso, todayDate } from "../lib/datetime";
 import type { LoadState } from "../components/AsyncBoundary";
 import { t } from "../i18n";
+import { CORE_COPY } from "../i18n/core-copy";
 
 export type TodayState = {
   state: LoadState;
@@ -110,16 +111,19 @@ export function useToday(deps: RepositoryDeps): TodayState {
 
       const dayNudges = detectPaydayVsBillNudges(income, bills, date, () => newUuid(), {
         locale,
+        copy: CORE_COPY,
       });
       const safeNudge = safeToSpendNudge(
         computeSafeToSpend({ accounts, transactions, bills, incomes: income, asOfDate: date }),
         () => newUuid(),
         locale,
+        CORE_COPY,
       );
       if (safeNudge) dayNudges.push(safeNudge);
 
       const slot = briefingSlotForHour(new Date().getHours());
       const composed = composeBriefing({
+        copy: CORE_COPY,
         id: newUuid(),
         userId: LOCAL_USER_ID,
         slot,

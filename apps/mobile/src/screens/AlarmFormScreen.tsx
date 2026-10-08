@@ -14,6 +14,7 @@ import { LOCAL_USER_ID } from "../lib/constants";
 import { todayDate } from "../lib/datetime";
 import { validateAlarmForm } from "../lib/forms";
 import { t } from "../i18n";
+import { CORE_COPY } from "../i18n/core-copy";
 
 type Params = { alarmId?: string };
 
@@ -81,7 +82,7 @@ export function AlarmFormScreen(): React.JSX.Element {
       ],
       { date: todayDate(now), time: `${pad(now.getHours())}:${pad(now.getMinutes())}` },
     );
-    return found ? formatTimeUntil(found.minutesUntil) : undefined;
+    return found ? formatTimeUntil(found.minutesUntil, CORE_COPY) : undefined;
   })();
 
   const toggleDay = (day: DayOfWeek): void =>
@@ -157,7 +158,7 @@ export function AlarmFormScreen(): React.JSX.Element {
         </Text>
       </View>
 
-      <Field label={t("tasks.alarmForm.repeat")} hint={describeRepeat(repeatDays)}>
+      <Field label={t("tasks.alarmForm.repeat")} hint={describeRepeat(repeatDays, CORE_COPY)}>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           {DAYS.map(({ day, letter, name }) => {
             const on = repeatDays.includes(day);

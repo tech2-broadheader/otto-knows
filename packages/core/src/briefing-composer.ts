@@ -2,6 +2,7 @@
 // Turns the day's context items + nudges into one coherent, gentle summary.
 // Pure: caller supplies id + generatedAt so it stays deterministic/testable.
 import type { Briefing, BriefingSlot, ContextItem, Nudge } from "@otto/schemas";
+import { EN_CORE_COPY, type CoreCopy } from "./copy";
 
 export type ComposeBriefingInput = {
   id: string;
@@ -13,12 +14,8 @@ export type ComposeBriefingInput = {
   nudges?: readonly Nudge[];
   /** ISO-8601 with offset */
   generatedAt: string;
-};
-
-const GREETING: Record<BriefingSlot, string> = {
-  morning: "Good morning.",
-  midday: "Quick midday check.",
-  evening: "Winding down.",
+  /** The app's wording (story 13.3); English when absent. */
+  copy?: CoreCopy;
 };
 
 function timePart(at: string): string {
@@ -27,9 +24,8 @@ function timePart(at: string): string {
   return match?.[1] ?? "";
 }
 
-function describeItems(items: readonly ContextItem[]): string {
-  if (items.length === 0) return "Nothing scheduled — an open day.";
-  const lead = items.length === 1 ? "1 thing on today" : `${items.length} things on today`;
+function describeItems(items: readonly ContextItem[], copy: CoreCopy): string {
+  if (items.length === 0) return copy.briefing.openDay;
   const preview = items
     .slice(0, 3)
     .map((it) => {
@@ -37,8 +33,8 @@ function describeItems(items: readonly ContextItem[]): string {
       return when ? `${when} ${it.title}` : it.title;
     })
     .join(", ");
-  const more = items.length > 3 ? `, and ${items.length - 3} more` : "";
-  return `${lead}: ${preview}${more}.`;
+  const more = items.length > 3 ? copy.briefing.more({ count: items.length - 3 }) : "";
+  return `${copy.briefing.things({ count: items.length, preview })}${more}.`;
 }
 
 /** Assemble a template `Briefing`. `source` is always "template" here. */
@@ -46,7 +42,8 @@ export function composeBriefing(input: ComposeBriefingInput): Briefing {
   const items = [...input.items];
   const nudges = [...(input.nudges ?? [])];
 
-  const sentences = [GREETING[input.slot], describeItems(items)];
+  const copy = input.copy ?? EN_CORE_COPY;
+  const sentences = [copy.briefing.greeting[input.slot], describeItems(items, copy)];
   for (const nudge of nudges) sentences.push(nudge.message);
 
   return {

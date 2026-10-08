@@ -4,6 +4,7 @@
 //          − credit-card amount owed
 //
 // Money is integer centavos throughout; the per-day figure uses floor division.
+import { EN_CORE_COPY, type CoreCopy } from "./copy";
 import type { Account, Bill, Income, Nudge, SafeToSpend, Transaction } from "@otto/schemas";
 import { summarizeWallets } from "./accounts";
 import { formatMoney, formatShortDate } from "./format";
@@ -81,6 +82,7 @@ export function safeToSpendNudge(
   result: SafeToSpend,
   makeId: IdFactory,
   locale: string,
+  copy: CoreCopy = EN_CORE_COPY,
 ): Nudge | null {
   if (result.status !== "ok" || result.nextPayday === undefined) return null;
   const payday = formatShortDate(result.nextPayday, locale);
@@ -91,7 +93,7 @@ export function safeToSpendNudge(
     return {
       id: makeId(),
       kind: "safe-to-spend",
-      message: `Heads up — bills before payday on ${payday} are ${money(-result.safeMinor)} more than what's on hand.`,
+      message: copy.safeToSpend.shortfall({ amount: money(-result.safeMinor), payday }),
       severity: "gentle",
       relatedIds: [],
     };
@@ -99,7 +101,11 @@ export function safeToSpendNudge(
   return {
     id: makeId(),
     kind: "safe-to-spend",
-    message: `${money(result.safeMinor)} is safe to spend until payday on ${payday} — about ${money(result.perDayMinor ?? 0)} a day.`,
+    message: copy.safeToSpend.safe({
+      amount: money(result.safeMinor),
+      payday,
+      perDay: money(result.perDayMinor ?? 0),
+    }),
     severity: "info",
     relatedIds: [],
   };

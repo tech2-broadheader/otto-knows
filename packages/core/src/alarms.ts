@@ -3,19 +3,11 @@
 // timezone. The Android alarm module computes the real fire instant itself
 // (it must, to re-arm repeats and after a reboot without JS).
 import type { Alarm, DayOfWeek } from "@otto/schemas";
+import { EN_CORE_COPY, type CoreCopy } from "./copy";
 
 export type LocalDateTime = { date: string; time: string };
 
 const WEEK: readonly DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-const LABEL: Record<DayOfWeek, string> = {
-  mon: "Mon",
-  tue: "Tue",
-  wed: "Wed",
-  thu: "Thu",
-  fri: "Fri",
-  sat: "Sat",
-  sun: "Sun",
-};
 const MINUTES_PER_DAY = 24 * 60;
 
 function utcDate(date: string): Date {
@@ -72,21 +64,23 @@ export function nextAlarm(
 }
 
 /** "Once", "Every day", "Mon–Fri", "Sat, Sun" or the days in week order. */
-export function describeRepeat(days: readonly DayOfWeek[]): string {
-  if (days.length === 0) return "Once";
-  if (days.length === 7) return "Every day";
+export function describeRepeat(days: readonly DayOfWeek[], copy: CoreCopy = EN_CORE_COPY): string {
+  const { repeat } = copy;
+  if (days.length === 0) return repeat.once;
+  if (days.length === 7) return repeat.everyDay;
   const sorted = WEEK.filter((d) => days.includes(d));
-  if (sorted.join() === "mon,tue,wed,thu,fri") return "Mon–Fri";
-  return sorted.map((d) => LABEL[d]).join(", ");
+  if (sorted.join() === "mon,tue,wed,thu,fri") return repeat.weekdays;
+  return sorted.map((d) => repeat.days[d]).join(repeat.separator);
 }
 
 /** "45 min", "7 h 20 min", "6 d 1 h". */
-export function formatTimeUntil(minutes: number): string {
-  if (minutes < 1) return "less than a minute";
+export function formatTimeUntil(minutes: number, copy: CoreCopy = EN_CORE_COPY): string {
+  const until = copy.timeUntil;
+  if (minutes < 1) return until.underAMinute;
   const d = Math.floor(minutes / MINUTES_PER_DAY);
   const h = Math.floor((minutes % MINUTES_PER_DAY) / 60);
   const m = minutes % 60;
-  if (d > 0) return h > 0 ? `${d} d ${h} h` : `${d} d`;
-  if (h > 0) return m > 0 ? `${h} h ${m} min` : `${h} h`;
-  return `${m} min`;
+  if (d > 0) return h > 0 ? until.daysHours(d, h) : until.days(d);
+  if (h > 0) return m > 0 ? until.hoursMinutes(h, m) : until.hours(h);
+  return until.minutes(m);
 }

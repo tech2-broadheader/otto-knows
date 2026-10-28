@@ -16,6 +16,8 @@
 
 > **Brand note:** Working name is **Otto** ("Otto knows" — the chief-of-staff who knows your day; matches the repo/BMAD project id `otto-knows`). Spec candidates _Cadence / Daylo / Routine_ remain open until brand sign-off (Open Decision OD-4).
 
+> **Backend note (ADR-008, 2026-10-28):** Supabase is replaced by **Convex** (database + server functions) with **Better Auth on Convex** for sign-in. All Pro server logic lives in Convex; Next.js remains only for the web companion. Below, read "backend" as Convex.
+
 > **Stack note (reconciliation — ADR-001):** The spec (§13) recommends Flutter; this file's historical default below is a Next.js web stack. We reconciled to **React Native + Expo (mobile, Android-first) + Next.js (Pro backend / LLM proxy / web companion), unified by shared TypeScript + Zod contracts.** Where §2 below says "Next.js (App Router)" for the *frontend*, read it as "Next.js for backend/web, React Native + Expo for the mobile app." All other rules (TS strict, Zod-first contract, shared schema, no secrets, etc.) apply unchanged across both. See `docs/ARCHITECTURE.md` ADR-001.
 
 ---
@@ -42,22 +44,22 @@ TypeScript everywhere, `strict: true`, no `any` without a comment.
 | Layer | Default (per ADR-001) |
 |-------|-------|
 | Mobile app | **React Native + Expo** (Android-first, iOS-ready) |
-| Web / backend | **Next.js (App Router)** — Pro sync/backup + LLM proxy + web companion |
+| Backend (Pro cloud) | **Convex** (per ADR-008) — queries/mutations/actions + HTTP actions: LLM proxy, sync/backup, webhooks, connectors |
+| Web companion | **Next.js (App Router)** — web companion only (talks to Convex) |
 | Styling (web) | Tailwind CSS |
 | Styling (mobile) | NativeWind (Tailwind for RN) |
 | UI components (web) | shadcn/ui |
-| Backend | Next.js Route Handlers / Server Actions |
-| Database (cloud/Pro) | Postgres via Supabase |
+| Database (cloud/Pro) | Convex database (schema in `convex/schema.ts`, mirrored by the Zod contracts) |
 | Local store (mobile, free tier) | SQLite via Drizzle (`expo-sqlite`) |
 | Validation | **Zod** (the shared contract) |
-| Auth | Supabase Auth (never hand-rolled) |
+| Auth | Better Auth on Convex (`@convex-dev/better-auth`; never hand-rolled) |
 | Forms | React Hook Form + Zod resolver |
 | LLM | Cloud model via API behind a server-side proxy (keys server-side, usage metered) — default to the latest Claude model |
 | Connectors | Google Calendar API, Google Tasks, Health Connect (Android) / HealthKit (iOS), EventKit/CalDAV |
 | Package manager | pnpm |
 | Lint/format | ESLint + Prettier |
 | Tests | Vitest (unit) + Playwright (web e2e) + Maestro/Detox (mobile e2e, when introduced) |
-| Hosting | Vercel + Supabase |
+| Hosting | Convex (backend) + Vercel (web companion) + Expo EAS (mobile builds) |
 
 **Tier 3 (this project):** stricter validation, audit logging on sensitive-data access, never trust the client, more tests, explicit consent flows. To swap a tool, change it here first (Architect records an ADR), then build to it.
 
@@ -87,7 +89,7 @@ Server-only code never imported into client/mobile components. Every shared data
 ## 4. HOW THE DEV AGENT IMPLEMENTS A STORY (inside BMAD's implementation loop)
 BMAD's loop is: SM creates story → Architect confirms Definition of Ready → Dev implements (TDD) → QA reviews → quality gates → commit & sync. Within the Dev step, follow this order:
 1. **Schema/contract** — Zod schema in `/packages/schemas`; derive types.
-2. **Data layer** — local SQLite (Drizzle) table/migration for mobile, or Postgres migration for cloud, matching the schema (never edit a shipped migration).
+2. **Data layer** — local SQLite (Drizzle) table/migration for mobile, or the Convex schema for cloud, matching the Zod schema (never edit a shipped migration).
 3. **Backend** — handler/action; validate input with the schema; typed result + typed error.
 4. **Frontend** — import the *same* schema; consume the typed API (see §5).
 5. **Wire & verify** — connect UI ↔ data/backend; confirm happy path AND one error path.

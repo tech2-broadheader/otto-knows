@@ -155,6 +155,26 @@ Goal: LLM proxy + conversational quick-add + proactive cross-domain reasoning.
 
 ---
 
+## E14 — Backend on Convex (ADR-008, added 2026-10-28)
+Goal: move the Pro cloud from Supabase + Next.js to Convex with Better Auth, with no change for free users. Spike first: verify current Convex + Better Auth versions and the Expo setup.
+### Story 14.1 — Convex project, schema and contracts
+- **AC1** `convex/` in the repo (workspace package), typed env config; tables for users/entitlement, connector tokens, audit events, billing events, usage/quota, mirrored from the Zod schemas.
+- **AC2** Functions validate input with the shared Zod schemas; an automated test suite runs Convex functions locally (convex-test).
+### Story 14.2 — Sign-in with Better Auth on Convex
+- **AC1** Email/password and Google sign-in on mobile; session in `expo-secure-store`; sign-out.
+- **AC2** Every Pro function checks the identity server-side; entitlement read from Convex.
+- **AC3** Free/local use still needs no account.
+### Story 14.3 — LLM proxy as Convex actions
+- **AC1** Brief, quick-add, optimizer and tips run as Convex actions with the same prompts, tools, Zod parsing and user timezone/currency (13.2); provider keys only in Convex env.
+- **AC2** Free-tier quick-add quota and rate limits stored in Convex (today they are in memory and reset on restart).
+### Story 14.4 — Google Calendar connect on Convex
+- **AC1** OAuth start/callback as HTTP actions with signed state; tokens AES-256-GCM encrypted in a Node action; refresh before expiry; disconnect.
+### Story 14.5 — RevenueCat webhook on Convex
+- **AC1** HTTP action with header auth, idempotent via billing events, sets entitlement (same rules as 9.5).
+### Story 14.6 — Account deletion, sync stub and retiring Supabase
+- **AC1** Delete account removes the user and all their Convex data; the mobile Your data flow uses it.
+- **AC2** Supabase, Drizzle/Postgres and the Next.js API routes are removed; docs updated (SETUP-convex.md replaces SETUP-supabase.md); all gates green.
+
 ## E11 — Budgeting+ (Free core)
 Goal: know where your money is, what came in, and how much you can safely spend until payday. Added 2026-10-07 by product-owner direction — see `sprint-change-proposal-2026-10-07.md`. Current priority.
 

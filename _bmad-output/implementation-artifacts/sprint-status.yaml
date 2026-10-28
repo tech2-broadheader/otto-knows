@@ -59,6 +59,15 @@ development_status:
   # --- Phase 5: continuity & polish ---
   epic-10: backlog
 
+  # --- Backend on Convex (ADR-008, product owner 2026-10-28) ---
+  epic-14: backlog
+  14-1-convex-schema-contracts: backlog
+  14-2-better-auth-sign-in: backlog
+  14-3-llm-proxy-convex-actions: backlog
+  14-4-google-connect-convex: backlog
+  14-5-revenuecat-webhook-convex: backlog
+  14-6-delete-sync-retire-supabase: backlog
+
   # --- Budgeting+ (product-owner priority 2026-10-07; see sprint-change-proposal-2026-10-07.md) ---
   epic-11: in-progress
   11-1-versioned-local-migrations: in-progress

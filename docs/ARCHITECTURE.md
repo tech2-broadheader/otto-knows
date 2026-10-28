@@ -17,18 +17,18 @@ Otto is a proactive, cross-domain personal daily assistant. It unifies calendar,
 ## 2. Architecture style
 **Local-first mobile app + thin cloud backend**, in a TypeScript monorepo.
 - The mobile app (React Native + Expo) owns the free-tier experience and works against an on-device SQLite store — the "smart organizer" runs without a backend.
-- A Next.js backend provides Pro-tier services only: the **LLM proxy** (keeps provider keys server-side, meters usage), cloud **sync/backup**, and a small **web companion**.
+- A **Convex** backend (ADR-008; was a Next.js backend) provides Pro-tier services only: the **LLM proxy** (keeps provider keys server-side, meters usage), cloud **sync/backup**, and a small **web companion**.
 - Split into more services only if a clear need is documented in an ADR. Rationale: the spec's economics (high local margin, real per-user LLM cost) map directly onto "free runs locally, paid hits the metered backend."
 
 ## 3. Tech stack
 Authoritative source: `CLAUDE.md §2`. This project uses:
 - Mobile: React Native + Expo (Android-first, iOS-ready); NativeWind for styling.
-- Web / backend: Next.js App Router on Vercel.
-- DB: Supabase Postgres (cloud / Pro); SQLite via Drizzle (`expo-sqlite`) on device (free).
+- Backend: Convex — functions, HTTP actions, scheduled jobs (ADR-008). Web companion: Next.js App Router on Vercel.
+- DB: Convex database (cloud / Pro); SQLite via Drizzle (`expo-sqlite`) on device (free).
 - Validation: Zod (shared contracts in `/packages/schemas`).
-- Auth: Supabase Auth.
+- Auth: Better Auth on Convex (ADR-008).
 - LLM: cloud Claude model behind a server-side proxy with usage metering.
-- Hosting: Vercel + Supabase.
+- Hosting: Convex + Vercel (web companion) + Expo EAS (mobile).
 - Deviation from the historical Next.js-only default is justified by **ADR-001**.
 
 ## 4. High-level data flow
@@ -64,7 +64,7 @@ User --natural language--> LLM Brain
 | consent | Granular per-source consent + audit log | Consent, AuditEntry |
 
 ## 6. Data model
-Entities and relationships live as Zod schemas in `/packages/schemas`; types via `z.infer`. Local migrations (Drizzle/SQLite) live in the mobile app; cloud migrations (Supabase) live in the web app. Never edit a shipped migration. Sensitive entities (finance, health) are encrypted at rest and access is audit-logged (Tier 3).
+Entities and relationships live as Zod schemas in `/packages/schemas`; types via `z.infer`. Local migrations (Drizzle/SQLite) live in the mobile app; the cloud schema lives in `convex/schema.ts` (ADR-008). Never edit a shipped migration. Sensitive entities (finance, health) are encrypted at rest and access is audit-logged (Tier 3).
 
 The on-device SQLite schema evolves via versioned migrations (`PRAGMA user_version`, ordered steps, each in a transaction) — see ADR-004. Never edit a shipped step; every schema change is a new step.
 
@@ -79,7 +79,7 @@ Overview (the contract is the Zod schema, not this table):
 | /api/connectors/google | * | Google Calendar/Tasks OAuth + read/write | required |
 
 ## 8. Auth & authorization
-- Authentication: Supabase Auth (email/OAuth); free tier can run fully local/anonymous, cloud features require an account.
+- Authentication: Better Auth on Convex (email/password + Google; ADR-008); free tier can run fully local/anonymous, cloud features require an account.
 - Authorization: entitlement checks (free / Pro / Lifetime) on every Pro route; caregiver links are explicit, consented, revocable. Every protected route/action checks server-side. Free-tier quotas (NL quick-adds, bill/med caps) enforced server-side for cloud calls and client-side for local.
 
 ## 9. External integrations
@@ -92,7 +92,7 @@ Overview (the contract is the Zod schema, not this table):
 | (Conditional) SMS parsing | Finance auto-capture | **Hard gate** — verify current Google Play policy first |
 
 ## 10. Environments & deployment
-- Local → Staging → Production. Hosting: Vercel (web/backend) + Supabase (DB); Expo EAS for mobile builds.
+- Local → Staging → Production. Hosting: Convex (backend + DB) + Vercel (web companion); Expo EAS for mobile builds.
 - Env vars documented in `.env.example`, read through one typed config module.
 - Release process: see `CLAUDE.md §7` + `PROJECT_RECORD.md` version log.
 
@@ -100,7 +100,7 @@ Overview (the contract is the Zod schema, not this table):
 - **Validation:** Zod at every boundary (forms, connector payloads, LLM tool args).
 - **Error handling:** typed errors, consistent envelope, no leaks.
 - **Logging/observability:** structured server logs for LLM proxy + sync; never log sensitive finance/health payloads.
-- **Security:** Supabase Auth, input validation, server-side secrets, rate limiting on LLM routes, encryption at rest for sensitive data, **audit logging on finance/health access (Tier 3)**.
+- **Security:** Better Auth on Convex, input validation, server-side secrets, rate limiting on LLM routes, encryption at rest for sensitive data, **audit logging on finance/health access (Tier 3)**.
 - **Privacy (DPA):** granular consent per source, explicit disclosure, no ad use of sensitive data, export & delete.
 - **Performance:** local-first reads; cache briefings; paginate history; batch LLM calls; quota free tier.
 - **Trust / safety:** write-back is always propose-and-confirm; tips stay non-prescriptive and supportive.
@@ -109,12 +109,13 @@ Overview (the contract is the Zod schema, not this table):
 | # | Decision | Status | Date |
 |---|----------|--------|------|
 | ADR-001 | React Native + Expo (mobile) + Next.js (backend/web), shared TS + Zod — instead of Flutter (spec) or Next-only (starter default) | Accepted | 2026-06-14 |
-| ADR-002 | Local-first SQLite for free tier; cloud Supabase only for Pro sync/LLM | Accepted | 2026-06-14 |
+| ADR-002 | Local-first SQLite for free tier; cloud (now Convex, ADR-008) only for Pro sync/LLM | Accepted | 2026-06-14 |
 | ADR-003 | Manual finance entry is the launch baseline; SMS parsing gated on Play policy | Accepted | 2026-06-14 |
 | ADR-004 | Derived wallet balances + versioned on-device migrations | Accepted | 2026-10-07 |
 | ADR-005 | Alarms via an in-repo Expo module (AlarmManager + full-screen notification), SCHEDULE_EXACT_ALARM path — see spike 12.2 | Accepted (owner, 2026-10-08) | 2026-10-08 |
 | ADR-006 | Billing: RevenueCat verifies store receipts; server trusts only its webhook | Proposed | 2026-10-08 |
 | ADR-007 | One home currency per user; locale/timezone-driven formatting via Intl; translation-ready string catalog | Accepted | 2026-10-08 |
+| ADR-008 | Convex replaces Supabase: database + all Pro server logic in Convex; Better Auth on Convex for sign-in; Next.js only for the web companion | Accepted (owner, 2026-10-28) | 2026-10-28 |
 
 ### ADR-001 — React Native + Expo + Next.js, unified by TypeScript + Zod
 - **Context:** The spec (§13) suggests Flutter (Android-first mobile). The project-starter's `CLAUDE.md` defaults to a Next.js-only web stack. The owner asked to standardize on React / React Native to keep web and mobile "inline" (one ecosystem), and delegated the final call.
@@ -124,7 +125,7 @@ Overview (the contract is the Zod schema, not this table):
 
 ### ADR-002 — Local-first free tier, cloud only for Pro
 - **Context:** Spec economics: local storage = high margin; online + LLM = real per-user cost. Free must not incur backend cost.
-- **Decision:** Free tier runs entirely on-device (SQLite). Cloud (Supabase + LLM proxy) is reached only by Pro features.
+- **Decision:** Free tier runs entirely on-device (SQLite). Cloud (Convex since ADR-008; was Supabase + LLM proxy) is reached only by Pro features.
 - **Status:** Accepted.
 - **Consequences:** Free tier is cheap and works offline; Pro carries the metered cost it should. Adds sync-reconciliation complexity when a user upgrades (local → cloud migration).
 
@@ -145,6 +146,17 @@ Overview (the contract is the Zod schema, not this table):
 - **Decision:** A small Kotlin module in `apps/mobile/modules/otto-alarm` (Expo Modules API, no npm dependency). It arms `AlarmManager.setAlarmClock` when "Alarms & reminders" is granted, else an inexact `setAndAllowWhileIdle`. It rings through an insistent alarm notification (alarm sound, `USAGE_ALARM`) whose full-screen intent opens a native ringing screen with Snooze / Dismiss. It keeps what is armed in its own store so a boot / update / clock / permission-change receiver can re-arm without JavaScript. Otto's SQLite `alarms` table is the source of truth; the app reconciles the two at start-up. Permissions: `SCHEDULE_EXACT_ALARM` (not `USE_EXACT_ALARM`), `USE_FULL_SCREEN_INTENT`, `RECEIVE_BOOT_COMPLETED`, `POST_NOTIFICATIONS`, `VIBRATE`.
 - **Status:** Accepted (product owner, 2026-10-08).
 - **Consequences:** No dependency risk and a small, owned surface. Android only: on iOS and in Expo Go alarms are saved but cannot ring, and the UI says so. Needs a dev or production build (EAS) and an on-device check; Play policy is re-checked at release (GATE-4).
+
+### ADR-008 — Convex instead of Supabase
+- **Context:** The Pro cloud was planned on Supabase (Postgres + Auth) with a Next.js backend for the LLM proxy, webhooks and connectors. Little of it is live yet: four tables (profiles/entitlement, connector tokens, audit events, billing events), sign-in, and a sync stub. The product owner chose Convex (2026-10-28).
+- **Decision:**
+  1. **Convex is the Pro backend and database.** Tables: users/entitlement, connector tokens (encrypted), audit events, billing events, usage/quota. Zod contracts in `/packages/schemas` stay the source of truth; Convex validators mirror them and functions still parse with Zod at the boundary.
+  2. **All server logic in Convex:** LLM proxy (actions; provider keys in Convex env, metered), RevenueCat webhook and Google OAuth start/callback (HTTP actions), account deletion, sync. Node-only code (AES-GCM token encryption) runs in `"use node"` actions.
+  3. **Sign-in: Better Auth on Convex** (`@convex-dev/better-auth`, Convex ≥ 1.25): email/password + Google; sessions on the phone in `expo-secure-store`. Chosen over Convex Auth, which is in beta with thin React Native docs (checked 2026-10-28).
+  4. **Next.js** stays only as the web companion. Drizzle/Postgres and `@supabase/supabase-js` are removed from web and mobile.
+  5. **Unchanged:** the free tier stays local-first on SQLite (ADR-002); propose-and-confirm; Tier-3 encryption and audit logging.
+- **Status:** Accepted (product owner, 2026-10-28).
+- **Consequences:** One backend to run, with real-time queries available for sync. Better Auth's Expo setup has "involved steps that could change", so its versions are pinned and the auth stories carry an on-device check. Convex has no SQL migrations; schema changes are additive with explicit backfills. Supabase-specific docs are retired (SETUP-supabase.md). Data residency and processor terms must be covered in the privacy reviews (GATE-3 / GATE-6).
 
 ### ADR-007 — Home currency, locale and timezone
 - **Context:** Otto launches in PH, Southeast Asia, US/Canada and UK/Europe (2026-10-08). The code assumed PHP, `en-PH` and Asia/Manila.

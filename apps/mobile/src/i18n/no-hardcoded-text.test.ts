@@ -52,6 +52,9 @@ const TEXT_KEYS = new Set([
 /** "file:text" pairs that are not translatable copy. */
 const ALLOWED = new Set<string>([]);
 
+/** Generous: the default 5 s is too tight when all packages test in parallel. */
+const SCAN_TIMEOUT_MS = 30_000;
+
 const SENTENCE = /[A-Za-z]{2,}[ ,.!?'’—-]+[A-Za-z]{2,}/;
 const WORD = /[A-Za-z]{2,}/;
 const URL_LIKE = /^`?https?:\/\//;
@@ -134,8 +137,13 @@ function findings(path: string): string[] {
 }
 
 describe("user-facing text lives in the string catalog (story 13.3)", () => {
-  it("has no hard-coded copy in screens, components, design, hooks or lib", () => {
-    const all = SCANNED.flatMap((dir) => files(join(SRC, dir))).flatMap(findings);
-    expect(all).toEqual([]);
-  });
+  it(
+    "has no hard-coded copy in screens, components, design, hooks or lib",
+    () => {
+      const all = SCANNED.flatMap((dir) => files(join(SRC, dir))).flatMap(findings);
+      expect(all).toEqual([]);
+      // Parses the whole UI source: give it room when every package tests at once.
+    },
+    SCAN_TIMEOUT_MS,
+  );
 });

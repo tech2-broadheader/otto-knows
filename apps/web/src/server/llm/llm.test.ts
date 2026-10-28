@@ -236,3 +236,30 @@ describe("the user's timezone and currency (story 13.2)", () => {
     expect(usd).toContain("100 USD → amountMinor 10000");
   });
 });
+
+describe("open-model quirks (ADR-009)", () => {
+  it("treats null optional fields as absent instead of rejecting the call", () => {
+    const proposal = toolCallToProposal(
+      {
+        name: "log_expense",
+        input: {
+          rationale: "From your note.",
+          amount: { amountMinor: 18000 },
+          description: null,
+          categoryId: null,
+          occurredAt: "2026-10-28T12:00:00+08:00",
+        },
+      },
+      counter(),
+      "PHP",
+    );
+    expect(proposal?.action.type).toBe("log_expense");
+  });
+
+  it("tells the model how to read short and non-English notes", () => {
+    const prompt = quickAddSystem({ timezone: "Asia/Manila", offset: "+08:00", currency: "PHP" });
+    expect(prompt).toMatch(/item and an amount/i);
+    expect(prompt).toMatch(/any language/i);
+    expect(prompt).toMatch(/never send null/i);
+  });
+});

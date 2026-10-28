@@ -54,7 +54,7 @@ TypeScript everywhere, `strict: true`, no `any` without a comment.
 | Validation | **Zod** (the shared contract) |
 | Auth | Better Auth on Convex (`@convex-dev/better-auth`; never hand-rolled) |
 | Forms | React Hook Form + Zod resolver |
-| LLM | Cloud model via API behind a server-side proxy (keys server-side, usage metered) — default to the latest Claude model |
+| LLM | Cloud model via API behind a server-side proxy (keys server-side, usage metered). **Default: Groq `openai/gpt-oss-120b`** (ADR-009); Claude and Gemini stay selectable via `LLM_PROVIDER` |
 | Connectors | Google Calendar API, Google Tasks, Health Connect (Android) / HealthKit (iOS), EventKit/CalDAV |
 | Package manager | pnpm |
 | Lint/format | ESLint + Prettier |

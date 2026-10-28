@@ -195,13 +195,28 @@ export function proposalTools(currency: CurrencyCode): LlmToolDef[] {
  * puts `rationale` alongside the draft fields; we split it out so the rest can
  * be validated against the draft schema. Returns null for unknown tools.
  */
+/** A copy of a JSON value with every null-valued object key removed. */
+function withoutNulls(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutNulls);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, v]) => v !== null)
+        .map(([k, v]) => [k, withoutNulls(v)]),
+    );
+  }
+  return value;
+}
+
 function toActionAndRationale(
   call: LlmToolCall,
   currency: CurrencyCode,
 ): { action: unknown; rationale: string } | null {
   const input = (call.input ?? {}) as Record<string, unknown>;
   const rationale = typeof input.rationale === "string" ? input.rationale : "";
-  const { rationale: _omit, ...payload } = input;
+  const { rationale: _omit, ...raw } = input;
+  // Open models sometimes send null for an optional field; treat it as absent.
+  const payload = withoutNulls(raw) as Record<string, unknown>;
   // Amounts are always the user's home currency: never trust or default the
   // model's currency (the schema default would otherwise be PHP).
   if (payload.amount && typeof payload.amount === "object") {

@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
 import { GeminiLlmClient } from "./gemini";
+import { GroqLlmClient } from "./groq";
 
 /**
  * LLM client (SERVER-ONLY). A narrow interface around a single non-streaming
@@ -123,8 +124,7 @@ let cached: LlmClient | null = null;
  * directly (not the full typed config) so the brain works regardless of which
  * other services are set up.
  *
- * Provider selection: `LLM_PROVIDER` ("anthropic" | "gemini"), else inferred
- * from whichever key is present (Anthropic preferred). No key → NullLlmClient.
+ * Provider selection: see selectProvider. No usable key → NullLlmClient.
  */
 export function getLlmClient(): LlmClient {
   if (cached) return cached;
@@ -132,20 +132,53 @@ export function getLlmClient(): LlmClient {
   return cached;
 }
 
+export type LlmProvider = "anthropic" | "gemini" | "groq" | "none";
+
+type ProviderEnv = Readonly<Record<string, string | undefined>>;
+
+const KEY_FOR: Record<Exclude<LlmProvider, "none">, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  gemini: "GEMINI_API_KEY",
+  groq: "GROQ_API_KEY",
+};
+
+/**
+ * Which provider to use (ADR-009): `LLM_PROVIDER` ("anthropic" | "gemini" |
+ * "groq") when its key is present — otherwise none, never a surprise fallback;
+ * without `LLM_PROVIDER`, the first key present in the order Anthropic,
+ * Gemini, Groq.
+ */
+export function selectProvider(env: ProviderEnv): LlmProvider {
+  const chosen = (env.LLM_PROVIDER ?? "").trim().toLowerCase();
+  if (chosen) {
+    if (chosen in KEY_FOR) {
+      const provider = chosen as Exclude<LlmProvider, "none">;
+      return env[KEY_FOR[provider]] ? provider : "none";
+    }
+    return "none";
+  }
+  for (const provider of ["anthropic", "gemini", "groq"] as const) {
+    if (env[KEY_FOR[provider]]) return provider;
+  }
+  return "none";
+}
+
 function buildLlmClient(): LlmClient {
-  const provider = (process.env.LLM_PROVIDER ?? "").toLowerCase();
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const geminiKey = process.env.GEMINI_API_KEY;
-
-  const useGemini = provider === "gemini" || (!provider && !anthropicKey && !!geminiKey);
-
-  if (useGemini && geminiKey) {
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-    return new GeminiLlmClient(new GoogleGenAI({ apiKey: geminiKey }), model);
+  const env = process.env;
+  switch (selectProvider(env)) {
+    case "anthropic":
+      return new AnthropicLlmClient(
+        new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }),
+        env.LLM_MODEL || "claude-opus-5-5",
+      );
+    case "gemini":
+      return new GeminiLlmClient(
+        new GoogleGenAI({ apiKey: env.GEMINI_API_KEY }),
+        env.GEMINI_MODEL || "gemini-2.5-flash",
+      );
+    case "groq":
+      return new GroqLlmClient(env.GROQ_API_KEY ?? "", env.GROQ_MODEL || "openai/gpt-oss-120b");
+    case "none":
+      return new NullLlmClient();
   }
-  if (anthropicKey && provider !== "gemini") {
-    const model = process.env.LLM_MODEL || "claude-opus-5-5";
-    return new AnthropicLlmClient(new Anthropic({ apiKey: anthropicKey }), model);
-  }
-  return new NullLlmClient();
 }

@@ -45,6 +45,10 @@ export function quickAddSystem(p: PromptLocale): string {
 Rules:
 - Each tool call is a PROPOSAL the user will confirm — never assume it is applied.
 - Extract only what the note clearly states. If nothing is actionable, call no tools and say so briefly.
+- A note that is just an item and an amount ("Lunch 180", "Grab 250 to work", "Kopi 1.80") is spending: call log_expense.
+- Notes can be in any language, and amounts may use a decimal comma ("12,50" = 12.50).
+- Leave out optional fields you don't know; never send null.
+- If the note asks for several things, call one tool per thing.
 - Resolve relative times ("tonight", "8pm", "tomorrow") against the Current time you are given.
 - ${timeRule(p)}
 - ${moneyRule(p)}

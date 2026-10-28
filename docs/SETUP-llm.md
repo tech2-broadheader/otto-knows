@@ -9,7 +9,20 @@
 `getLlmClient()` (`apps/web/src/server/llm/client.ts`) selects, in order:
 1. `LLM_PROVIDER=gemini` + `GEMINI_API_KEY` → **Gemini**
 2. `LLM_PROVIDER=anthropic` (or just `ANTHROPIC_API_KEY` present) → **Claude**
+3. `LLM_PROVIDER=groq` + `GROQ_API_KEY` → **Groq** (open models; ADR-009)
+
+With no `LLM_PROVIDER`, the first key present wins, in the order Anthropic, Gemini, Groq. If `LLM_PROVIDER` names a provider whose key is missing, the brain is off (no surprise fallback).
 3. neither → **NullLlmClient**: the brief falls back to its template, quick-add/optimizer return nothing, tips are empty. The app stays fully usable on the free/local path with **no key at all**.
+
+## Option C — Groq (fast, low cost)
+1. Create a key at console.groq.com and put it in `apps/web/.env.local` (never in git or chat):
+   ```
+   LLM_PROVIDER=groq
+   GROQ_API_KEY=...
+   GROQ_MODEL=openai/gpt-oss-120b   # or qwen/qwen3.8-27b. Check what your key can use: GET https://api.groq.com/openai/v1/models (Groq's public list may include models your account lacks)
+   ```
+2. **Privacy:** Groq does not retain inference requests by default; abuse/reliability logs, if taken, are kept up to 30 days. Turn on **Zero Data Retention** (Groq console → Data Controls) before real user data (checked 2026-10-28; re-check at launch, GATE-3/6).
+3. Compare providers on our real tasks with `pnpm --filter @otto/web exec tsx scripts/llm-eval.ts` (makes real API calls).
 
 ## Option A — Gemini (free tier) — current choice
 1. Get a key at **aistudio.google.com → API keys**.

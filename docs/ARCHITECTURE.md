@@ -27,7 +27,7 @@ Authoritative source: `CLAUDE.md §2`. This project uses:
 - DB: Convex database (cloud / Pro); SQLite via Drizzle (`expo-sqlite`) on device (free).
 - Validation: Zod (shared contracts in `/packages/schemas`).
 - Auth: Better Auth on Convex (ADR-008).
-- LLM: cloud Claude model behind a server-side proxy with usage metering.
+- LLM: Groq `openai/gpt-oss-120b` by default (ADR-009), behind a server-side proxy with usage metering; Claude / Gemini selectable.
 - Hosting: Convex + Vercel (web companion) + Expo EAS (mobile).
 - Deviation from the historical Next.js-only default is justified by **ADR-001**.
 
@@ -116,6 +116,7 @@ Overview (the contract is the Zod schema, not this table):
 | ADR-006 | Billing: RevenueCat verifies store receipts; server trusts only its webhook | Proposed | 2026-10-08 |
 | ADR-007 | One home currency per user; locale/timezone-driven formatting via Intl; translation-ready string catalog | Accepted | 2026-10-08 |
 | ADR-008 | Convex replaces Supabase: database + all Pro server logic in Convex; Better Auth on Convex for sign-in; Next.js only for the web companion | Accepted (owner, 2026-10-28) | 2026-10-28 |
+| ADR-009 | Default LLM provider: Groq (`openai/gpt-oss-120b`), chosen on a measured Quick Add comparison; providers stay swappable | Accepted (owner, 2026-10-29) | 2026-10-29 |
 
 ### ADR-001 — React Native + Expo + Next.js, unified by TypeScript + Zod
 - **Context:** The spec (§13) suggests Flutter (Android-first mobile). The project-starter's `CLAUDE.md` defaults to a Next.js-only web stack. The owner asked to standardize on React / React Native to keep web and mobile "inline" (one ecosystem), and delegated the final call.
@@ -146,6 +147,13 @@ Overview (the contract is the Zod schema, not this table):
 - **Decision:** A small Kotlin module in `apps/mobile/modules/otto-alarm` (Expo Modules API, no npm dependency). It arms `AlarmManager.setAlarmClock` when "Alarms & reminders" is granted, else an inexact `setAndAllowWhileIdle`. It rings through an insistent alarm notification (alarm sound, `USAGE_ALARM`) whose full-screen intent opens a native ringing screen with Snooze / Dismiss. It keeps what is armed in its own store so a boot / update / clock / permission-change receiver can re-arm without JavaScript. Otto's SQLite `alarms` table is the source of truth; the app reconciles the two at start-up. Permissions: `SCHEDULE_EXACT_ALARM` (not `USE_EXACT_ALARM`), `USE_FULL_SCREEN_INTENT`, `RECEIVE_BOOT_COMPLETED`, `POST_NOTIFICATIONS`, `VIBRATE`.
 - **Status:** Accepted (product owner, 2026-10-08).
 - **Consequences:** No dependency risk and a small, owned surface. Android only: on iOS and in Expo Go alarms are saved but cannot ring, and the UI says so. Needs a dev or production build (EAS) and an on-device check; Play policy is re-checked at release (GATE-4).
+
+### ADR-009 — Groq as the default LLM provider
+- **Context:** Otto's brain (Quick Add, briefing, optimizer, tips) must be fast, cheap enough for a free-tier daily quota, and reliable at tool calling with the user's timezone and currency (13.2). The proxy already sat behind one `LlmClient` interface (Claude, Gemini). The product owner asked to evaluate Groq (2026-10-28).
+- **Evidence:** `apps/web/scripts/llm-eval.ts` runs 30 real Quick Add notes across 6 regions (PH, US, UK, DE, VN, SG) through the production code and scores action, amount (minor units) and local date/time/offset. Results (2026-10-28/29, fixed "now"): Groq `openai/gpt-oss-120b` 24/30 before prompt fixes and 25–27/30 across two runs after (answers vary run to run), at ~1.2 s median — remaining misses: two-in-one notes, an occasional weekday slip, an occasional malformed call; Groq `qwen/qwen3.8-27b` 22/30 at ~31 s; Gemini 2.5 Flash free tier could not complete a run (5 requests/min). `llama-3.3-70b-versatile` is listed by Groq but was not available to our key.
+- **Decision:** Default provider Groq, model `openai/gpt-oss-120b` (`LLM_PROVIDER=groq`). Claude and Gemini remain selectable; `selectProvider` never falls back to a different provider than the one named. Groq-specific handling: optional tool fields may be null on Groq's side and are dropped before Zod; `reasoning_effort` only for gpt-oss; the briefing gets a 4,096-token budget because reasoning counts toward it.
+- **Status:** Accepted (product owner, 2026-10-29).
+- **Consequences:** Fast, low-cost replies. gpt-oss returns **one tool call per reply**, so a note asking for two things ("coffee 120 and parking 50") yields only the first proposal — revisit with a follow-up call or a model with parallel tool calls. Privacy: enable Groq **Zero Data Retention** before real user data; Groq is a processor to list in GATE-3 / GATE-6. Re-run the eval before changing models. The proxy moves into Convex with story 14.3 (ADR-008); the adapter carries over unchanged.
 
 ### ADR-008 — Convex instead of Supabase
 - **Context:** The Pro cloud was planned on Supabase (Postgres + Auth) with a Next.js backend for the LLM proxy, webhooks and connectors. Little of it is live yet: four tables (profiles/entitlement, connector tokens, audit events, billing events), sign-in, and a sync stub. The product owner chose Convex (2026-10-28).

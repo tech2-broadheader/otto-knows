@@ -73,7 +73,8 @@ export async function generateBriefing(
     tools: proposalTools(locale.currency),
     thinking: true,
     effort: "medium",
-    maxTokens: 2048,
+    // Room for reasoning models (e.g. gpt-oss on Groq), whose thinking counts toward the limit.
+    maxTokens: 4096,
   });
 
   if (result.refused || !result.text) {

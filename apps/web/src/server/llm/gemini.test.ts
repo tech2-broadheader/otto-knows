@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toGeminiSchema } from "./gemini";
-import { NullLlmClient } from "./client";
+import { NullLlmClient, selectProvider } from "./client";
 
 describe("toGeminiSchema", () => {
   it("uppercases types and keeps the supported subset recursively", () => {
@@ -37,5 +37,25 @@ describe("NullLlmClient", () => {
     const result = await new NullLlmClient().generate();
     expect(result.refused).toBe(true);
     expect(result.toolCalls).toEqual([]);
+  });
+});
+
+describe("selectProvider (ADR-009)", () => {
+  it("honours LLM_PROVIDER when its key is present", () => {
+    expect(
+      selectProvider({ LLM_PROVIDER: "groq", GROQ_API_KEY: "k", ANTHROPIC_API_KEY: "a" }),
+    ).toBe("groq");
+    expect(selectProvider({ LLM_PROVIDER: "Gemini", GEMINI_API_KEY: "g" })).toBe("gemini");
+  });
+
+  it("falls back to none when the chosen provider has no key (never a surprise provider)", () => {
+    expect(selectProvider({ LLM_PROVIDER: "groq", ANTHROPIC_API_KEY: "a" })).toBe("none");
+  });
+
+  it("infers from the keys present: Anthropic, then Gemini, then Groq", () => {
+    expect(selectProvider({ ANTHROPIC_API_KEY: "a", GROQ_API_KEY: "k" })).toBe("anthropic");
+    expect(selectProvider({ GEMINI_API_KEY: "g", GROQ_API_KEY: "k" })).toBe("gemini");
+    expect(selectProvider({ GROQ_API_KEY: "k" })).toBe("groq");
+    expect(selectProvider({})).toBe("none");
   });
 });

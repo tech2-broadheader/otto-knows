@@ -1,0 +1,24 @@
+{
+  "name": "@otto/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Otto Pro cloud on Convex (ADR-008): database, server functions, HTTP actions.",
+  "scripts": {
+    "dev": "convex dev",
+    "codegen": "convex codegen",
+    "typecheck": "tsc --noEmit -p convex",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@otto/schemas": "workspace:*",
+    "convex": "^1.48.0",
+    "convex-helpers": "^0.1.129",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
+    "convex-test": "^0.0.66",
+    "@types/node": "^22.10.0"
+  }
+}

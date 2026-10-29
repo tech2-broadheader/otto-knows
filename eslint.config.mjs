@@ -14,6 +14,7 @@ export default tseslint.config(
       "**/dist/**",
       "**/build/**",
       "**/coverage/**",
+      "**/convex/_generated/**",
       "**/*.config.js",
       "**/*.config.cjs",
       "**/next-env.d.ts",

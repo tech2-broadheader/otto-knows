@@ -14,3 +14,4 @@ export * from "./notes";
 export * from "./appointments";
 export * from "./locale";
 export * from "./alarms";
+export * from "./cloud";

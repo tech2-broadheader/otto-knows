@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { idSchema } from "@otto/schemas";
+import { entitlementSchema, idSchema, type Entitlement } from "@otto/schemas";
 import { getAuthVerifier, type AuthVerifier } from "./supabase";
 import { getEntitlementStore, type EntitlementStore } from "./entitlement";
 
@@ -12,8 +12,7 @@ import { getEntitlementStore, type EntitlementStore } from "./entitlement";
  * so routes get the real Supabase + DB implementations while tests pass fakes.
  */
 
-export const entitlementSchema = z.enum(["free", "pro", "lifetime"]);
-export type Entitlement = z.infer<typeof entitlementSchema>;
+export { entitlementSchema, type Entitlement };
 
 export type AuthContext = {
   userId: z.infer<typeof idSchema>;
